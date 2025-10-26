@@ -1,8 +1,9 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate, useParams } from "react-router-dom";
 import { createEmpleado, deleteEmpleado, getEmpleado, updateEmpleado } from "../api/empleado.api";
 import { toast } from "react-hot-toast";
+import { ActivityLogger } from "../utils/activityLogger";
 
 export function EmpleadoFormPage() {
   const {
@@ -13,22 +14,36 @@ export function EmpleadoFormPage() {
   } = useForm();
   const navigate = useNavigate();
   const params = useParams();
+  const [empleadoActual, setEmpleadoActual] = useState(null);
 
   const onSubmit = handleSubmit(async (data) => {
     try {
-      if (params.id) {
+      const nombreCompleto = `${data.nombre} ${data.apellido}`;
+      
+      // Si es actualización y password está vacío, no enviarlo
+      if (params.id && (!data.password || data.password.trim() === "")) {
+        const { password, ...dataWithoutPassword } = data;
+        await updateEmpleado(params.id, dataWithoutPassword);
+        ActivityLogger.empleadoUpdated(nombreCompleto);
+        toast.success("Empleado actualizado correctamente", {
+          position: "bottom-right",
+        });
+      } else if (params.id) {
         await updateEmpleado(params.id, data);
+        ActivityLogger.empleadoUpdated(nombreCompleto);
         toast.success("Empleado actualizado correctamente", {
           position: "bottom-right",
         });
       } else {
         await createEmpleado(data);
+        ActivityLogger.empleadoCreated(nombreCompleto);
         toast.success("Empleado creado correctamente", {
           position: "bottom-right",
         });
       }
       navigate("/empleado");
     } catch (error) {
+      console.error("Error al guardar:", error);
       toast.error("Error al guardar empleado", {
         position: "bottom-right",
       });
@@ -40,6 +55,7 @@ export function EmpleadoFormPage() {
       if (params.id) {
         try {
           const { data } = await getEmpleado(params.id);
+          setEmpleadoActual(data);
           setValue("rut", data.rut);
           setValue("nombre", data.nombre);
           setValue("apellido", data.apellido);
@@ -81,7 +97,7 @@ export function EmpleadoFormPage() {
               type="text"
               placeholder="12.345.678-9"
               {...register("rut", { required: "El RUT es requerido" })}
-              className={`block w-full px-3 py-2 border rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 ${
+              className={`block w-full px-3 py-2 border rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500 ${
                 errors.rut ? 'border-red-300' : 'border-gray-300'
               }`}
               autoFocus
@@ -100,7 +116,7 @@ export function EmpleadoFormPage() {
               type="text"
               placeholder="Juan"
               {...register("nombre", { required: "El nombre es requerido" })}
-              className={`block w-full px-3 py-2 border rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 ${
+              className={`block w-full px-3 py-2 border rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500 ${
                 errors.nombre ? 'border-red-300' : 'border-gray-300'
               }`}
             />
@@ -118,7 +134,7 @@ export function EmpleadoFormPage() {
               type="text"
               placeholder="Pérez"
               {...register("apellido", { required: "El apellido es requerido" })}
-              className={`block w-full px-3 py-2 border rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 ${
+              className={`block w-full px-3 py-2 border rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500 ${
                 errors.apellido ? 'border-red-300' : 'border-gray-300'
               }`}
             />
@@ -134,7 +150,7 @@ export function EmpleadoFormPage() {
             </label>
             <select
               {...register("cargo", { required: "El cargo es requerido" })}
-              className={`block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 ${
+              className={`block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 ${
                 errors.cargo ? 'border-red-300' : 'border-gray-300'
               }`}
             >
@@ -157,7 +173,7 @@ export function EmpleadoFormPage() {
               type="email"
               placeholder="juan.perez@monkeycoffee.com"
               {...register("correo")}
-              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500"
             />
           </div>
 
@@ -170,7 +186,7 @@ export function EmpleadoFormPage() {
               type="text"
               placeholder="+56 9 1234 5678"
               {...register("celular")}
-              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500"
             />
           </div>
 
@@ -185,7 +201,7 @@ export function EmpleadoFormPage() {
               {...register("password", { 
                 required: !params.id ? "La contraseña es requerida" : false 
               })}
-              className={`block w-full px-3 py-2 border rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 ${
+              className={`block w-full px-3 py-2 border rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500 ${
                 errors.password ? 'border-red-300' : 'border-gray-300'
               }`}
             />
@@ -205,7 +221,7 @@ export function EmpleadoFormPage() {
               <input
                 type="checkbox"
                 {...register("activo")}
-                className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                className="h-4 w-4 text-primary-500 focus:ring-primary-500 border-gray-300 rounded"
               />
               <label className="ml-2 block text-sm text-gray-900">
                 Empleado activo
@@ -219,7 +235,7 @@ export function EmpleadoFormPage() {
           <button
             type="button"
             onClick={() => navigate("/empleado")}
-            className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
           >
             Cancelar
           </button>
@@ -233,6 +249,9 @@ export function EmpleadoFormPage() {
                   if (accepted) {
                     try {
                       await deleteEmpleado(params.id);
+                      if (empleadoActual) {
+                        ActivityLogger.empleadoDeleted(`${empleadoActual.nombre} ${empleadoActual.apellido}`);
+                      }
                       toast.success("Empleado eliminado correctamente", {
                         position: "bottom-right",
                       });
@@ -252,7 +271,7 @@ export function EmpleadoFormPage() {
             
             <button
               type="submit"
-              className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-500 hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
             >
               {params.id ? 'Actualizar' : 'Crear'} Empleado
             </button>

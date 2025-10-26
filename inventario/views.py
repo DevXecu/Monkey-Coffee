@@ -1,7 +1,6 @@
 from rest_framework import viewsets, status, filters
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import Q, Sum, Count
 from django.utils import timezone
@@ -15,13 +14,12 @@ from .serializer import (
     InventarioStatsSerializer
 )
 
-
 class InventarioViewSet(viewsets.ModelViewSet):
     """
     ViewSet para gestionar el inventario de productos
     """
     queryset = Inventario.objects.filter(activo=True)
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]  # Deshabilitado para desarrollo
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['categoria', 'estado', 'proveedor', 'activo']
     search_fields = ['codigo_producto', 'nombre_producto', 'descripcion', 'proveedor']
@@ -59,11 +57,17 @@ class InventarioViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         """Establecer el usuario que crea el inventario"""
-        serializer.save(creado_por=self.request.user)
+        if self.request.user.is_authenticated:
+            serializer.save(creado_por=self.request.user)
+        else:
+            serializer.save()
 
     def perform_update(self, serializer):
         """Establecer el usuario que actualiza el inventario"""
-        serializer.save(actualizado_por=self.request.user)
+        if self.request.user.is_authenticated:
+            serializer.save(actualizado_por=self.request.user)
+        else:
+            serializer.save()
 
     @action(detail=False, methods=['get'])
     def stats(self, request):
@@ -152,7 +156,8 @@ class InventarioViewSet(viewsets.ModelViewSet):
         else:
             inventario.estado = Inventario.Estado.DISPONIBLE
         
-        inventario.actualizado_por = request.user
+        if request.user.is_authenticated:
+            inventario.actualizado_por = request.user
         inventario.save()
         
         # Agregar notas si se proporcionan

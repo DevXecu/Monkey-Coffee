@@ -7,7 +7,7 @@ router = routers.DefaultRouter()
 router.register(r'empleado', views.EmpleadoView, 'empleado')
 
 urlpatterns = [
-    path("api/v1/", include(router.urls)),
+    path("", include(router.urls)),
 
     # Endpoint para generar el esquema OpenAPI
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),

@@ -7,7 +7,7 @@ const URL =
 
 console.log("Backend URL:", URL);
 const empleadoApi = axios.create({
-  baseURL: `${URL}/empleado/api/v1/empleado`,
+  baseURL: `${URL}/api/empleado`,
 });
 
 // Interceptor para debugging
@@ -35,10 +35,10 @@ empleadoApi.interceptors.response.use(
 
 export const getAllEmpleado = () => empleadoApi.get("/");
 
-export const getEmpleado = (id) => empleadoApi.get(`/${id}`);
+export const getEmpleado = (id) => empleadoApi.get(`/${id}/`);
 
 export const createEmpleado = (empleado) => empleadoApi.post("/", empleado);
 
 export const updateEmpleado = (id, empleado) => empleadoApi.put(`/${id}/`, empleado);
 
-export const deleteEmpleado = (id) => empleadoApi.delete(`/${id}`);
+export const deleteEmpleado = (id) => empleadoApi.delete(`/${id}/`);

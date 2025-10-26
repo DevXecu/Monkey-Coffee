@@ -18,7 +18,7 @@ export function EmpleadoCard({ empleado }) {
 
   return (
     <div
-      className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 hover:shadow-md hover:border-indigo-300 cursor-pointer transition-all duration-200"
+      className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 hover:shadow-md hover:border-primary-300 cursor-pointer transition-all duration-200"
       onClick={() => {
         navigate(`/empleado/${empleado.id}`);
       }}
@@ -26,8 +26,8 @@ export function EmpleadoCard({ empleado }) {
       <div className="flex items-start justify-between">
         <div className="flex-1">
           <div className="flex items-center space-x-3 mb-2">
-            <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center">
-              <span className="text-indigo-600 font-semibold text-sm">
+            <div className="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center">
+              <span className="text-primary-500 font-semibold text-sm">
                 {empleado.nombre.charAt(0)}{empleado.apellido.charAt(0)}
               </span>
             </div>

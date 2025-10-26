@@ -1,8 +1,9 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { inventarioAPI } from "../api/inventario.api";
 
 export function InventarioCard({ inventario, onUpdate }) {
-  const [isEditing, setIsEditing] = useState(false);
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
 
   const getEstadoColor = (estado) => {
@@ -113,8 +114,8 @@ export function InventarioCard({ inventario, onUpdate }) {
           </div>
           <div className="flex space-x-2 ml-4">
             <button
-              onClick={() => setIsEditing(!isEditing)}
-              className="text-indigo-600 hover:text-indigo-900"
+              onClick={() => navigate(`/inventario/${inventario.id}`)}
+              className="text-primary-500 hover:text-primary-700"
               title="Editar"
             >
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">

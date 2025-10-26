@@ -19,7 +19,7 @@ export function Layout({ children }) {
       <Sidebar isOpen={sidebarOpen} onClose={closeSidebar} />
       
       {/* Main content area */}
-      <div className="flex-1 flex flex-col overflow-hidden lg:ml-0">
+      <div className="flex-1 flex flex-col overflow-hidden">
         {/* Navbar */}
         <Navbar onToggleSidebar={toggleSidebar} />
         

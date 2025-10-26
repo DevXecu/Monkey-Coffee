@@ -90,9 +90,11 @@ export function Sidebar({ isOpen, onClose }) {
 
       {/* Sidebar */}
       <div
-        className={`fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0 ${
-          isOpen ? 'translate-x-0' : '-translate-x-full'
-        }`}
+        className={`
+          fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out
+          ${isOpen ? 'translate-x-0' : '-translate-x-full'}
+          lg:static lg:translate-x-0
+        `}
       >
         <div className="flex flex-col h-full">
           {/* Sidebar header */}
@@ -122,30 +124,17 @@ export function Sidebar({ isOpen, onClose }) {
                 onClick={onClose}
                 className={`flex items-center space-x-3 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 ${
                   isActive(item.href)
-                    ? 'bg-indigo-100 text-indigo-700 border-r-2 border-indigo-700'
+                    ? 'bg-primary-100 text-primary-700 border-r-2 border-primary-700'
                     : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
                 }`}
               >
-                <span className={isActive(item.href) ? 'text-indigo-500' : 'text-gray-400'}>
+                <span className={isActive(item.href) ? 'text-primary-500' : 'text-gray-400'}>
                   {item.icon}
                 </span>
                 <span>{item.name}</span>
               </Link>
             ))}
           </nav>
-
-          {/* Sidebar footer */}
-          <div className="p-4 border-t border-gray-200">
-            <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
-              <div className="w-10 h-10 bg-indigo-500 rounded-full flex items-center justify-center">
-                <span className="text-white text-sm font-medium">A</span>
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-900 truncate">Admin</p>
-                <p className="text-xs text-gray-500 truncate">admin@monkeycoffee.com</p>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
     </>

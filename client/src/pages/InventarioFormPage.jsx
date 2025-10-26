@@ -1,8 +1,9 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate, useParams } from "react-router-dom";
 import { inventarioAPI } from "../api/inventario.api";
 import { toast } from "react-hot-toast";
+import { ActivityLogger } from "../utils/activityLogger";
 
 export function InventarioFormPage() {
   const {
@@ -14,6 +15,7 @@ export function InventarioFormPage() {
   } = useForm();
   const navigate = useNavigate();
   const params = useParams();
+  const [productoActual, setProductoActual] = useState(null);
 
   const categorias = [
     { value: "cafe", label: "Café" },
@@ -64,11 +66,13 @@ export function InventarioFormPage() {
 
       if (params.id) {
         await inventarioAPI.update(params.id, formData);
+        ActivityLogger.productoUpdated(data.nombre_producto);
         toast.success("Producto actualizado correctamente", {
           position: "bottom-right",
         });
       } else {
         await inventarioAPI.create(formData);
+        ActivityLogger.productoCreated(data.nombre_producto);
         toast.success("Producto creado correctamente", {
           position: "bottom-right",
         });
@@ -87,6 +91,7 @@ export function InventarioFormPage() {
       if (params.id) {
         try {
           const data = await inventarioAPI.getById(params.id);
+          setProductoActual(data);
           setValue("codigo_producto", data.codigo_producto);
           setValue("nombre_producto", data.nombre_producto);
           setValue("descripcion", data.descripcion || "");
@@ -149,7 +154,7 @@ export function InventarioFormPage() {
               type="text"
               placeholder="PROD-001"
               {...register("codigo_producto", { required: "El código del producto es requerido" })}
-              className={`block w-full px-3 py-2 border rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 ${
+              className={`block w-full px-3 py-2 border rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500 ${
                 errors.codigo_producto ? 'border-red-300' : 'border-gray-300'
               }`}
               autoFocus
@@ -168,7 +173,7 @@ export function InventarioFormPage() {
               type="text"
               placeholder="Café Americano"
               {...register("nombre_producto", { required: "El nombre del producto es requerido" })}
-              className={`block w-full px-3 py-2 border rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 ${
+              className={`block w-full px-3 py-2 border rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500 ${
                 errors.nombre_producto ? 'border-red-300' : 'border-gray-300'
               }`}
             />
@@ -184,7 +189,7 @@ export function InventarioFormPage() {
             </label>
             <select
               {...register("categoria", { required: "La categoría es requerida" })}
-              className={`block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 ${
+              className={`block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 ${
                 errors.categoria ? 'border-red-300' : 'border-gray-300'
               }`}
             >
@@ -207,7 +212,7 @@ export function InventarioFormPage() {
             </label>
             <select
               {...register("estado", { required: "El estado es requerido" })}
-              className={`block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 ${
+              className={`block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 ${
                 errors.estado ? 'border-red-300' : 'border-gray-300'
               }`}
             >
@@ -232,7 +237,7 @@ export function InventarioFormPage() {
               rows={3}
               placeholder="Descripción del producto..."
               {...register("descripcion")}
-              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500"
             />
           </div>
 
@@ -254,7 +259,7 @@ export function InventarioFormPage() {
                 required: "La cantidad actual es requerida",
                 min: { value: 0, message: "La cantidad debe ser mayor o igual a 0" }
               })}
-              className={`block w-full px-3 py-2 border rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 ${
+              className={`block w-full px-3 py-2 border rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500 ${
                 errors.cantidad_actual ? 'border-red-300' : 'border-gray-300'
               }`}
             />
@@ -270,7 +275,7 @@ export function InventarioFormPage() {
             </label>
             <select
               {...register("unidad_medida", { required: "La unidad de medida es requerida" })}
-              className={`block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 ${
+              className={`block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 ${
                 errors.unidad_medida ? 'border-red-300' : 'border-gray-300'
               }`}
             >
@@ -299,7 +304,7 @@ export function InventarioFormPage() {
                 required: "La cantidad mínima es requerida",
                 min: { value: 0, message: "La cantidad debe ser mayor o igual a 0" }
               })}
-              className={`block w-full px-3 py-2 border rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 ${
+              className={`block w-full px-3 py-2 border rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500 ${
                 errors.cantidad_minima ? 'border-red-300' : 'border-gray-300'
               }`}
             />
@@ -320,7 +325,7 @@ export function InventarioFormPage() {
               {...register("cantidad_maxima", {
                 min: { value: 0, message: "La cantidad debe ser mayor o igual a 0" }
               })}
-              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500"
             />
             {errors.cantidad_maxima && (
               <p className="mt-1 text-sm text-red-600">{errors.cantidad_maxima.message}</p>
@@ -344,7 +349,7 @@ export function InventarioFormPage() {
               {...register("precio_unitario", {
                 min: { value: 0, message: "El precio debe ser mayor o igual a 0" }
               })}
-              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500"
             />
             {errors.precio_unitario && (
               <p className="mt-1 text-sm text-red-600">{errors.precio_unitario.message}</p>
@@ -363,7 +368,7 @@ export function InventarioFormPage() {
               {...register("precio_venta", {
                 min: { value: 0, message: "El precio debe ser mayor o igual a 0" }
               })}
-              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500"
             />
             {errors.precio_venta && (
               <p className="mt-1 text-sm text-red-600">{errors.precio_venta.message}</p>
@@ -384,7 +389,7 @@ export function InventarioFormPage() {
               type="text"
               placeholder="QR-123456"
               {...register("codigo_qr")}
-              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500"
             />
           </div>
 
@@ -397,7 +402,7 @@ export function InventarioFormPage() {
               type="text"
               placeholder="1234567890123"
               {...register("codigo_barra")}
-              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500"
             />
           </div>
 
@@ -410,7 +415,7 @@ export function InventarioFormPage() {
               type="text"
               placeholder="Estante A-1"
               {...register("ubicacion")}
-              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500"
             />
           </div>
 
@@ -423,7 +428,7 @@ export function InventarioFormPage() {
               type="url"
               placeholder="https://ejemplo.com/imagen.jpg"
               {...register("imagen_producto")}
-              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500"
             />
           </div>
 
@@ -441,7 +446,7 @@ export function InventarioFormPage() {
               type="text"
               placeholder="Café del Sur S.A."
               {...register("proveedor")}
-              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500"
             />
           </div>
 
@@ -454,7 +459,7 @@ export function InventarioFormPage() {
               type="text"
               placeholder="+56 9 1234 5678"
               {...register("contacto_proveedor")}
-              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500"
             />
           </div>
 
@@ -471,7 +476,7 @@ export function InventarioFormPage() {
             <input
               type="datetime-local"
               {...register("fecha_ultimo_ingreso")}
-              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
             />
           </div>
 
@@ -483,7 +488,7 @@ export function InventarioFormPage() {
             <input
               type="date"
               {...register("fecha_vencimiento")}
-              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
             />
           </div>
 
@@ -496,7 +501,7 @@ export function InventarioFormPage() {
               type="text"
               placeholder="LOTE-2024-001"
               {...register("lote")}
-              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500"
             />
           </div>
 
@@ -509,7 +514,7 @@ export function InventarioFormPage() {
               rows={3}
               placeholder="Notas adicionales sobre el producto..."
               {...register("notas")}
-              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500"
             />
           </div>
 
@@ -524,7 +529,7 @@ export function InventarioFormPage() {
               <input
                 type="checkbox"
                 {...register("requiere_alerta")}
-                className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                className="h-4 w-4 text-primary-500 focus:ring-primary-500 border-gray-300 rounded"
               />
               <label className="ml-2 block text-sm text-gray-900">
                 Requiere alerta de stock bajo
@@ -538,7 +543,7 @@ export function InventarioFormPage() {
               <input
                 type="checkbox"
                 {...register("activo")}
-                className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                className="h-4 w-4 text-primary-500 focus:ring-primary-500 border-gray-300 rounded"
               />
               <label className="ml-2 block text-sm text-gray-900">
                 Producto activo
@@ -552,7 +557,7 @@ export function InventarioFormPage() {
           <button
             type="button"
             onClick={() => navigate("/inventario")}
-            className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
           >
             Cancelar
           </button>
@@ -566,6 +571,9 @@ export function InventarioFormPage() {
                   if (accepted) {
                     try {
                       await inventarioAPI.delete(params.id);
+                      if (productoActual) {
+                        ActivityLogger.productoDeleted(productoActual.nombre_producto);
+                      }
                       toast.success("Producto eliminado correctamente", {
                         position: "bottom-right",
                       });
@@ -585,7 +593,7 @@ export function InventarioFormPage() {
             
             <button
               type="submit"
-              className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-500 hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
             >
               {params.id ? 'Actualizar' : 'Crear'} Producto
             </button>
