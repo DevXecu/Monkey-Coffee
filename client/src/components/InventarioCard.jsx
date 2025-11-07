@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { inventarioAPI } from "../api/inventario.api";
+import { formatCurrency, formatInteger } from "../utils/currencyUtils";
 
 export function InventarioCard({ inventario, onUpdate }) {
   const navigate = useNavigate();
@@ -67,15 +68,7 @@ export function InventarioCard({ inventario, onUpdate }) {
 
   const formatDate = (dateString) => {
     if (!dateString) return "N/A";
-    return new Date(dateString).toLocaleDateString("es-ES");
-  };
-
-  const formatCurrency = (amount) => {
-    if (!amount) return "N/A";
-    return new Intl.NumberFormat("es-ES", {
-      style: "currency",
-      currency: "EUR"
-    }).format(amount);
+    return new Date(dateString).toLocaleDateString("es-CL");
   };
 
   const handleDelete = async () => {
@@ -155,7 +148,7 @@ export function InventarioCard({ inventario, onUpdate }) {
               isExpiringSoon ? "text-yellow-600" : 
               "text-green-600"
             }`}>
-              {inventario.cantidad_actual} {getUnidadLabel(inventario.unidad_medida)}
+              {formatInteger(inventario.cantidad_actual)} {getUnidadLabel(inventario.unidad_medida)}
             </span>
           </div>
           
@@ -164,7 +157,7 @@ export function InventarioCard({ inventario, onUpdate }) {
               <svg className="h-4 w-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
               </svg>
-              Stock bajo (mín: {inventario.cantidad_minima})
+              Stock bajo (mín: {formatInteger(inventario.cantidad_minima)})
             </div>
           )}
 

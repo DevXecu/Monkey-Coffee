@@ -23,6 +23,7 @@ export function EmpleadoFormPage() {
   const [apellidoValue, setApellidoValue] = useState("");
   const [passwordValue, setPasswordValue] = useState("");
   const [showPasswordValidation, setShowPasswordValidation] = useState(false);
+  const [celularValue, setCelularValue] = useState("");
   
   // Referencias para los campos
   const rutRef = useRef(null);
@@ -70,6 +71,75 @@ export function EmpleadoFormPage() {
     setPasswordValue(value);
     setValue("password", value);
     setShowPasswordValidation(value.length > 0);
+  };
+
+  // Función para limpiar el número de celular (remover +56, espacios, etc.)
+  const limpiarCelular = (celular) => {
+    if (!celular) return "";
+    // Remover +56, espacios, guiones y otros caracteres no numéricos
+    return celular.replace(/\+56|\s|-/g, '').replace(/[^0-9]/g, '');
+  };
+
+  // Función para formatear el número de celular chileno
+  const formatearCelularChileno = (numero) => {
+    const limpiado = limpiarCelular(numero);
+    
+    // Si está vacío, retornar vacío
+    if (!limpiado) return "";
+    
+    // Si empieza con 9, mantenerlo; si no, agregar 9 al inicio
+    let numeroFormateado = limpiado.startsWith('9') ? limpiado : '9' + limpiado;
+    
+    // Limitar a 9 dígitos (9 + 8 dígitos)
+    if (numeroFormateado.length > 9) {
+      numeroFormateado = numeroFormateado.substring(0, 9);
+    }
+    
+    // Formatear: 9 1111 1111
+    if (numeroFormateado.length === 0) {
+      return "";
+    } else if (numeroFormateado.length === 1) {
+      return numeroFormateado;
+    } else if (numeroFormateado.length <= 5) {
+      // Para 2-5 dígitos: "9 1", "9 11", "9 111", "9 1111"
+      return `${numeroFormateado.substring(0, 1)} ${numeroFormateado.substring(1)}`;
+    } else {
+      // Para más de 5 dígitos: "9 1111 1", "9 1111 11", etc.
+      return `${numeroFormateado.substring(0, 1)} ${numeroFormateado.substring(1, 5)} ${numeroFormateado.substring(5)}`;
+    }
+  };
+
+  const handleCelularChange = (e) => {
+    const inputValue = e.target.value;
+    
+    // Limpiar y formatear el número
+    const limpiado = limpiarCelular(inputValue);
+    const formateado = formatearCelularChileno(limpiado);
+    
+    setCelularValue(formateado);
+    
+    // Guardar el valor completo con +56 para el formulario
+    const valorCompleto = formateado ? `+56 ${formateado}` : "";
+    setValue("celular", valorCompleto);
+  };
+
+  const handleCelularKeyDown = (e) => {
+    // Permitir solo números y teclas de control
+    const allowedKeys = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab', 'Enter'];
+    const isNumber = /^[0-9]$/.test(e.key);
+    
+    if (!isNumber && !allowedKeys.includes(e.key) && !e.ctrlKey && !e.metaKey) {
+      e.preventDefault();
+    }
+  };
+
+  const handleCelularFocus = (e) => {
+    // Colocar el cursor al final del texto si hay contenido
+    if (celularValue) {
+      setTimeout(() => {
+        e.target.setSelectionRange(celularValue.length, celularValue.length);
+      }, 0);
+    }
   };
 
   const validarPassword = (password) => {
@@ -242,7 +312,18 @@ export function EmpleadoFormPage() {
       if (!cleanData.correo || cleanData.correo === '') {
         cleanData.correo = null;
       }
-      if (!cleanData.celular || cleanData.celular === '') {
+      // Limpiar y formatear celular antes de enviar
+      if (cleanData.celular && cleanData.celular !== '') {
+        // Asegurar que tenga el formato correcto
+        const celularLimpio = limpiarCelular(cleanData.celular);
+        if (celularLimpio) {
+          // Si no empieza con 9, agregarlo
+          const numeroCompleto = celularLimpio.startsWith('9') ? celularLimpio : '9' + celularLimpio;
+          cleanData.celular = `+56${numeroCompleto}`;
+        } else {
+          cleanData.celular = null;
+        }
+      } else {
         cleanData.celular = null;
       }
       if (!cleanData.observaciones || cleanData.observaciones === '') {
@@ -292,9 +373,32 @@ export function EmpleadoFormPage() {
       navigate("/empleado");
     } catch (error) {
       console.error("Error al guardar:", error);
-      toast.error("Error al guardar empleado", {
-        position: "bottom-right",
-      });
+      
+      // Manejar errores específicos del backend
+      if (error.response?.data?.error) {
+        const errorData = error.response.data.error;
+        
+        // Error de RUT duplicado
+        if (errorData.rut && errorData.rut[0]?.includes('already exists')) {
+          setError("rut", { 
+            type: "manual", 
+            message: "Este RUT ya está registrado en el sistema" 
+          });
+          toast.error("El RUT ingresado ya existe en el sistema", {
+            position: "bottom-right",
+            duration: 4000,
+          });
+        } else {
+          // Otros errores de validación
+          toast.error("Error de validación: " + JSON.stringify(errorData), {
+            position: "bottom-right",
+          });
+        }
+      } else {
+        toast.error("Error al guardar empleado", {
+          position: "bottom-right",
+        });
+      }
     }
   });
 
@@ -323,7 +427,18 @@ export function EmpleadoFormPage() {
           setValue("tipo_contrato", data.tipo_contrato || "indefinido");
           setValue("estado", data.estado || "activo");
           setValue("correo", data.correo);
-          setValue("celular", data.celular);
+          
+          // Formatear celular si existe
+          if (data.celular) {
+            const celularLimpio = limpiarCelular(data.celular);
+            const celularFormateado = formatearCelularChileno(celularLimpio);
+            setCelularValue(celularFormateado);
+            setValue("celular", celularFormateado ? `+56 ${celularFormateado}` : "");
+          } else {
+            setCelularValue("");
+            setValue("celular", "");
+          }
+          
           setPasswordValue("");
           setValue("password", "");
           setValue("observaciones", data.observaciones || "");
@@ -451,14 +566,23 @@ export function EmpleadoFormPage() {
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Celular
             </label>
-            <input
-              ref={celularRef}
-              type="text"
-              placeholder="+56 9 1234 5678"
-              {...register("celular")}
-              onKeyPress={(e) => handleFieldKeyPress(e, direccionRef)}
-              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500"
-            />
+            <div className="relative">
+              <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 pointer-events-none select-none">
+                +56 
+              </div>
+              <input
+                ref={celularRef}
+                type="text"
+                placeholder="9 1234 5678"
+                value={celularValue}
+                onChange={handleCelularChange}
+                onKeyDown={handleCelularKeyDown}
+                onFocus={handleCelularFocus}
+                onKeyPress={(e) => handleFieldKeyPress(e, direccionRef)}
+                className="block w-full pl-12 pr-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+                maxLength={11}
+              />
+            </div>
           </div>
 
           {/* Dirección */}
@@ -578,10 +702,17 @@ export function EmpleadoFormPage() {
             <input
               ref={salarioRef}
               type="number"
-              step="0.01"
-              placeholder="0.00"
+              step="1"
+              min="0"
+              placeholder="0"
               {...register("salario")}
-              onKeyPress={(e) => handleFieldKeyPress(e, passwordRef)}
+              onKeyPress={(e) => {
+                // Prevenir entrada de punto decimal o coma
+                if (e.key === '.' || e.key === ',') {
+                  e.preventDefault();
+                }
+                handleFieldKeyPress(e, passwordRef);
+              }}
               className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500"
             />
           </div>

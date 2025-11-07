@@ -7,9 +7,6 @@ export function ProductosPage() {
           <h1 className="text-2xl font-bold text-gray-900">Productos</h1>
           <p className="text-gray-600">Gestiona tu catálogo de productos</p>
         </div>
-        <button className="px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors">
-          + Nuevo Producto
-        </button>
       </div>
 
       {/* Content placeholder */}

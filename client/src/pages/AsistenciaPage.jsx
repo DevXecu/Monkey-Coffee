@@ -7,9 +7,6 @@ export function AsistenciaPage() {
           <h1 className="text-2xl font-bold text-gray-900">Asistencia</h1>
           <p className="text-gray-600">Gestiona y registra la asistencia de empleados</p>
         </div>
-        <button className="px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors">
-          + Registrar Asistencia
-        </button>
       </div>
 
       {/* Stats */}

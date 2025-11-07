@@ -50,14 +50,14 @@ export function InventarioFormPage() {
 
   const onSubmit = handleSubmit(async (data) => {
     try {
-      // Convertir campos numéricos
+      // Convertir campos numéricos a enteros
       const formData = {
         ...data,
-        cantidad_actual: parseFloat(data.cantidad_actual) || 0,
-        cantidad_minima: parseFloat(data.cantidad_minima),
-        cantidad_maxima: data.cantidad_maxima ? parseFloat(data.cantidad_maxima) : null,
-        precio_unitario: data.precio_unitario ? parseFloat(data.precio_unitario) : null,
-        precio_venta: data.precio_venta ? parseFloat(data.precio_venta) : null,
+        cantidad_actual: Math.round(parseFloat(data.cantidad_actual) || 0),
+        cantidad_minima: Math.round(parseFloat(data.cantidad_minima)),
+        cantidad_maxima: data.cantidad_maxima ? Math.round(parseFloat(data.cantidad_maxima)) : null,
+        precio_unitario: data.precio_unitario ? Math.round(parseFloat(data.precio_unitario)) : null,
+        precio_venta: data.precio_venta ? Math.round(parseFloat(data.precio_venta)) : null,
         requiere_alerta: data.requiere_alerta || false,
         activo: data.activo !== false,
         fecha_vencimiento: data.fecha_vencimiento || null,
@@ -97,11 +97,11 @@ export function InventarioFormPage() {
           setValue("descripcion", data.descripcion || "");
           setValue("categoria", data.categoria);
           setValue("unidad_medida", data.unidad_medida);
-          setValue("cantidad_actual", data.cantidad_actual);
-          setValue("cantidad_minima", data.cantidad_minima);
-          setValue("cantidad_maxima", data.cantidad_maxima || "");
-          setValue("precio_unitario", data.precio_unitario || "");
-          setValue("precio_venta", data.precio_venta || "");
+          setValue("cantidad_actual", Math.round(data.cantidad_actual || 0));
+          setValue("cantidad_minima", Math.round(data.cantidad_minima || 0));
+          setValue("cantidad_maxima", data.cantidad_maxima ? Math.round(data.cantidad_maxima) : "");
+          setValue("precio_unitario", data.precio_unitario ? Math.round(data.precio_unitario) : "");
+          setValue("precio_venta", data.precio_venta ? Math.round(data.precio_venta) : "");
           setValue("codigo_qr", data.codigo_qr || "");
           setValue("codigo_barra", data.codigo_barra || "");
           setValue("ubicacion", data.ubicacion || "");
@@ -253,8 +253,8 @@ export function InventarioFormPage() {
             </label>
             <input
               type="number"
-              step="0.01"
-              placeholder="0.00"
+              step="1"
+              placeholder="0"
               {...register("cantidad_actual", { 
                 required: "La cantidad actual es requerida",
                 min: { value: 0, message: "La cantidad debe ser mayor o igual a 0" }
@@ -298,8 +298,8 @@ export function InventarioFormPage() {
             </label>
             <input
               type="number"
-              step="0.01"
-              placeholder="5.00"
+              step="1"
+              placeholder="5"
               {...register("cantidad_minima", { 
                 required: "La cantidad mínima es requerida",
                 min: { value: 0, message: "La cantidad debe ser mayor o igual a 0" }
@@ -320,8 +320,8 @@ export function InventarioFormPage() {
             </label>
             <input
               type="number"
-              step="0.01"
-              placeholder="100.00"
+              step="1"
+              placeholder="100"
               {...register("cantidad_maxima", {
                 min: { value: 0, message: "La cantidad debe ser mayor o igual a 0" }
               })}
@@ -340,12 +340,12 @@ export function InventarioFormPage() {
           {/* Precio Unitario */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Precio Unitario (€)
+              Precio Unitario (CLP)
             </label>
             <input
               type="number"
-              step="0.01"
-              placeholder="0.00"
+              step="1"
+              placeholder="0"
               {...register("precio_unitario", {
                 min: { value: 0, message: "El precio debe ser mayor o igual a 0" }
               })}
@@ -359,12 +359,12 @@ export function InventarioFormPage() {
           {/* Precio Venta */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Precio Venta (€)
+              Precio Venta (CLP)
             </label>
             <input
               type="number"
-              step="0.01"
-              placeholder="0.00"
+              step="1"
+              placeholder="0"
               {...register("precio_venta", {
                 min: { value: 0, message: "El precio debe ser mayor o igual a 0" }
               })}
