@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from .models import Inventario
+from datetime import timedelta
 
 
 class InventarioSerializer(serializers.ModelSerializer):
@@ -154,7 +155,7 @@ class InventarioListSerializer(serializers.ModelSerializer):
         from django.utils import timezone
         if obj.fecha_vencimiento:
             # Considerar por vencer si vence en los próximos 30 días
-            return obj.fecha_vencimiento <= timezone.now().date() + timezone.timedelta(days=30)
+            return obj.fecha_vencimiento <= timezone.now().date() + timedelta(days=30)
         return False
 
 

@@ -2,7 +2,7 @@ from rest_framework import viewsets, status, filters
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
-from django.db.models import Q, Sum, Count
+from django.db.models import Q, Sum, Count, F
 from django.utils import timezone
 from datetime import timedelta
 from .models import Inventario
@@ -42,7 +42,7 @@ class InventarioViewSet(viewsets.ModelViewSet):
         
         # Filtro para stock bajo
         if self.request.query_params.get('low_stock') == 'true':
-            queryset = queryset.filter(cantidad_actual__lte=models.F('cantidad_minima'))
+            queryset = queryset.filter(cantidad_actual__lte=F('cantidad_minima'))
         
         # Filtro para productos por vencer
         if self.request.query_params.get('expiring_soon') == 'true':
@@ -82,11 +82,11 @@ class InventarioViewSet(viewsets.ModelViewSet):
         productos_vencidos = queryset.filter(estado='vencido').count()
         
         # Stock bajo
-        stock_bajo = queryset.filter(cantidad_actual__lte=models.F('cantidad_minima')).count()
+        stock_bajo = queryset.filter(cantidad_actual__lte=F('cantidad_minima')).count()
         
         # Valor total del inventario
         valor_total = queryset.aggregate(
-            total=Sum(models.F('cantidad_actual') * models.F('precio_unitario'))
+            total=Sum(F('cantidad_actual') * F('precio_unitario'))
         )['total'] or 0
         
         # Distribución por categorías
@@ -172,7 +172,7 @@ class InventarioViewSet(viewsets.ModelViewSet):
     def low_stock(self, request):
         """Obtener productos con stock bajo"""
         queryset = self.get_queryset().filter(
-            cantidad_actual__lte=models.F('cantidad_minima')
+            cantidad_actual__lte=F('cantidad_minima')
         )
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)

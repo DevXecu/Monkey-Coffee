@@ -5,7 +5,7 @@ import { EmpleadoPage } from "./pages/EmpleadoPage";
 import { DashboardPage } from "./pages/DashboardPage";
 import { InventarioPage } from "./pages/InventarioPage";
 import { InventarioFormPage } from "./pages/InventarioFormPage";
-import { ProductosPage } from "./pages/ProductosPage";
+import { TurnosPage } from "./pages/TurnosPage";
 import { AsistenciaPage } from "./pages/AsistenciaPage";
 import { ReportesPage } from "./pages/ReportesPage";
 import { ConfiguracionPage } from "./pages/ConfiguracionPage";
@@ -29,7 +29,7 @@ function App() {
           <Route path="empleado" element={<EmpleadoPage />} />
           <Route path="empleado/:id" element={<EmpleadoFormPage />} />
           <Route path="empleado-create" element={<EmpleadoFormPage />} />
-          <Route path="productos" element={<ProductosPage />} />
+          <Route path="turnos" element={<TurnosPage />} />
           <Route path="asistencia" element={<AsistenciaPage />} />
           <Route path="inventario" element={<InventarioPage />} />
           <Route path="inventario/:id" element={<InventarioFormPage />} />

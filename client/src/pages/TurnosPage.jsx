@@ -1,11 +1,11 @@
-export function ProductosPage() {
+export function TurnosPage() {
   return (
     <div className="space-y-6">
       {/* Page header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Productos</h1>
-          <p className="text-gray-600">Gestiona tu catálogo de productos</p>
+          <h1 className="text-2xl font-bold text-gray-900">Turnos Laborales</h1>
+          <p className="text-gray-600">Gestiona los turnos de trabajo de los empleados</p>
         </div>
       </div>
 
@@ -22,11 +22,11 @@ export function ProductosPage() {
               strokeLinecap="round"
               strokeLinejoin="round"
               strokeWidth={2}
-              d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
+              d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
             />
           </svg>
-          <h3 className="mt-2 text-sm font-medium text-gray-900">Sin productos</h3>
-          <p className="mt-1 text-sm text-gray-500">Comienza agregando un nuevo producto.</p>
+          <h3 className="mt-2 text-sm font-medium text-gray-900">Sin turnos configurados</h3>
+          <p className="mt-1 text-sm text-gray-500">Comienza configurando los turnos laborales.</p>
         </div>
       </div>
     </div>

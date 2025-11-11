@@ -80,46 +80,44 @@ export function EmpleadoFormPage() {
     return celular.replace(/\+56|\s|-/g, '').replace(/[^0-9]/g, '');
   };
 
-  // Función para formatear el número de celular chileno
+  // Función para formatear el número de celular chileno (solo los 8 dígitos después del 9)
   const formatearCelularChileno = (numero) => {
     const limpiado = limpiarCelular(numero);
     
     // Si está vacío, retornar vacío
     if (!limpiado) return "";
     
-    // Si empieza con 9, mantenerlo; si no, agregar 9 al inicio
-    let numeroFormateado = limpiado.startsWith('9') ? limpiado : '9' + limpiado;
+    // Remover el 9 inicial si existe (ya que el prefijo lo incluye)
+    let numeroSin9 = limpiado.startsWith('9') ? limpiado.substring(1) : limpiado;
     
-    // Limitar a 9 dígitos (9 + 8 dígitos)
-    if (numeroFormateado.length > 9) {
-      numeroFormateado = numeroFormateado.substring(0, 9);
+    // Limitar a 8 dígitos (después del 9)
+    if (numeroSin9.length > 8) {
+      numeroSin9 = numeroSin9.substring(0, 8);
     }
     
-    // Formatear: 9 1111 1111
-    if (numeroFormateado.length === 0) {
+    // Formatear: 1234 5678
+    if (numeroSin9.length === 0) {
       return "";
-    } else if (numeroFormateado.length === 1) {
-      return numeroFormateado;
-    } else if (numeroFormateado.length <= 5) {
-      // Para 2-5 dígitos: "9 1", "9 11", "9 111", "9 1111"
-      return `${numeroFormateado.substring(0, 1)} ${numeroFormateado.substring(1)}`;
+    } else if (numeroSin9.length <= 4) {
+      // Para 1-4 dígitos: "1", "12", "123", "1234"
+      return numeroSin9;
     } else {
-      // Para más de 5 dígitos: "9 1111 1", "9 1111 11", etc.
-      return `${numeroFormateado.substring(0, 1)} ${numeroFormateado.substring(1, 5)} ${numeroFormateado.substring(5)}`;
+      // Para más de 4 dígitos: "1234 5", "1234 56", etc.
+      return `${numeroSin9.substring(0, 4)} ${numeroSin9.substring(4)}`;
     }
   };
 
   const handleCelularChange = (e) => {
     const inputValue = e.target.value;
     
-    // Limpiar y formatear el número
+    // Limpiar y formatear el número (solo los 8 dígitos después del 9)
     const limpiado = limpiarCelular(inputValue);
     const formateado = formatearCelularChileno(limpiado);
     
     setCelularValue(formateado);
     
-    // Guardar el valor completo con +56 para el formulario
-    const valorCompleto = formateado ? `+56 ${formateado}` : "";
+    // Guardar el valor completo con +56 9 para el formulario
+    const valorCompleto = formateado ? `+56 9${formateado.replace(/\s/g, '')}` : "";
     setValue("celular", valorCompleto);
   };
 
@@ -130,6 +128,12 @@ export function EmpleadoFormPage() {
     
     if (!isNumber && !allowedKeys.includes(e.key) && !e.ctrlKey && !e.metaKey) {
       e.preventDefault();
+    }
+    
+    // Manejar Enter para navegar al siguiente campo
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleFieldKeyDown(e, direccionRef);
     }
   };
 
@@ -190,7 +194,7 @@ export function EmpleadoFormPage() {
     }
   };
 
-  const handleRutKeyPress = (e) => {
+  const handleRutKeyDown = (e) => {
     if (e.key === 'Enter') {
       e.preventDefault();
       handleRutComplete();
@@ -198,7 +202,7 @@ export function EmpleadoFormPage() {
     }
   };
 
-  const handleFieldKeyPress = (e, nextRef) => {
+  const handleFieldKeyDown = (e, nextRef) => {
     if (e.key === 'Enter') {
       e.preventDefault();
       if (nextRef === 'submit') {
@@ -317,9 +321,11 @@ export function EmpleadoFormPage() {
         // Asegurar que tenga el formato correcto
         const celularLimpio = limpiarCelular(cleanData.celular);
         if (celularLimpio) {
-          // Si no empieza con 9, agregarlo
+          // Asegurar que empiece con 9
           const numeroCompleto = celularLimpio.startsWith('9') ? celularLimpio : '9' + celularLimpio;
-          cleanData.celular = `+56${numeroCompleto}`;
+          // Formato: +56 9 + 8 dígitos restantes
+          const digitosRestantes = numeroCompleto.substring(1).substring(0, 8);
+          cleanData.celular = `+56 9${digitosRestantes}`;
         } else {
           cleanData.celular = null;
         }
@@ -433,7 +439,7 @@ export function EmpleadoFormPage() {
             const celularLimpio = limpiarCelular(data.celular);
             const celularFormateado = formatearCelularChileno(celularLimpio);
             setCelularValue(celularFormateado);
-            setValue("celular", celularFormateado ? `+56 ${celularFormateado}` : "");
+            setValue("celular", celularFormateado ? `+56 9${celularFormateado.replace(/\s/g, '')}` : "");
           } else {
             setCelularValue("");
             setValue("celular", "");
@@ -479,7 +485,7 @@ export function EmpleadoFormPage() {
               value={rutValue}
               onChange={handleRutChange}
               onBlur={handleRutComplete}
-              onKeyPress={handleRutKeyPress}
+              onKeyDown={handleRutKeyDown}
               className={`block w-full px-3 py-2 border rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500 ${
                 errors.rut ? 'border-red-300' : 'border-gray-300'
               }`}
@@ -501,7 +507,7 @@ export function EmpleadoFormPage() {
               placeholder="Juan Carlos"
               value={nombreValue}
               onChange={handleNombreChange}
-              onKeyPress={(e) => handleFieldKeyPress(e, apellidoRef)}
+              onKeyDown={(e) => handleFieldKeyDown(e, apellidoRef)}
               className={`block w-full px-3 py-2 border rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500 ${
                 errors.nombre ? 'border-red-300' : 'border-gray-300'
               }`}
@@ -522,7 +528,7 @@ export function EmpleadoFormPage() {
               placeholder="Pérez González"
               value={apellidoValue}
               onChange={handleApellidoChange}
-              onKeyPress={(e) => handleFieldKeyPress(e, fechaNacimientoRef)}
+              onKeyDown={(e) => handleFieldKeyDown(e, fechaNacimientoRef)}
               className={`block w-full px-3 py-2 border rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500 ${
                 errors.apellido ? 'border-red-300' : 'border-gray-300'
               }`}
@@ -541,7 +547,7 @@ export function EmpleadoFormPage() {
               ref={fechaNacimientoRef}
               type="date"
               {...register("fecha_nacimiento")}
-              onKeyPress={(e) => handleFieldKeyPress(e, correoRef)}
+              onKeyDown={(e) => handleFieldKeyDown(e, correoRef)}
               className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
             />
           </div>
@@ -556,7 +562,7 @@ export function EmpleadoFormPage() {
               type="email"
               placeholder="juan.perez@monkeycoffee.com"
               {...register("correo")}
-              onKeyPress={(e) => handleFieldKeyPress(e, celularRef)}
+              onKeyDown={(e) => handleFieldKeyDown(e, celularRef)}
               className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500"
             />
           </div>
@@ -567,19 +573,18 @@ export function EmpleadoFormPage() {
               Celular
             </label>
             <div className="relative">
-              <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 pointer-events-none select-none">
-                +56 
-              </div>
+              <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 pointer-events-none select-none text-sm">
+                +56 9
+              </span>
               <input
                 ref={celularRef}
                 type="text"
-                placeholder="9 1234 5678"
+                placeholder="1234 5678"
                 value={celularValue}
                 onChange={handleCelularChange}
                 onKeyDown={handleCelularKeyDown}
                 onFocus={handleCelularFocus}
-                onKeyPress={(e) => handleFieldKeyPress(e, direccionRef)}
-                className="block w-full pl-12 pr-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+                className="block w-full pl-[3.25rem] pr-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500"
                 maxLength={11}
               />
             </div>
@@ -595,7 +600,7 @@ export function EmpleadoFormPage() {
               type="text"
               placeholder="Calle Ejemplo #123, Comuna, Ciudad"
               {...register("direccion")}
-              onKeyPress={(e) => handleFieldKeyPress(e, cargoRef)}
+              onKeyDown={(e) => handleFieldKeyDown(e, cargoRef)}
               className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500"
             />
           </div>
@@ -613,7 +618,7 @@ export function EmpleadoFormPage() {
             <select
               ref={cargoRef}
               {...register("cargo", { required: "El cargo es requerido" })}
-              onKeyPress={(e) => handleFieldKeyPress(e, departamentoRef)}
+              onKeyDown={(e) => handleFieldKeyDown(e, departamentoRef)}
               className={`block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 ${
                 errors.cargo ? 'border-red-300' : 'border-gray-300'
               }`}
@@ -638,7 +643,7 @@ export function EmpleadoFormPage() {
               type="text"
               placeholder="Operaciones, Ventas, etc."
               {...register("departamento")}
-              onKeyPress={(e) => handleFieldKeyPress(e, fechaContratacionRef)}
+              onKeyDown={(e) => handleFieldKeyDown(e, fechaContratacionRef)}
               className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500"
             />
           </div>
@@ -652,7 +657,7 @@ export function EmpleadoFormPage() {
               ref={fechaContratacionRef}
               type="date"
               {...register("fecha_contratacion")}
-              onKeyPress={(e) => handleFieldKeyPress(e, tipoContratoRef)}
+              onKeyDown={(e) => handleFieldKeyDown(e, tipoContratoRef)}
               className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
             />
           </div>
@@ -665,12 +670,12 @@ export function EmpleadoFormPage() {
             <select
               ref={tipoContratoRef}
               {...register("tipo_contrato")}
-              onKeyPress={(e) => handleFieldKeyPress(e, estadoRef)}
+              onKeyDown={(e) => handleFieldKeyDown(e, estadoRef)}
               className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
             >
               <option value="indefinido">Indefinido</option>
               <option value="plazo_fijo">Plazo Fijo</option>
-              <option value="honorarios">Honorarios</option>
+              <option value="full_time">Full Time</option>
               <option value="part_time">Part Time</option>
             </select>
           </div>
@@ -683,7 +688,7 @@ export function EmpleadoFormPage() {
             <select
               ref={estadoRef}
               {...register("estado")}
-              onKeyPress={(e) => handleFieldKeyPress(e, salarioRef)}
+              onKeyDown={(e) => handleFieldKeyDown(e, salarioRef)}
               className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
             >
               <option value="activo">Activo</option>
@@ -706,12 +711,12 @@ export function EmpleadoFormPage() {
               min="0"
               placeholder="0"
               {...register("salario")}
-              onKeyPress={(e) => {
+              onKeyDown={(e) => {
                 // Prevenir entrada de punto decimal o coma
                 if (e.key === '.' || e.key === ',') {
                   e.preventDefault();
                 }
-                handleFieldKeyPress(e, passwordRef);
+                handleFieldKeyDown(e, passwordRef);
               }}
               className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500"
             />
@@ -733,7 +738,7 @@ export function EmpleadoFormPage() {
               placeholder="•••••••••••••"
               value={passwordValue}
               onChange={handlePasswordChange}
-              onKeyPress={(e) => handleFieldKeyPress(e, observacionesRef)}
+              onKeyDown={(e) => handleFieldKeyDown(e, observacionesRef)}
               className={`block w-full px-3 py-2 border rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500 ${
                 errors.password ? 'border-red-300' : 'border-gray-300'
               }`}
@@ -786,7 +791,7 @@ export function EmpleadoFormPage() {
               rows="3"
               placeholder="Notas adicionales sobre el empleado..."
               {...register("observaciones")}
-              onKeyPress={(e) => handleFieldKeyPress(e, activoRef)}
+              onKeyDown={(e) => handleFieldKeyDown(e, activoRef)}
               className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500"
             />
           </div>
@@ -798,7 +803,7 @@ export function EmpleadoFormPage() {
                 ref={activoRef}
                 type="checkbox"
                 {...register("activo")}
-                onKeyPress={(e) => handleFieldKeyPress(e, 'submit')}
+                onKeyDown={(e) => handleFieldKeyDown(e, 'submit')}
                 className="h-4 w-4 text-primary-500 focus:ring-primary-500 border-gray-300 rounded"
               />
               <label className="ml-2 block text-sm text-gray-900">

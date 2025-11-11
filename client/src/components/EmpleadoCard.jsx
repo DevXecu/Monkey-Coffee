@@ -48,7 +48,7 @@ export function EmpleadoCard({ empleado }) {
     const tipos = {
       'indefinido': 'Indefinido',
       'plazo_fijo': 'Plazo Fijo',
-      'honorarios': 'Honorarios',
+      'full_time': 'Full Time',
       'part_time': 'Part Time'
     };
     return tipos[tipo] || tipo;

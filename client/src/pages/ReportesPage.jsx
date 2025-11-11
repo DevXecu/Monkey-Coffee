@@ -16,7 +16,7 @@ export function ReportesPage() {
               <option>Asistencia</option>
               <option>Inventario</option>
               <option>Empleados</option>
-              <option>Productos</option>
+              <option>Turnos</option>
             </select>
           </div>
           <div>
