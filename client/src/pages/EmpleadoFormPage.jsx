@@ -165,8 +165,11 @@ export function EmpleadoFormPage() {
     // Permitir solo números mientras escribe
     const cleaned = inputValue.replace(/[^0-9]/g, '');
     
-    if (cleaned.length <= 8) { // Máximo 8 dígitos (sin DV)
-      const formatted = formatearRUT(cleaned);
+    // Limitar estrictamente a 8 dígitos (sin DV)
+    const limited = cleaned.substring(0, 8);
+    
+    if (limited.length <= 8) {
+      const formatted = formatearRUT(limited);
       setRutValue(formatted);
       setValue("rut", formatted);
       clearErrors("rut");
@@ -176,8 +179,11 @@ export function EmpleadoFormPage() {
   const handleRutComplete = () => {
     if (rutValue && !rutValue.includes('-')) {
       const cleaned = rutValue.replace(/[^0-9]/g, '');
-      if (cleaned.length >= 7) { // Mínimo 7 dígitos para calcular DV
-        const formatted = formatearRUTCompleto(cleaned);
+      // Limitar a máximo 8 dígitos antes de calcular el DV
+      const limited = cleaned.substring(0, 8);
+      
+      if (limited.length >= 7) { // Mínimo 7 dígitos para calcular DV
+        const formatted = formatearRUTCompleto(limited);
         setRutValue(formatted);
         setValue("rut", formatted);
         
@@ -433,13 +439,14 @@ export function EmpleadoFormPage() {
       navigate("/empleado");
     } catch (error) {
       console.error("Error al guardar:", error);
+      console.error("Error response:", error.response);
       
       // Manejar errores específicos del backend
       if (error.response?.data?.error) {
         const errorData = error.response.data.error;
         
         // Error de RUT duplicado
-        if (errorData.rut && errorData.rut[0]?.includes('already exists')) {
+        if (errorData.rut && (Array.isArray(errorData.rut) ? errorData.rut[0]?.includes('already exists') : errorData.rut.includes('already exists'))) {
           setError("rut", { 
             type: "manual", 
             message: "Este RUT ya está registrado en el sistema" 
@@ -450,13 +457,24 @@ export function EmpleadoFormPage() {
           });
         } else {
           // Otros errores de validación
-          toast.error("Error de validación: " + JSON.stringify(errorData), {
+          const errorMessage = typeof errorData === 'string' 
+            ? errorData 
+            : (errorData.detail || JSON.stringify(errorData));
+          toast.error("Error de validación: " + errorMessage, {
             position: "bottom-right",
+            duration: 5000,
           });
         }
-      } else {
-        toast.error("Error al guardar empleado", {
+      } else if (error.response?.data?.detail) {
+        toast.error("Error: " + error.response.data.detail, {
           position: "bottom-right",
+          duration: 5000,
+        });
+      } else {
+        const errorMessage = error.message || "Error al guardar empleado";
+        toast.error(errorMessage, {
+          position: "bottom-right",
+          duration: 4000,
         });
       }
     }
@@ -909,8 +927,15 @@ export function EmpleadoFormPage() {
                       });
                       navigate("/empleado");
                     } catch (error) {
-                      toast.error("Error al eliminar empleado", {
+                      console.error("Error al eliminar empleado:", error);
+                      const errorMessage = error.response?.data?.error 
+                        ? (typeof error.response.data.error === 'string' 
+                            ? error.response.data.error 
+                            : JSON.stringify(error.response.data.error))
+                        : "Error al eliminar empleado";
+                      toast.error(errorMessage, {
                         position: "bottom-right",
+                        duration: 4000,
                       });
                     }
                   }

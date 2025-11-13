@@ -1,8 +1,43 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 
 export function Navbar({ onToggleSidebar }) {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const { empleado, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    setIsProfileOpen(false);
+    navigate('/login');
+  };
+
+  // Obtener iniciales del empleado
+  const getInitials = () => {
+    if (empleado) {
+      const nombre = empleado.nombre || '';
+      const apellido = empleado.apellido || '';
+      return `${nombre.charAt(0)}${apellido.charAt(0)}`.toUpperCase();
+    }
+    return 'U';
+  };
+
+  // Obtener nombre completo
+  const getFullName = () => {
+    if (empleado) {
+      return `${empleado.nombre || ''} ${empleado.apellido || ''}`.trim() || 'Usuario';
+    }
+    return 'Usuario';
+  };
+
+  // Obtener cargo
+  const getCargo = () => {
+    if (empleado) {
+      return empleado.cargo || 'Empleado';
+    }
+    return 'Empleado';
+  };
 
   return (
     <nav className="bg-white shadow-sm border-b border-gray-200 px-4 py-3 flex items-center justify-between">
@@ -58,11 +93,11 @@ export function Navbar({ onToggleSidebar }) {
             className="flex items-center space-x-3 p-2 rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
           >
             <div className="w-8 h-8 bg-primary-500 rounded-full flex items-center justify-center">
-              <span className="text-white text-sm font-medium">A</span>
+              <span className="text-white text-sm font-medium">{getInitials()}</span>
             </div>
             <div className="hidden md:block text-left">
-              <p className="text-sm font-medium text-gray-900">Admin</p>
-              <p className="text-xs text-gray-500">Administrador</p>
+              <p className="text-sm font-medium text-gray-900">{getFullName()}</p>
+              <p className="text-xs text-gray-500">{getCargo()}</p>
             </div>
             <svg className="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -88,8 +123,8 @@ export function Navbar({ onToggleSidebar }) {
               </Link>
               <hr className="my-1" />
               <button
-                className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                onClick={() => setIsProfileOpen(false)}
+                className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                onClick={handleLogout}
               >
                 Cerrar Sesión
               </button>

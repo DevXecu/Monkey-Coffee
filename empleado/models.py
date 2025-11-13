@@ -1,5 +1,52 @@
 from django.db import models
 
+class Asistencia(models.Model):
+    TIPO_ENTRADA_CHOICES = [
+        ('biometrico', 'Biométrico'),
+        ('manual', 'Manual'),
+        ('app_movil', 'App Móvil'),
+    ]
+    
+    ESTADO_CHOICES = [
+        ('presente', 'Presente'),
+        ('tarde', 'Tarde'),
+        ('ausente', 'Ausente'),
+        ('justificado', 'Justificado'),
+        ('permiso', 'Permiso'),
+    ]
+
+    empleado_rut = models.CharField(max_length=12, db_column='empleado_rut')
+    fecha = models.DateField(db_column='fecha')
+    hora_entrada = models.DateTimeField(blank=True, null=True, db_column='hora_entrada')
+    hora_salida = models.DateTimeField(blank=True, null=True, db_column='hora_salida')
+    tipo_entrada = models.CharField(max_length=20, choices=TIPO_ENTRADA_CHOICES, default='biometrico', db_column='tipo_entrada')
+    tipo_salida = models.CharField(max_length=20, choices=TIPO_ENTRADA_CHOICES, default='biometrico', db_column='tipo_salida')
+    minutos_tarde = models.IntegerField(default=0, db_column='minutos_tarde')
+    minutos_extras = models.IntegerField(default=0, db_column='minutos_extras')
+    horas_trabajadas = models.DecimalField(max_digits=4, decimal_places=2, blank=True, null=True, db_column='horas_trabajadas')
+    estado = models.CharField(max_length=20, choices=ESTADO_CHOICES, default='presente', db_column='estado')
+    observaciones = models.TextField(blank=True, null=True, db_column='observaciones')
+    ubicacion_entrada = models.CharField(max_length=255, blank=True, null=True, db_column='ubicacion_entrada')
+    ubicacion_salida = models.CharField(max_length=255, blank=True, null=True, db_column='ubicacion_salida')
+    ip_entrada = models.CharField(max_length=45, blank=True, null=True, db_column='ip_entrada')
+    ip_salida = models.CharField(max_length=45, blank=True, null=True, db_column='ip_salida')
+    validado_por = models.ForeignKey('Empleado', on_delete=models.SET_NULL, blank=True, null=True, db_column='validado_por', related_name='asistencias_validadas')
+    fecha_validacion = models.DateTimeField(blank=True, null=True, db_column='fecha_validacion')
+    fecha_creacion = models.DateTimeField(auto_now_add=True, db_column='fecha_creacion')
+    fecha_actualizacion = models.DateTimeField(auto_now=True, db_column='fecha_actualizacion')
+    
+    class Meta:
+        db_table = 'asistencias'
+        unique_together = [['empleado_rut', 'fecha']]
+        indexes = [
+            models.Index(fields=['empleado_rut', 'fecha']),
+            models.Index(fields=['fecha']),
+            models.Index(fields=['estado']),
+        ]
+    
+    def __str__(self):
+        return f"{self.empleado_rut} - {self.fecha} - {self.estado}"
+
 class Empleado(models.Model):
     CARGO_CHOICES = [
         ('Gerente', 'Gerente'),
@@ -60,3 +107,27 @@ class Empleado(models.Model):
 
     def __str__(self):
         return f"{self.nombre} {self.apellido} - {self.cargo}"
+
+
+class Turno(models.Model):
+    empleados_rut = models.CharField(max_length=12, db_column='empleados_rut')
+    nombre_turno = models.CharField(max_length=100, db_column='nombre_turno')
+    hora_entrada = models.TimeField(db_column='hora_entrada')
+    hora_salida = models.TimeField(db_column='hora_salida')
+    tolerancia_minutos = models.IntegerField(default=15, db_column='tolerancia_minutos')
+    horas_trabajo = models.DecimalField(max_digits=4, decimal_places=2, db_column='horas_trabajo')
+    descripcion = models.TextField(blank=True, null=True, db_column='descripcion')
+    dias_semana = models.JSONField(blank=True, null=True, db_column='dias_semana')
+    activo = models.BooleanField(default=True, db_column='activo')
+    fecha_creacion = models.DateTimeField(auto_now_add=True, db_column='fecha_creacion')
+    
+    class Meta:
+        db_table = 'turnos'
+        indexes = [
+            models.Index(fields=['empleados_rut']),
+            models.Index(fields=['nombre_turno']),
+            models.Index(fields=['activo']),
+        ]
+    
+    def __str__(self):
+        return f"{self.nombre_turno} - {self.empleados_rut}"

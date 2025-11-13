@@ -39,6 +39,6 @@ export const getEmpleado = (id) => empleadoApi.get(`/${id}/`);
 
 export const createEmpleado = (empleado) => empleadoApi.post("/", empleado);
 
-export const updateEmpleado = (id, empleado) => empleadoApi.put(`/${id}/`, empleado);
+export const updateEmpleado = (id, empleado) => empleadoApi.patch(`/${id}/`, empleado);
 
 export const deleteEmpleado = (id) => empleadoApi.delete(`/${id}/`);
