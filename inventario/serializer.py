@@ -7,8 +7,18 @@ class InventarioSerializer(serializers.ModelSerializer):
     categoria_display = serializers.CharField(source='get_categoria_display', read_only=True)
     unidad_medida_display = serializers.CharField(source='get_unidad_medida_display', read_only=True)
     estado_display = serializers.CharField(source='get_estado_display', read_only=True)
-    creado_por_nombre = serializers.CharField(source='creado_por.get_full_name', read_only=True)
-    actualizado_por_nombre = serializers.CharField(source='actualizado_por.get_full_name', read_only=True)
+    creado_por_nombre = serializers.SerializerMethodField()
+    actualizado_por_nombre = serializers.SerializerMethodField()
+    
+    def get_creado_por_nombre(self, obj):
+        if obj.creado_por:
+            return f"{obj.creado_por.nombre} {obj.creado_por.apellido}"
+        return None
+    
+    def get_actualizado_por_nombre(self, obj):
+        if obj.actualizado_por:
+            return f"{obj.actualizado_por.nombre} {obj.actualizado_por.apellido}"
+        return None
     
     class Meta:
         model = Inventario

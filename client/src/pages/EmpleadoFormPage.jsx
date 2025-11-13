@@ -223,7 +223,7 @@ export function EmpleadoFormPage() {
         message: "El RUT es requerido" 
       });
       hasErrors = true;
-    } else if (!validarRUT(data.rut)) {
+    } else if (!validarRUT(rutValue)) {
       setError("rut", { 
         type: "manual", 
         message: "El RUT ingresado no es válido" 
@@ -251,6 +251,14 @@ export function EmpleadoFormPage() {
       setError("cargo", { 
         type: "manual", 
         message: "El cargo es requerido" 
+      });
+      hasErrors = true;
+    }
+
+    if (!data.fecha_contratacion || data.fecha_contratacion.trim() === "") {
+      setError("fecha_contratacion", { 
+        type: "manual", 
+        message: "La fecha de contratación es requerida" 
       });
       hasErrors = true;
     }
@@ -290,41 +298,61 @@ export function EmpleadoFormPage() {
     }
 
     try {
-      const nombreCompleto = `${data.nombre} ${data.apellido}`;
+      // Usar los valores del estado para nombre y apellido
+      const nombreCompleto = `${nombreValue} ${apellidoValue}`;
       
-      // Limpiar datos: convertir strings vacíos a null para campos opcionales
-      const cleanData = { ...data };
+      // Preparar datos para enviar al backend
+      // El modelo Django espera: nombre, apellido, correo, celular
+      // La BD MySQL tiene: nombres, apellidos, email, telefono
+      // Django hace el mapeo automáticamente con db_column
+      const cleanData = {
+        rut: limpiarRUT(rutValue),
+        nombre: nombreValue.trim(),
+        apellido: apellidoValue.trim(),
+        cargo: data.cargo?.trim() || '',
+        fecha_contratacion: data.fecha_contratacion || null,
+      };
       
       // Limpiar campos de fecha
-      if (!cleanData.fecha_nacimiento || cleanData.fecha_nacimiento === '') {
+      if (data.fecha_nacimiento && data.fecha_nacimiento !== '') {
+        cleanData.fecha_nacimiento = data.fecha_nacimiento;
+      } else {
         cleanData.fecha_nacimiento = null;
       }
-      if (!cleanData.fecha_contratacion || cleanData.fecha_contratacion === '') {
-        cleanData.fecha_contratacion = null;
-      }
-      if (!cleanData.fecha_termino || cleanData.fecha_termino === '') {
+      
+      if (data.fecha_termino && data.fecha_termino !== '') {
+        cleanData.fecha_termino = data.fecha_termino;
+      } else {
         cleanData.fecha_termino = null;
       }
       
-      // Limpiar campos de texto
-      if (!cleanData.direccion || cleanData.direccion === '') {
+      // Limpiar campos de texto opcionales
+      if (data.direccion && data.direccion.trim() !== '') {
+        cleanData.direccion = data.direccion.trim();
+      } else {
         cleanData.direccion = null;
       }
-      if (!cleanData.departamento || cleanData.departamento === '') {
+      
+      if (data.departamento && data.departamento.trim() !== '') {
+        cleanData.departamento = data.departamento.trim();
+      } else {
         cleanData.departamento = null;
       }
-      if (!cleanData.correo || cleanData.correo === '') {
+      
+      if (data.correo && data.correo.trim() !== '') {
+        cleanData.correo = data.correo.trim();
+      } else {
         cleanData.correo = null;
       }
+      
       // Limpiar y formatear celular antes de enviar
-      if (cleanData.celular && cleanData.celular !== '') {
-        // Asegurar que tenga el formato correcto
-        const celularLimpio = limpiarCelular(cleanData.celular);
+      if (data.celular && data.celular !== '') {
+        const celularLimpio = limpiarCelular(data.celular);
         if (celularLimpio) {
           // Asegurar que empiece con 9
           const numeroCompleto = celularLimpio.startsWith('9') ? celularLimpio : '9' + celularLimpio;
           // Formato: +56 9 + 8 dígitos restantes
-          const digitosRestantes = numeroCompleto.substring(1).substring(0, 8);
+          const digitosRestantes = numeroCompleto.substring(1, 9);
           cleanData.celular = `+56 9${digitosRestantes}`;
         } else {
           cleanData.celular = null;
@@ -332,44 +360,70 @@ export function EmpleadoFormPage() {
       } else {
         cleanData.celular = null;
       }
-      if (!cleanData.observaciones || cleanData.observaciones === '') {
+      
+      if (data.observaciones && data.observaciones.trim() !== '') {
+        cleanData.observaciones = data.observaciones.trim();
+      } else {
         cleanData.observaciones = null;
       }
       
       // Limpiar salario
-      if (!cleanData.salario || cleanData.salario === '') {
+      if (data.salario && data.salario !== '' && data.salario !== undefined && data.salario !== null) {
+        cleanData.salario = parseFloat(data.salario);
+      } else {
         cleanData.salario = null;
       }
       
-      // Asegurar valores por defecto
-      if (!cleanData.tipo_contrato) {
+      // Asegurar valores por defecto según la BD MySQL
+      // tipo_contrato: 'indefinido','plazo_fijo','full_time','part_time'
+      if (data.tipo_contrato && data.tipo_contrato !== '') {
+        cleanData.tipo_contrato = data.tipo_contrato;
+      } else {
         cleanData.tipo_contrato = 'indefinido';
       }
-      if (!cleanData.estado) {
+      
+      // estado: 'activo','inactivo','vacaciones','licencia','desvinculado'
+      if (data.estado && data.estado !== '') {
+        cleanData.estado = data.estado;
+      } else {
         cleanData.estado = 'activo';
       }
-      if (cleanData.activo === undefined || cleanData.activo === '') {
+      
+      if (data.activo !== undefined && data.activo !== '') {
+        cleanData.activo = Boolean(data.activo);
+      } else {
         cleanData.activo = true;
       }
       
-      // Log para debugging
-      console.log("Datos a enviar:", cleanData);
+      // Agregar password solo si está presente
+      if (passwordValue && passwordValue.trim() !== '') {
+        cleanData.password = passwordValue;
+      }
       
       // Si es actualización y password está vacío, no enviarlo
-      if (params.id && (!cleanData.password || cleanData.password.trim() === "")) {
-        const { password, ...dataWithoutPassword } = cleanData;
-        await updateEmpleado(params.id, dataWithoutPassword);
-        ActivityLogger.empleadoUpdated(nombreCompleto);
-        toast.success("Empleado actualizado correctamente", {
-          position: "bottom-right",
-        });
-      } else if (params.id) {
-        await updateEmpleado(params.id, cleanData);
+      if (params.id) {
+        if (!cleanData.password || cleanData.password.trim() === "") {
+          const { password, ...dataWithoutPassword } = cleanData;
+          await updateEmpleado(params.id, dataWithoutPassword);
+        } else {
+          await updateEmpleado(params.id, cleanData);
+        }
         ActivityLogger.empleadoUpdated(nombreCompleto);
         toast.success("Empleado actualizado correctamente", {
           position: "bottom-right",
         });
       } else {
+        // Para creación, password es requerido
+        if (!cleanData.password || cleanData.password.trim() === "") {
+          setError("password", { 
+            type: "manual", 
+            message: "La contraseña es requerida" 
+          });
+          toast.error("La contraseña es requerida para crear un empleado", {
+            position: "bottom-right",
+          });
+          return;
+        }
         await createEmpleado(cleanData);
         ActivityLogger.empleadoCreated(nombreCompleto);
         toast.success("Empleado creado correctamente", {
@@ -414,27 +468,37 @@ export function EmpleadoFormPage() {
         try {
           const { data } = await getEmpleado(params.id);
           setEmpleadoActual(data);
+          
+          // El backend devuelve: nombre, apellido, correo, celular
+          // (Django mapea automáticamente desde nombres, apellidos, email, telefono)
           const rutLimpio = limpiarRUT(data.rut);
           // Si el RUT ya tiene DV, usarlo; si no, formatearlo completo
           const rutFormateado = data.rut.includes('-') ? data.rut : formatearRUTCompleto(rutLimpio);
           setRutValue(rutFormateado);
           setValue("rut", rutFormateado);
-          setNombreValue(data.nombre);
-          setValue("nombre", data.nombre);
-          setApellidoValue(data.apellido);
-          setValue("apellido", data.apellido);
+          
+          // Usar nombre y apellido del backend (Django los mapea desde nombres/apellidos)
+          setNombreValue(data.nombre || "");
+          setValue("nombre", data.nombre || "");
+          setApellidoValue(data.apellido || "");
+          setValue("apellido", data.apellido || "");
+          
           setValue("fecha_nacimiento", data.fecha_nacimiento || "");
           setValue("direccion", data.direccion || "");
-          setValue("cargo", data.cargo);
+          setValue("cargo", data.cargo || "");
           setValue("departamento", data.departamento || "");
           setValue("fecha_contratacion", data.fecha_contratacion || "");
           setValue("fecha_termino", data.fecha_termino || "");
           setValue("salario", data.salario || "");
-          setValue("tipo_contrato", data.tipo_contrato || "indefinido");
-          setValue("estado", data.estado || "activo");
-          setValue("correo", data.correo);
           
-          // Formatear celular si existe
+          // tipo_contrato: 'indefinido','plazo_fijo','full_time','part_time'
+          let tipoContrato = data.tipo_contrato || "indefinido";
+          setValue("tipo_contrato", tipoContrato);
+          
+          setValue("estado", data.estado || "activo");
+          setValue("correo", data.correo || "");
+          
+          // Formatear celular si existe (Django devuelve 'celular' mapeado desde 'telefono')
           if (data.celular) {
             const celularLimpio = limpiarCelular(data.celular);
             const celularFormateado = formatearCelularChileno(celularLimpio);
@@ -448,7 +512,7 @@ export function EmpleadoFormPage() {
           setPasswordValue("");
           setValue("password", "");
           setValue("observaciones", data.observaciones || "");
-          setValue("activo", data.activo);
+          setValue("activo", data.activo !== undefined ? data.activo : true);
         } catch (error) {
           toast.error("Error al cargar empleado", {
             position: "bottom-right",
@@ -651,15 +715,20 @@ export function EmpleadoFormPage() {
           {/* Fecha de Contratación */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Fecha de Contratación
+              Fecha de Contratación *
             </label>
             <input
               ref={fechaContratacionRef}
               type="date"
-              {...register("fecha_contratacion")}
+              {...register("fecha_contratacion", { required: "La fecha de contratación es requerida" })}
               onKeyDown={(e) => handleFieldKeyDown(e, tipoContratoRef)}
-              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+              className={`block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 ${
+                errors.fecha_contratacion ? 'border-red-300' : 'border-gray-300'
+              }`}
             />
+            {errors.fecha_contratacion && (
+              <p className="mt-1 text-sm text-red-600">{errors.fecha_contratacion.message}</p>
+            )}
           </div>
 
           {/* Tipo de Contrato */}

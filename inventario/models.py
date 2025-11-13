@@ -1,5 +1,5 @@
 from django.db import models
-from django.contrib.auth.models import User
+from empleado.models import Empleado
 
 class Inventario(models.Model):
     class Categoria(models.TextChoices):
@@ -30,33 +30,33 @@ class Inventario(models.Model):
         EN_PEDIDO = 'en_pedido', 'En pedido'
         DESCONTINUADO = 'descontinuado', 'Descontinuado'
 
-    codigo_producto = models.CharField(max_length=50)
-    nombre_producto = models.CharField(max_length=100)
-    descripcion = models.TextField(blank=True, null=True)
-    categoria = models.CharField(max_length=20, choices=Categoria.choices)
-    unidad_medida = models.CharField(max_length=20, choices=UnidadMedida.choices)
-    cantidad_actual = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
-    cantidad_minima = models.DecimalField(max_digits=10, decimal_places=2)
-    cantidad_maxima = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
-    precio_unitario = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
-    precio_venta = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
-    codigo_qr = models.CharField(max_length=255, blank=True, null=True)
-    codigo_barra = models.CharField(max_length=100, blank=True, null=True)
-    ubicacion = models.CharField(max_length=100, blank=True, null=True)
-    proveedor = models.CharField(max_length=100, blank=True, null=True)
-    contacto_proveedor = models.CharField(max_length=100, blank=True, null=True)
-    fecha_ultimo_ingreso = models.DateTimeField(blank=True, null=True)
-    fecha_vencimiento = models.DateField(blank=True, null=True)
-    lote = models.CharField(max_length=50, blank=True, null=True)
-    estado = models.CharField(max_length=20, choices=Estado.choices, default=Estado.DISPONIBLE)
-    requiere_alerta = models.BooleanField(default=False)
-    imagen_producto = models.CharField(max_length=255, blank=True, null=True)
-    notas = models.TextField(blank=True, null=True)
-    fecha_creacion = models.DateTimeField(auto_now_add=True)
-    fecha_actualizacion = models.DateTimeField(auto_now=True)
-    creado_por = models.ForeignKey(User, on_delete=models.SET_NULL, related_name='inventarios_creados', blank=True, null=True)
-    actualizado_por = models.ForeignKey(User, on_delete=models.SET_NULL, related_name='inventarios_actualizados', blank=True, null=True)
-    activo = models.BooleanField(default=True)
+    codigo_producto = models.CharField(max_length=50, db_column='codigo_producto', unique=True)
+    nombre_producto = models.CharField(max_length=100, db_column='nombre_producto')
+    descripcion = models.TextField(blank=True, null=True, db_column='descripcion')
+    categoria = models.CharField(max_length=20, choices=Categoria.choices, db_column='categoria')
+    unidad_medida = models.CharField(max_length=20, choices=UnidadMedida.choices, db_column='unidad_medida')
+    cantidad_actual = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, db_column='cantidad_actual')
+    cantidad_minima = models.DecimalField(max_digits=10, decimal_places=2, db_column='cantidad_minima')
+    cantidad_maxima = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True, db_column='cantidad_maxima')
+    precio_unitario = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True, db_column='precio_unitario')
+    precio_venta = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True, db_column='precio_venta')
+    codigo_qr = models.CharField(max_length=255, blank=True, null=True, db_column='codigo_qr')
+    codigo_barra = models.CharField(max_length=100, blank=True, null=True, db_column='codigo_barra')
+    ubicacion = models.CharField(max_length=100, blank=True, null=True, db_column='ubicacion')
+    proveedor = models.CharField(max_length=100, blank=True, null=True, db_column='proveedor')
+    contacto_proveedor = models.CharField(max_length=100, blank=True, null=True, db_column='contacto_proveedor')
+    fecha_ultimo_ingreso = models.DateTimeField(blank=True, null=True, db_column='fecha_ultimo_ingreso')
+    fecha_vencimiento = models.DateField(blank=True, null=True, db_column='fecha_vencimiento')
+    lote = models.CharField(max_length=50, blank=True, null=True, db_column='lote')
+    estado = models.CharField(max_length=20, choices=Estado.choices, default=Estado.DISPONIBLE, db_column='estado')
+    requiere_alerta = models.BooleanField(default=False, db_column='requiere_alerta')
+    imagen_producto = models.CharField(max_length=255, blank=True, null=True, db_column='imagen_producto')
+    notas = models.TextField(blank=True, null=True, db_column='notas')
+    fecha_creacion = models.DateTimeField(auto_now_add=True, db_column='fecha_creacion')
+    fecha_actualizacion = models.DateTimeField(auto_now=True, db_column='fecha_actualizacion')
+    creado_por = models.ForeignKey(Empleado, on_delete=models.SET_NULL, related_name='inventarios_creados', blank=True, null=True, db_column='creado_por')
+    actualizado_por = models.ForeignKey(Empleado, on_delete=models.SET_NULL, related_name='inventarios_actualizados', blank=True, null=True, db_column='actualizado_por')
+    activo = models.BooleanField(default=True, db_column='activo')
 
     class Meta:
         db_table = 'inventario'

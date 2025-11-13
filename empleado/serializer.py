@@ -4,7 +4,7 @@ from datetime import date
 
 class EmpleadoSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=False, allow_blank=True)
-    fecha_contratacion = serializers.DateField(required=False, allow_null=True)
+    fecha_contratacion = serializers.DateField(required=False)
     fecha_nacimiento = serializers.DateField(required=False, allow_null=True)
     fecha_termino = serializers.DateField(required=False, allow_null=True)
     salario = serializers.DecimalField(max_digits=10, decimal_places=2, required=False, allow_null=True)
