@@ -23,9 +23,14 @@ export function calcularDigitoVerificador(rut) {
   const resto = suma % 11;
   const dv = 11 - resto;
 
-  if (dv === 11) return '0';
-  if (dv === 10) return 'K';
-  return dv.toString();
+  // Reglas para el dígito verificador del RUT chileno:
+  // - Si el resultado (dv) es entre 1 y 9, ese es el dígito verificador
+  // - Si el resultado (dv) es 10, se usa la letra "K"
+  // - Si el resultado (dv) es 11, el dígito verificador es "0"
+  
+  if (dv === 11) return '0';  // Cuando resto = 0
+  if (dv === 10) return 'K';  // Cuando resto = 1
+  return dv.toString();        // Cuando dv está entre 1 y 9 (resto entre 2 y 10)
 }
 
 /**

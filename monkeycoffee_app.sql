@@ -78,7 +78,7 @@ CREATE TABLE IF NOT EXISTS `asistencias` (
   `tipo_salida` enum('biometrico','manual','app_movil') COLLATE utf8mb4_general_ci DEFAULT 'biometrico',
   `minutos_tarde` int DEFAULT '0',
   `minutos_extras` int DEFAULT '0',
-  `horas_trabajadas` decimal(4,2) DEFAULT NULL,
+  `horas_trabajadas` int DEFAULT NULL,
   `estado` enum('presente','tarde','ausente','justificado','permiso') COLLATE utf8mb4_general_ci DEFAULT 'presente',
   `observaciones` text COLLATE utf8mb4_general_ci,
   `ubicacion_entrada` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
@@ -115,11 +115,11 @@ CREATE TABLE IF NOT EXISTS `detalle_ventas` (
   `id` int NOT NULL,
   `venta_id` int NOT NULL,
   `inventario_id` int NOT NULL,
-  `cantidad` decimal(10,2) NOT NULL,
-  `precio_unitario` decimal(10,2) NOT NULL,
-  `subtotal` decimal(10,2) NOT NULL,
-  `descuento_item` decimal(10,2) DEFAULT '0.00',
-  `total_item` decimal(10,2) NOT NULL,
+  `cantidad` int NOT NULL,
+  `precio_unitario` int NOT NULL,
+  `subtotal` int NOT NULL,
+  `descuento_item` int DEFAULT '0',
+  `total_item` int NOT NULL,
   `notas_item` text CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci,
   `fecha_creacion` datetime DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
@@ -144,7 +144,7 @@ CREATE TABLE IF NOT EXISTS `empleados` (
   `departamento` varchar(100) COLLATE utf8mb4_general_ci DEFAULT NULL,
   `fecha_contratacion` date NOT NULL,
   `fecha_termino` date DEFAULT NULL,
-  `salario` decimal(10,2) DEFAULT NULL,
+  `salario` int DEFAULT NULL,
   `tipo_contrato` enum('indefinido','plazo_fijo','full_time','part_time') COLLATE utf8mb4_general_ci NOT NULL,
   `estado` enum('activo','inactivo','vacaciones','licencia','desvinculado') COLLATE utf8mb4_general_ci DEFAULT 'activo',
   `huella_digital` blob,
@@ -206,11 +206,11 @@ CREATE TABLE IF NOT EXISTS `inventario` (
   `descripcion` text COLLATE utf8mb4_general_ci,
   `categoria` enum('cafe','insumos','equipamiento','desechables','alimentos','bebidas','limpieza','otros') COLLATE utf8mb4_general_ci NOT NULL,
   `unidad_medida` enum('unidad','kilogramo','litro','gramo','mililitro','paquete','caja','bolsa') COLLATE utf8mb4_general_ci NOT NULL,
-  `cantidad_actual` decimal(10,2) NOT NULL DEFAULT '0.00',
-  `cantidad_minima` decimal(10,2) NOT NULL,
-  `cantidad_maxima` decimal(10,2) DEFAULT NULL,
-  `precio_unitario` decimal(10,2) DEFAULT NULL,
-  `precio_venta` decimal(10,2) DEFAULT NULL,
+  `cantidad_actual` int NOT NULL DEFAULT '0',
+  `cantidad_minima` int NOT NULL,
+  `cantidad_maxima` int DEFAULT NULL,
+  `precio_unitario` int DEFAULT NULL,
+  `precio_venta` int DEFAULT NULL,
   `codigo_qr` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
   `codigo_barra` varchar(100) COLLATE utf8mb4_general_ci DEFAULT NULL,
   `ubicacion` varchar(100) COLLATE utf8mb4_general_ci DEFAULT NULL,
@@ -261,11 +261,11 @@ CREATE TABLE IF NOT EXISTS `movimientos_inventario` (
   `id` int NOT NULL,
   `inventario_id` int NOT NULL,
   `tipo_movimiento` enum('ingreso','salida','ajuste','merma','devolucion','transferencia','venta') COLLATE utf8mb4_general_ci NOT NULL,
-  `cantidad` decimal(10,2) NOT NULL,
-  `cantidad_anterior` decimal(10,2) NOT NULL,
-  `cantidad_nueva` decimal(10,2) NOT NULL,
-  `precio_unitario` decimal(10,2) DEFAULT NULL,
-  `costo_total` decimal(10,2) DEFAULT NULL,
+  `cantidad` int NOT NULL,
+  `cantidad_anterior` int NOT NULL,
+  `cantidad_nueva` int NOT NULL,
+  `precio_unitario` int DEFAULT NULL,
+  `costo_total` int DEFAULT NULL,
   `motivo` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
   `documento_referencia` varchar(100) COLLATE utf8mb4_general_ci DEFAULT NULL,
   `proveedor` varchar(100) COLLATE utf8mb4_general_ci DEFAULT NULL,
@@ -441,7 +441,7 @@ CREATE TABLE IF NOT EXISTS `turnos` (
   `hora_entrada` time NOT NULL,
   `hora_salida` time NOT NULL,
   `tolerancia_minutos` int DEFAULT '15',
-  `horas_trabajo` decimal(4,2) NOT NULL,
+  `horas_trabajo` int NOT NULL,
   `descripcion` text COLLATE utf8mb4_general_ci,
   `dias_semana` json DEFAULT NULL,
   `activo` tinyint(1) DEFAULT '1',
@@ -464,10 +464,10 @@ CREATE TABLE IF NOT EXISTS `ventas` (
   `numero_venta` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
   `empleado_id` int NOT NULL,
   `fecha_venta` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `subtotal` decimal(10,2) NOT NULL DEFAULT '0.00',
-  `descuento` decimal(10,2) DEFAULT '0.00',
-  `impuesto` decimal(10,2) DEFAULT '0.00',
-  `total` decimal(10,2) NOT NULL,
+  `subtotal` int NOT NULL DEFAULT '0',
+  `descuento` int DEFAULT '0',
+  `impuesto` int DEFAULT '0',
+  `total` int NOT NULL,
   `metodo_pago` enum('efectivo','tarjeta_debito','tarjeta_credito','transferencia','multiple') CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
   `estado` enum('completada','cancelada','pendiente','reembolsada') CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT 'completada',
   `tipo_venta` enum('local','delivery','para_llevar') CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT 'local',
@@ -939,6 +939,55 @@ INNER JOIN inventario i ON dv.inventario_id = i.id
 INNER JOIN empleados e ON v.empleado_id = e.id
 WHERE v.estado = 'completada'
 ORDER BY v.fecha_venta DESC;
+
+--
+-- Vista: `vista_inventario_precios`
+-- Vista que incluye los campos calculados de precios con IVA y ganancia
+--
+
+DROP VIEW IF EXISTS `vista_inventario_precios`;
+
+CREATE VIEW `vista_inventario_precios` AS
+SELECT 
+    id,
+    codigo_producto,
+    nombre_producto,
+    descripcion,
+    categoria,
+    unidad_medida,
+    cantidad_actual,
+    cantidad_minima,
+    cantidad_maxima,
+    precio_unitario,
+    precio_venta,
+    -- Precio con IVA (19% en Chile)
+    CASE 
+        WHEN precio_venta IS NOT NULL THEN CAST(precio_venta * 1.19 AS UNSIGNED)
+        ELSE NULL
+    END AS precio_con_iva,
+    -- Ganancia (precio_venta - precio_unitario)
+    CASE 
+        WHEN precio_venta IS NOT NULL AND precio_unitario IS NOT NULL THEN precio_venta - precio_unitario
+        ELSE NULL
+    END AS ganancia,
+    codigo_qr,
+    codigo_barra,
+    ubicacion,
+    proveedor,
+    contacto_proveedor,
+    fecha_ultimo_ingreso,
+    fecha_vencimiento,
+    lote,
+    estado,
+    requiere_alerta,
+    imagen_producto,
+    notas,
+    fecha_creacion,
+    fecha_actualizacion,
+    creado_por,
+    actualizado_por,
+    activo
+FROM inventario;
 
 --
 -- Volcado de datos para la tabla `inventario`

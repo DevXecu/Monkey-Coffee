@@ -9,6 +9,8 @@ class InventarioSerializer(serializers.ModelSerializer):
     estado_display = serializers.CharField(source='get_estado_display', read_only=True)
     creado_por_nombre = serializers.SerializerMethodField()
     actualizado_por_nombre = serializers.SerializerMethodField()
+    precio_con_iva = serializers.SerializerMethodField()
+    ganancia = serializers.SerializerMethodField()
     
     def get_creado_por_nombre(self, obj):
         if obj.creado_por:
@@ -18,6 +20,19 @@ class InventarioSerializer(serializers.ModelSerializer):
     def get_actualizado_por_nombre(self, obj):
         if obj.actualizado_por:
             return f"{obj.actualizado_por.nombre} {obj.actualizado_por.apellido}"
+        return None
+    
+    def get_precio_con_iva(self, obj):
+        """Calcular precio de venta con IVA (19%)"""
+        if obj.precio_venta is not None:
+            # IVA en Chile es 19%
+            return int(obj.precio_venta * 1.19)
+        return None
+    
+    def get_ganancia(self, obj):
+        """Calcular ganancia (precio_venta - precio_unitario)"""
+        if obj.precio_venta is not None and obj.precio_unitario is not None:
+            return int(obj.precio_venta - obj.precio_unitario)
         return None
     
     class Meta:
@@ -36,6 +51,8 @@ class InventarioSerializer(serializers.ModelSerializer):
             'cantidad_maxima',
             'precio_unitario',
             'precio_venta',
+            'precio_con_iva',
+            'ganancia',
             'codigo_qr',
             'codigo_barra',
             'ubicacion',
@@ -134,6 +151,8 @@ class InventarioListSerializer(serializers.ModelSerializer):
     estado_display = serializers.CharField(source='get_estado_display', read_only=True)
     stock_bajo = serializers.SerializerMethodField()
     por_vencer = serializers.SerializerMethodField()
+    precio_con_iva = serializers.SerializerMethodField()
+    ganancia = serializers.SerializerMethodField()
     
     class Meta:
         model = Inventario
@@ -150,6 +169,8 @@ class InventarioListSerializer(serializers.ModelSerializer):
             'estado_display',
             'precio_unitario',
             'precio_venta',
+            'precio_con_iva',
+            'ganancia',
             'fecha_vencimiento',
             'stock_bajo',
             'por_vencer',
@@ -167,6 +188,19 @@ class InventarioListSerializer(serializers.ModelSerializer):
             # Considerar por vencer si vence en los próximos 30 días
             return obj.fecha_vencimiento <= timezone.now().date() + timedelta(days=30)
         return False
+    
+    def get_precio_con_iva(self, obj):
+        """Calcular precio de venta con IVA (19%)"""
+        if obj.precio_venta is not None:
+            # IVA en Chile es 19%
+            return int(obj.precio_venta * 1.19)
+        return None
+    
+    def get_ganancia(self, obj):
+        """Calcular ganancia (precio_venta - precio_unitario)"""
+        if obj.precio_venta is not None and obj.precio_unitario is not None:
+            return int(obj.precio_venta - obj.precio_unitario)
+        return None
 
 
 class InventarioStatsSerializer(serializers.Serializer):
@@ -177,5 +211,5 @@ class InventarioStatsSerializer(serializers.Serializer):
     productos_por_vencer = serializers.IntegerField()
     productos_vencidos = serializers.IntegerField()
     stock_bajo = serializers.IntegerField()
-    valor_total_inventario = serializers.DecimalField(max_digits=15, decimal_places=2)
+    valor_total_inventario = serializers.IntegerField()
     categorias_distribucion = serializers.DictField()

@@ -312,18 +312,25 @@ export function EmpleadoFormPage() {
       // La BD MySQL tiene: nombres, apellidos, email, telefono
       // Django hace el mapeo automáticamente con db_column
       const cleanData = {
-        rut: limpiarRUT(rutValue),
         nombre: nombreValue.trim(),
         apellido: apellidoValue.trim(),
         cargo: data.cargo?.trim() || '',
         fecha_contratacion: data.fecha_contratacion || null,
       };
       
+      // Solo incluir RUT y fecha_nacimiento si es creación (no edición)
+      if (!params.id) {
+        cleanData.rut = limpiarRUT(rutValue);
+      }
+      
       // Limpiar campos de fecha
-      if (data.fecha_nacimiento && data.fecha_nacimiento !== '') {
-        cleanData.fecha_nacimiento = data.fecha_nacimiento;
-      } else {
-        cleanData.fecha_nacimiento = null;
+      // Solo incluir fecha_nacimiento si es creación (no edición)
+      if (!params.id) {
+        if (data.fecha_nacimiento && data.fecha_nacimiento !== '') {
+          cleanData.fecha_nacimiento = data.fecha_nacimiento;
+        } else {
+          cleanData.fecha_nacimiento = null;
+        }
       }
       
       if (data.fecha_termino && data.fecha_termino !== '') {
@@ -587,13 +594,19 @@ export function EmpleadoFormPage() {
               onChange={handleRutChange}
               onBlur={handleRutComplete}
               onKeyDown={handleRutKeyDown}
+              disabled={!!params.id}
               className={`block w-full px-3 py-2 border rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500 ${
                 errors.rut ? 'border-red-300' : 'border-gray-300'
-              }`}
-              autoFocus
+              } ${params.id ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+              autoFocus={!params.id}
             />
             {errors.rut && (
               <p className="mt-1 text-sm text-red-600">{errors.rut.message}</p>
+            )}
+            {params.id && (
+              <p className="mt-1 text-sm text-gray-500">
+                El RUT no puede ser modificado
+              </p>
             )}
           </div>
 
@@ -649,8 +662,16 @@ export function EmpleadoFormPage() {
               type="date"
               {...register("fecha_nacimiento")}
               onKeyDown={(e) => handleFieldKeyDown(e, correoRef)}
-              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+              disabled={!!params.id}
+              className={`block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 ${
+                params.id ? 'bg-gray-100 cursor-not-allowed' : ''
+              }`}
             />
+            {params.id && (
+              <p className="mt-1 text-sm text-gray-500">
+                La fecha de nacimiento no puede ser modificada
+              </p>
+            )}
           </div>
 
           {/* Correo */}

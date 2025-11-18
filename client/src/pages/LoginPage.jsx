@@ -1,7 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import toast from "react-hot-toast";
+import { formatearRUT, formatearRUTCompleto, limpiarRUT } from "../utils/rutUtils";
 
 export const LoginPage = () => {
   const [rut, setRut] = useState("");
@@ -9,6 +10,7 @@ export const LoginPage = () => {
   const [loading, setLoading] = useState(false);
   const { login, isAuthenticated, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const passwordRef = useRef(null);
 
   // Redirigir si ya está autenticado
   useEffect(() => {
@@ -16,6 +18,54 @@ export const LoginPage = () => {
       navigate("/dashboard", { replace: true });
     }
   }, [isAuthenticated, authLoading, navigate]);
+
+  const handleRutChange = (e) => {
+    const inputValue = e.target.value;
+    // Si el RUT ya tiene guión, extraer solo los números para reformatear
+    if (inputValue.includes('-')) {
+      const parts = inputValue.split('-');
+      const numeros = parts[0].replace(/[^0-9]/g, '').substring(0, 8);
+      const dv = parts[1] ? parts[1].replace(/[^0-9kK]/g, '').toUpperCase().substring(0, 1) : '';
+      if (numeros.length >= 7 && dv) {
+        const formatted = formatearRUT(numeros) + '-' + dv;
+        setRut(formatted);
+      } else if (numeros.length > 0) {
+        const formatted = formatearRUT(numeros);
+        setRut(formatted);
+      } else {
+        setRut('');
+      }
+    } else {
+      // Si no tiene guión, formatear solo con puntos
+      const cleaned = inputValue.replace(/[^0-9]/g, '');
+      const limited = cleaned.substring(0, 8);
+      if (limited.length <= 8) {
+        const formatted = formatearRUT(limited);
+        setRut(formatted);
+      }
+    }
+  };
+
+  const handleRutComplete = () => {
+    if (rut && !rut.includes('-')) {
+      const cleaned = rut.replace(/[^0-9]/g, '');
+      // Limitar a máximo 8 dígitos antes de calcular el DV
+      const limited = cleaned.substring(0, 8);
+      
+      if (limited.length >= 7) { // Mínimo 7 dígitos para calcular DV
+        const formatted = formatearRUTCompleto(limited);
+        setRut(formatted);
+      }
+    }
+  };
+
+  const handleRutKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleRutComplete();
+      passwordRef.current?.focus();
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -25,8 +75,24 @@ export const LoginPage = () => {
       return;
     }
 
+    // Asegurar que el RUT tenga el dígito verificador antes de enviarlo
+    let rutParaEnviar = rut;
+    if (rut && !rut.includes('-')) {
+      const cleaned = rut.replace(/[^0-9]/g, '');
+      const limited = cleaned.substring(0, 8);
+      if (limited.length >= 7) {
+        rutParaEnviar = formatearRUTCompleto(limited);
+        setRut(rutParaEnviar);
+      } else {
+        toast.error("Por favor, ingresa un RUT válido");
+        return;
+      }
+    }
+
     setLoading(true);
-    const result = await login(rut, password);
+    // Limpiar el RUT antes de enviarlo (remover puntos y guión)
+    const rutLimpio = limpiarRUT(rutParaEnviar);
+    const result = await login(rutLimpio, password);
     setLoading(false);
 
     if (result.success) {
@@ -70,8 +136,10 @@ export const LoginPage = () => {
                 id="rut"
                 type="text"
                 value={rut}
-                onChange={(e) => setRut(e.target.value)}
-                placeholder="12345678-9"
+                onChange={handleRutChange}
+                onBlur={handleRutComplete}
+                onKeyDown={handleRutKeyDown}
+                placeholder="12.345.678-9"
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none transition-all"
                 disabled={loading}
                 autoComplete="username"
@@ -87,6 +155,7 @@ export const LoginPage = () => {
                 Contraseña
               </label>
               <input
+                ref={passwordRef}
                 id="password"
                 type="password"
                 value={password}

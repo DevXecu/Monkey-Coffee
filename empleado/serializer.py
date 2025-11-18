@@ -1,13 +1,17 @@
 from rest_framework import serializers
 from .models import Empleado, Asistencia, Turno
 from datetime import date, datetime, time
+from argon2 import PasswordHasher
 
 class EmpleadoSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=False, allow_blank=True)
     fecha_contratacion = serializers.DateField(required=False)
     fecha_nacimiento = serializers.DateField(required=False, allow_null=True)
     fecha_termino = serializers.DateField(required=False, allow_null=True)
-    salario = serializers.DecimalField(max_digits=10, decimal_places=2, required=False, allow_null=True)
+    salario = serializers.IntegerField(required=False, allow_null=True)
+    
+    # Instancia de PasswordHasher para Argon2id
+    _ph = PasswordHasher()
     
     class Meta:
         model = Empleado
@@ -33,6 +37,11 @@ class EmpleadoSerializer(serializers.ModelSerializer):
         if not validated_data.get('password'):
             raise serializers.ValidationError({"password": "La contraseña es requerida al crear un empleado."})
         
+        # Cifrar la contraseña con Argon2id antes de guardarla
+        password_plain = validated_data.pop('password')
+        password_hashed = self._ph.hash(password_plain)
+        validated_data['password'] = password_hashed
+        
         # Si no se proporciona fecha_contratacion, usar la fecha actual
         if 'fecha_contratacion' not in validated_data or not validated_data.get('fecha_contratacion'):
             validated_data['fecha_contratacion'] = date.today()
@@ -46,9 +55,20 @@ class EmpleadoSerializer(serializers.ModelSerializer):
         return empleado
     
     def update(self, instance, validated_data):
-        # Si no se proporciona password o está vacío, no actualizarlo
+        # No permitir actualizar RUT ni fecha_nacimiento
+        if 'rut' in validated_data:
+            validated_data.pop('rut')
+        
+        if 'fecha_nacimiento' in validated_data:
+            validated_data.pop('fecha_nacimiento')
+        
+        # Si se proporciona password, cifrarlo con Argon2id
         password = validated_data.get('password')
-        if not password or password.strip() == '':
+        if password and password.strip() != '':
+            password_hashed = self._ph.hash(password)
+            validated_data['password'] = password_hashed
+        else:
+            # Si no se proporciona password o está vacío, no actualizarlo
             validated_data.pop('password', None)
         
         # Actualizar los campos
@@ -104,7 +124,7 @@ class AsistenciaSerializer(serializers.ModelSerializer):
         if validated_data.get('hora_entrada') and validated_data.get('hora_salida'):
             diferencia = validated_data['hora_salida'] - validated_data['hora_entrada']
             horas = diferencia.total_seconds() / 3600
-            validated_data['horas_trabajadas'] = round(horas, 2)
+            validated_data['horas_trabajadas'] = int(round(horas))
         
         return super().create(validated_data)
     
@@ -126,7 +146,7 @@ class AsistenciaSerializer(serializers.ModelSerializer):
             if hora_entrada and hora_salida:
                 diferencia = hora_salida - hora_entrada
                 horas = diferencia.total_seconds() / 3600
-                validated_data['horas_trabajadas'] = round(horas, 2)
+                validated_data['horas_trabajadas'] = int(round(horas))
         
         return super().update(instance, validated_data)
     
@@ -212,7 +232,7 @@ class TurnoSerializer(serializers.ModelSerializer):
                 if diferencia_segundos < 0:
                     diferencia_segundos += 24 * 3600  # Si cruza medianoche
                 horas = diferencia_segundos / 3600
-                validated_data['horas_trabajo'] = round(horas, 2)
+                validated_data['horas_trabajo'] = int(round(horas))
         
         return super().create(validated_data)
     
@@ -238,7 +258,7 @@ class TurnoSerializer(serializers.ModelSerializer):
                 if diferencia_segundos < 0:
                     diferencia_segundos += 24 * 3600
                 horas = diferencia_segundos / 3600
-                validated_data['horas_trabajo'] = round(horas, 2)
+                validated_data['horas_trabajo'] = int(round(horas))
         
         return super().update(instance, validated_data)
     

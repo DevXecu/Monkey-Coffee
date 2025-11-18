@@ -196,6 +196,24 @@ export function InventarioCard({ inventario, onUpdate }) {
             </div>
           )}
 
+          {inventario.precio_con_iva && (
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-500">Precio con IVA:</span>
+              <span className="font-medium text-blue-600">{formatCurrency(inventario.precio_con_iva)}</span>
+            </div>
+          )}
+
+          {inventario.ganancia !== null && inventario.ganancia !== undefined && (
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-500">Ganancia:</span>
+              <span className={`font-medium ${
+                inventario.ganancia >= 0 ? 'text-green-600' : 'text-red-600'
+              }`}>
+                {formatCurrency(inventario.ganancia)}
+              </span>
+            </div>
+          )}
+
           {inventario.fecha_vencimiento && (
             <div className="flex justify-between text-sm">
               <span className="text-gray-500">Vencimiento:</span>

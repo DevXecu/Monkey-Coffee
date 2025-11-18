@@ -229,3 +229,30 @@ class InventarioViewSet(viewsets.ModelViewSet):
         )
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
+    
+    def destroy(self, request, *args, **kwargs):
+        """
+        Soft delete: En lugar de eliminar físicamente el producto del inventario,
+        se cambia el campo 'activo' a False.
+        """
+        try:
+            print("Desactivando producto de inventario con ID:", kwargs.get('pk'))
+            instance = self.get_object()
+            
+            # Soft delete: cambiar activo a False
+            instance.activo = False
+            instance.save()
+            
+            print(f"Producto {instance.codigo_producto} desactivado correctamente")
+            
+            return Response(
+                {"message": "Producto desactivado correctamente"},
+                status=status.HTTP_200_OK
+            )
+        except Exception as e:
+            print("Error al desactivar producto:", str(e))
+            print("Traceback:", traceback.format_exc())
+            return Response(
+                {"error": str(e), "detail": traceback.format_exc()},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )

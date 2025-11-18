@@ -8,12 +8,14 @@ from .models import Empleado, Asistencia, Turno
 from django.db import connection, transaction
 from django.utils import timezone
 from datetime import date, datetime, timedelta
+from argon2 import PasswordHasher
+from argon2.exceptions import VerifyMismatchError
 import traceback
 
 # Create your views here.
 class EmpleadoView(viewsets.ModelViewSet):
     serializer_class = EmpleadoSerializer
-    queryset = Empleado.objects.all()
+    queryset = Empleado.objects.filter(activo=True)
     
     def create(self, request, *args, **kwargs):
         try:
@@ -175,77 +177,29 @@ class EmpleadoView(viewsets.ModelViewSet):
             )
     
     def destroy(self, request, *args, **kwargs):
+        """
+        Soft delete: En lugar de eliminar físicamente el empleado,
+        se cambia el campo 'activo' a False.
+        """
         try:
-            print("Eliminando empleado con ID:", kwargs.get('pk'))
+            print("Desactivando empleado con ID:", kwargs.get('pk'))
             instance = self.get_object()
-            rut_empleado = instance.rut
             
-            # Usar transacción para asegurar que todas las operaciones se ejecuten correctamente
-            with transaction.atomic():
-                try:
-                    with connection.cursor() as cursor:
-                        # Deshabilitar temporalmente las verificaciones de clave foránea para evitar problemas
-                        # Esto es necesario porque algunas restricciones pueden estar bloqueando la eliminación
-                        cursor.execute("SET FOREIGN_KEY_CHECKS = 0")
-                        
-                        try:
-                            # 1. Eliminar empleados_turnos relacionados (PRIMERO, ya que puede tener restricciones)
-                            cursor.execute(
-                                "DELETE FROM empleados_turnos WHERE empleados_rut = %s",
-                                [rut_empleado]
-                            )
-                            deleted_empleados_turnos = cursor.rowcount
-                            print(f"Eliminados {deleted_empleados_turnos} registros de empleados_turnos relacionados")
-                            
-                            # 2. Eliminar horarios relacionados
-                            try:
-                                cursor.execute(
-                                    "DELETE FROM horarios WHERE empleado_rut = %s",
-                                    [rut_empleado]
-                                )
-                                deleted_horarios = cursor.rowcount
-                                print(f"Eliminados {deleted_horarios} horarios relacionados al empleado {rut_empleado}")
-                            except Exception as e:
-                                print(f"Error al eliminar horarios (puede que la tabla no exista): {str(e)}")
-                            
-                            # 3. Eliminar asistencias relacionadas
-                            cursor.execute(
-                                "DELETE FROM asistencias WHERE empleado_rut = %s",
-                                [rut_empleado]
-                            )
-                            deleted_asistencias = cursor.rowcount
-                            print(f"Eliminadas {deleted_asistencias} asistencias relacionadas al empleado {rut_empleado}")
-                            
-                            # 4. Eliminar turnos relacionados (aunque tienen CASCADE, lo hacemos explícitamente)
-                            cursor.execute(
-                                "DELETE FROM turnos WHERE empleados_rut = %s",
-                                [rut_empleado]
-                            )
-                            deleted_turnos = cursor.rowcount
-                            print(f"Eliminados {deleted_turnos} turnos relacionados al empleado {rut_empleado}")
-                            
-                        finally:
-                            # Rehabilitar las verificaciones de clave foránea
-                            cursor.execute("SET FOREIGN_KEY_CHECKS = 1")
-                        
-                except Exception as db_error:
-                    # Si hay un error, lanzarlo para que la transacción se revierta
-                    print(f"Error al eliminar registros relacionados: {str(db_error)}")
-                    raise db_error
-                
-                # 5. Finalmente eliminar el empleado
-                self.perform_destroy(instance)
+            # Soft delete: cambiar activo a False
+            instance.activo = False
+            instance.save()
             
-            return Response(status=status.HTTP_204_NO_CONTENT)
-        except Exception as e:
-            print("Error al eliminar empleado:", str(e))
-            print("Traceback:", traceback.format_exc())
-            error_message = str(e)
-            # Extraer mensaje más legible del error
-            if "foreign key constraint" in error_message.lower():
-                error_message = "No se puede eliminar el empleado porque tiene registros relacionados. Por favor, elimine primero los horarios, turnos y otros registros asociados."
+            print(f"Empleado {instance.rut} desactivado correctamente")
+            
             return Response(
-                {"error": error_message, "detail": traceback.format_exc()},
+                {"message": "Empleado desactivado correctamente"},
+                status=status.HTTP_200_OK
+            )
+        except Exception as e:
+            print("Error al desactivar empleado:", str(e))
+            print("Traceback:", traceback.format_exc())
+            return Response(
+                {"error": str(e), "detail": traceback.format_exc()},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
@@ -304,12 +258,32 @@ def login(request):
                 status=status.HTTP_401_UNAUTHORIZED
             )
         
-        # Verificar contraseña (comparación directa - las contraseñas se almacenan en texto plano)
-        if empleado.password.strip() != password:
+        # Verificar contraseña con Argon2id
+        ph = PasswordHasher()
+        try:
+            # Intentar verificar la contraseña con Argon2id
+            ph.verify(empleado.password, password)
+        except VerifyMismatchError:
+            # Si falla la verificación, la contraseña es incorrecta
             return Response(
                 {"error": "RUT o contraseña incorrectos"},
                 status=status.HTTP_401_UNAUTHORIZED
             )
+        except Exception as e:
+            # Si hay otro error (por ejemplo, formato de hash inválido), 
+            # podría ser una contraseña antigua en texto plano
+            # Intentar comparación directa como fallback (para migración gradual)
+            try:
+                if empleado.password.strip() != password:
+                    return Response(
+                        {"error": "RUT o contraseña incorrectos"},
+                        status=status.HTTP_401_UNAUTHORIZED
+                    )
+            except:
+                return Response(
+                    {"error": "RUT o contraseña incorrectos"},
+                    status=status.HTTP_401_UNAUTHORIZED
+                )
         
         # Serializar datos del empleado (el serializer ya excluye el password por write_only=True)
         serializer = EmpleadoSerializer(empleado)
@@ -450,10 +424,10 @@ def estadisticas_asistencia(request):
 
 class TurnoView(viewsets.ModelViewSet):
     serializer_class = TurnoSerializer
-    queryset = Turno.objects.all()
+    queryset = Turno.objects.filter(activo=True)
     
     def get_queryset(self):
-        queryset = Turno.objects.all().order_by('-fecha_creacion')
+        queryset = Turno.objects.filter(activo=True).order_by('-fecha_creacion')
         
         # Filtros opcionales
         empleado_rut = self.request.query_params.get('empleado_rut', None)
@@ -503,6 +477,33 @@ class TurnoView(viewsets.ModelViewSet):
             )
         except Exception as e:
             print("Error al actualizar turno:", str(e))
+            print("Traceback:", traceback.format_exc())
+            return Response(
+                {"error": str(e), "detail": traceback.format_exc()},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+    
+    def destroy(self, request, *args, **kwargs):
+        """
+        Soft delete: En lugar de eliminar físicamente el turno,
+        se cambia el campo 'activo' a False.
+        """
+        try:
+            print("Desactivando turno con ID:", kwargs.get('pk'))
+            instance = self.get_object()
+            
+            # Soft delete: cambiar activo a False
+            instance.activo = False
+            instance.save()
+            
+            print(f"Turno {instance.id} desactivado correctamente")
+            
+            return Response(
+                {"message": "Turno desactivado correctamente"},
+                status=status.HTTP_200_OK
+            )
+        except Exception as e:
+            print("Error al desactivar turno:", str(e))
             print("Traceback:", traceback.format_exc())
             return Response(
                 {"error": str(e), "detail": traceback.format_exc()},
