@@ -42,20 +42,12 @@ export const LoginPage = () => {
       <div className="w-full max-w-md">
         {/* Logo y título */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-primary-500 rounded-full mb-4">
-            <svg
-              className="w-12 h-12 text-white"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-              />
-            </svg>
+          <div className="inline-flex items-center justify-center mb-4">
+            <img
+              src="/logoMC.png"
+              alt="Monkey Coffee Logo"
+              className="w-32 h-32 object-contain"
+            />
           </div>
           <h1 className="text-3xl font-bold text-primary-900 mb-2">
             Monkey Coffee

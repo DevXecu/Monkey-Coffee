@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { generarReporte } from "../api/reportes.api";
 import { toast } from "react-hot-toast";
+import { formatearRUTParaMostrar } from "../utils/rutUtils";
 
 export function ReportesPage() {
   const [tipoReporte, setTipoReporte] = useState("Empleados");
@@ -51,7 +52,7 @@ export function ReportesPage() {
             "Activo",
           ];
           rows = reporte.datos.map((emp) => [
-            emp.rut || "",
+            formatearRUTParaMostrar(emp.rut) || "",
             emp.nombre || "",
             emp.apellido || "",
             emp.correo || "",
@@ -105,7 +106,7 @@ export function ReportesPage() {
           ];
           rows = reporte.datos.map((item) => [
             item.empleado || "",
-            item.rut || "",
+            formatearRUTParaMostrar(item.rut) || "",
             item.cargo || "",
             item.diasTrabajados || 0,
             item.horasTrabajadas || 0,
@@ -414,7 +415,7 @@ export function ReportesPage() {
                         {reporte.tipo === "empleados" && (
                           <>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                              {item.rut}
+                              {formatearRUTParaMostrar(item.rut)}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                               {item.nombre} {item.apellido}
@@ -503,7 +504,7 @@ export function ReportesPage() {
                               {item.empleado}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                              {item.rut}
+                              {formatearRUTParaMostrar(item.rut)}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                               {item.cargo}

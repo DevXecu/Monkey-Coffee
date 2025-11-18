@@ -31,8 +31,11 @@ authApi.interceptors.request.use(
 
 export const login = async (rut, password) => {
   try {
+    // Limpiar el RUT de puntos y guiones antes de enviarlo
+    const rutLimpio = rut.replace(/[^0-9kK]/g, '').toUpperCase();
+    
     const response = await authApi.post("/auth/login/", {
-      rut,
+      rut: rutLimpio,
       password,
     });
     return response.data;

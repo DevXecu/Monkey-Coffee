@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { getAllAsistencias, getEstadisticasAsistencia, createAsistencia, updateAsistencia, deleteAsistencia } from "../api/asistencia.api";
 import { getAllEmpleado } from "../api/empleado.api";
 import { toast } from "react-hot-toast";
+import { formatearRUTParaMostrar } from "../utils/rutUtils";
 
 export function AsistenciaPage() {
   const [asistencias, setAsistencias] = useState([]);
@@ -94,49 +95,83 @@ export function AsistenciaPage() {
 
       if (asistenciaEditando) {
         await updateAsistencia(asistenciaEditando.id, data);
-        toast.success('Asistencia actualizada correctamente');
+        toast.success("Asistencia actualizada correctamente", {
+          position: "bottom-right",
+        });
       } else {
         await createAsistencia(data);
-        toast.success('Asistencia registrada correctamente');
+        toast.success("Asistencia registrada correctamente", {
+          position: "bottom-right",
+        });
       }
       
       setShowModal(false);
       resetForm();
       loadData();
     } catch (error) {
-      console.error('Error saving asistencia:', error);
-      toast.error(error.response?.data?.error || 'Error al guardar la asistencia');
+      console.error("Error al guardar asistencia:", error);
+      const errorMessage = error.response?.data?.error 
+        ? (typeof error.response.data.error === 'string' 
+            ? error.response.data.error 
+            : JSON.stringify(error.response.data.error))
+        : "Error al guardar la asistencia";
+      toast.error(errorMessage, {
+        position: "bottom-right",
+        duration: 4000,
+      });
     }
   };
 
   const handleEdit = (asistencia) => {
-    setAsistenciaEditando(asistencia);
-    const horaEntrada = asistencia.hora_entrada ? new Date(asistencia.hora_entrada).toTimeString().slice(0, 5) : '';
-    const horaSalida = asistencia.hora_salida ? new Date(asistencia.hora_salida).toTimeString().slice(0, 5) : '';
-    
-    setFormData({
-      empleado_rut: asistencia.empleado_rut,
-      fecha: asistencia.fecha,
-      hora_entrada: horaEntrada,
-      hora_salida: horaSalida,
-      tipo_entrada: asistencia.tipo_entrada,
-      tipo_salida: asistencia.tipo_salida,
-      estado: asistencia.estado,
-      observaciones: asistencia.observaciones || '',
-    });
-    setShowModal(true);
+    console.log('handleEdit called with:', asistencia);
+    try {
+      setAsistenciaEditando(asistencia);
+      const horaEntrada = asistencia.hora_entrada ? new Date(asistencia.hora_entrada).toTimeString().slice(0, 5) : '';
+      const horaSalida = asistencia.hora_salida ? new Date(asistencia.hora_salida).toTimeString().slice(0, 5) : '';
+      
+      setFormData({
+        empleado_rut: asistencia.empleado_rut,
+        fecha: asistencia.fecha,
+        hora_entrada: horaEntrada,
+        hora_salida: horaSalida,
+        tipo_entrada: asistencia.tipo_entrada,
+        tipo_salida: asistencia.tipo_salida,
+        estado: asistencia.estado,
+        observaciones: asistencia.observaciones || '',
+      });
+      setShowModal(true);
+      console.log('Modal should be open now');
+    } catch (error) {
+      console.error('Error in handleEdit:', error);
+    }
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('¿Está seguro de eliminar esta asistencia?')) return;
-    
+    console.log('handleDelete called with id:', id);
     try {
+      const accepted = window.confirm("¿Estás seguro de que quieres eliminar esta asistencia?");
+      if (!accepted) {
+        console.log('Delete cancelled by user');
+        return;
+      }
+      
+      console.log('Deleting asistencia with id:', id);
       await deleteAsistencia(id);
-      toast.success('Asistencia eliminada correctamente');
+      toast.success("Asistencia eliminada correctamente", {
+        position: "bottom-right",
+      });
       loadData();
     } catch (error) {
-      console.error('Error deleting asistencia:', error);
-      toast.error('Error al eliminar la asistencia');
+      console.error("Error al eliminar asistencia:", error);
+      const errorMessage = error.response?.data?.error 
+        ? (typeof error.response.data.error === 'string' 
+            ? error.response.data.error 
+            : JSON.stringify(error.response.data.error))
+        : "Error al eliminar la asistencia";
+      toast.error(errorMessage, {
+        position: "bottom-right",
+        duration: 4000,
+      });
     }
   };
 
@@ -214,11 +249,16 @@ export function AsistenciaPage() {
           <p className="text-gray-600">Gestiona y registra la asistencia de empleados</p>
         </div>
         <button
-          onClick={() => {
+          type="button"
+          onClick={(e) => {
+            console.log('Registrar Asistencia button clicked');
+            e.preventDefault();
+            e.stopPropagation();
             resetForm();
             setShowModal(true);
+            console.log('Modal should be open');
           }}
-          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-500 hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-500 hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 cursor-pointer"
         >
           <svg className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
@@ -331,7 +371,7 @@ export function AsistenciaPage() {
               <option value="">Todos los empleados</option>
               {empleados.map((emp) => (
                 <option key={emp.rut} value={emp.rut}>
-                  {emp.nombre} {emp.apellido} - {emp.rut}
+                  {emp.nombre} {emp.apellido} - {formatearRUTParaMostrar(emp.rut)}
                 </option>
               ))}
             </select>
@@ -401,7 +441,7 @@ export function AsistenciaPage() {
                       <div className="text-sm font-medium text-gray-900">
                         {asistencia.empleado_nombre} {asistencia.empleado_apellido}
                       </div>
-                      <div className="text-sm text-gray-500">{asistencia.empleado_rut}</div>
+                      <div className="text-sm text-gray-500">{formatearRUTParaMostrar(asistencia.empleado_rut)}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {formatDate(asistencia.fecha)}
@@ -421,18 +461,40 @@ export function AsistenciaPage() {
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <button
-                        onClick={() => handleEdit(asistencia)}
-                        className="text-primary-600 hover:text-primary-900 mr-4"
-                      >
-                        Editar
-                      </button>
-                      <button
-                        onClick={() => handleDelete(asistencia.id)}
-                        className="text-red-600 hover:text-red-900"
-                      >
-                        Eliminar
-                      </button>
+                      <div className="flex items-center space-x-2">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            console.log('Edit button clicked');
+                            e.preventDefault();
+                            e.stopPropagation();
+                            console.log('Calling handleEdit with:', asistencia);
+                            handleEdit(asistencia);
+                          }}
+                          className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 cursor-pointer"
+                        >
+                          <svg className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                          </svg>
+                          Editar
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            console.log('Delete button clicked');
+                            e.preventDefault();
+                            e.stopPropagation();
+                            console.log('Calling handleDelete with id:', asistencia.id);
+                            handleDelete(asistencia.id);
+                          }}
+                          className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 cursor-pointer"
+                        >
+                          <svg className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                          Eliminar
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -444,10 +506,20 @@ export function AsistenciaPage() {
 
       {/* Modal */}
       {showModal && (
-        <div className="fixed z-10 inset-0 overflow-y-auto">
+        <div className="fixed z-50 inset-0 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
           <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-            <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" onClick={() => setShowModal(false)}></div>
-            <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+            <div 
+              className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" 
+              onClick={() => {
+                setShowModal(false);
+                resetForm();
+              }}
+            ></div>
+            <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+            <div 
+              className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full"
+              onClick={(e) => e.stopPropagation()}
+            >
               <form onSubmit={handleSubmit}>
                 <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
                   <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
@@ -466,7 +538,7 @@ export function AsistenciaPage() {
                         <option value="">Seleccione un empleado</option>
                         {empleados.map((emp) => (
                           <option key={emp.rut} value={emp.rut}>
-                            {emp.nombre} {emp.apellido} - {emp.rut}
+                            {emp.nombre} {emp.apellido} - {formatearRUTParaMostrar(emp.rut)}
                           </option>
                         ))}
                       </select>
@@ -536,8 +608,11 @@ export function AsistenciaPage() {
                 <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
                   <button
                     type="submit"
-                    className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-primary-500 text-base font-medium text-white hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 sm:ml-3 sm:w-auto sm:text-sm"
+                    className="w-full inline-flex justify-center items-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-primary-600 text-base font-medium text-white hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 sm:ml-3 sm:w-auto sm:text-sm"
                   >
+                    <svg className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
                     {asistenciaEditando ? 'Actualizar' : 'Registrar'}
                   </button>
                   <button
@@ -546,7 +621,7 @@ export function AsistenciaPage() {
                       setShowModal(false);
                       resetForm();
                     }}
-                    className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+                    className="mt-3 w-full inline-flex justify-center items-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
                   >
                     Cancelar
                   </button>

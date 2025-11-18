@@ -15,7 +15,7 @@ class Asistencia(models.Model):
         ('permiso', 'Permiso'),
     ]
 
-    empleado_rut = models.CharField(max_length=12, db_column='empleado_rut')
+    empleado_rut = models.ForeignKey('Empleado', on_delete=models.CASCADE, to_field='rut', db_column='empleado_rut', related_name='asistencias')
     fecha = models.DateField(db_column='fecha')
     hora_entrada = models.DateTimeField(blank=True, null=True, db_column='hora_entrada')
     hora_salida = models.DateTimeField(blank=True, null=True, db_column='hora_salida')
@@ -45,15 +45,10 @@ class Asistencia(models.Model):
         ]
     
     def __str__(self):
-        return f"{self.empleado_rut} - {self.fecha} - {self.estado}"
+        rut_display = self.empleado_rut.rut if self.empleado_rut else 'N/A'
+        return f"{rut_display} - {self.fecha} - {self.estado}"
 
 class Empleado(models.Model):
-    CARGO_CHOICES = [
-        ('Gerente', 'Gerente'),
-        ('Administrador', 'Administrador'),
-        ('Trabajador', 'Trabajador'),
-    ]
-    
     TIPO_CONTRATO_CHOICES = [
         ('indefinido', 'Indefinido'),
         ('plazo_fijo', 'Plazo Fijo'),
@@ -79,7 +74,7 @@ class Empleado(models.Model):
     direccion = models.TextField(blank=True, null=True, db_column='direccion')
     
     # Información laboral
-    cargo = models.CharField(max_length=100, choices=CARGO_CHOICES, db_column='cargo')
+    cargo = models.CharField(max_length=100, db_column='cargo')
     departamento = models.CharField(max_length=100, blank=True, null=True, db_column='departamento')
     fecha_contratacion = models.DateField(db_column='fecha_contratacion')
     fecha_termino = models.DateField(blank=True, null=True, db_column='fecha_termino')
@@ -110,7 +105,7 @@ class Empleado(models.Model):
 
 
 class Turno(models.Model):
-    empleados_rut = models.CharField(max_length=12, db_column='empleados_rut')
+    empleados_rut = models.ForeignKey('Empleado', on_delete=models.CASCADE, to_field='rut', db_column='empleados_rut', related_name='turnos')
     nombre_turno = models.CharField(max_length=100, db_column='nombre_turno')
     hora_entrada = models.TimeField(db_column='hora_entrada')
     hora_salida = models.TimeField(db_column='hora_salida')
@@ -130,4 +125,5 @@ class Turno(models.Model):
         ]
     
     def __str__(self):
-        return f"{self.nombre_turno} - {self.empleados_rut}"
+        rut_display = self.empleados_rut.rut if self.empleados_rut else 'N/A'
+        return f"{self.nombre_turno} - {rut_display}"

@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom";
+import { formatearRUTParaMostrar } from "../utils/rutUtils";
 
 export function TurnosCard({ turno }) {
   const navigate = useNavigate();
@@ -49,7 +50,7 @@ export function TurnosCard({ turno }) {
               <p className="text-sm text-gray-500">
                 {turno.empleado_nombre} {turno.empleado_apellido}
               </p>
-              <p className="text-xs text-gray-400">RUT: {turno.empleados_rut}</p>
+              <p className="text-xs text-gray-400">RUT: {formatearRUTParaMostrar(turno.empleados_rut)}</p>
             </div>
           </div>
           

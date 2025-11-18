@@ -121,3 +121,80 @@ export function validarRUT(rut) {
   return dv === dvCalculado;
 }
 
+/**
+ * Formatea un RUT para mostrar (xx.xxx.xxx-x)
+ * Acepta RUTs con o sin formato, con o sin dígito verificador
+ * @param {string} rut - RUT a formatear (puede venir con o sin formato)
+ * @returns {string} - RUT formateado como xx.xxx.xxx-x
+ */
+export function formatearRUTParaMostrar(rut) {
+  if (!rut) return '';
+  
+  // Limpiar el RUT de cualquier formato previo
+  const rutLimpio = rut.replace(/[^0-9kK]/g, '');
+  
+  if (!rutLimpio || rutLimpio.length === 0) {
+    return '';
+  }
+  
+  let rutNumeros, dv;
+  
+  // Si el RUT tiene 9 caracteres, asumir formato estándar: 8 números + 1 DV
+  if (rutLimpio.length === 9) {
+    rutNumeros = rutLimpio.slice(0, 8);
+    dv = rutLimpio.slice(8, 9).toUpperCase();
+    
+    // Validar que el DV sea correcto
+    const dvCalculado = calcularDigitoVerificador(rutNumeros);
+    if (dv !== dvCalculado) {
+      // Si el DV no coincide, usar el calculado (el de la BD podría estar mal)
+      dv = dvCalculado;
+    }
+  } 
+  // Si el RUT tiene más de 9 caracteres, tomar solo los primeros 8 como números y el 9º como DV
+  else if (rutLimpio.length > 9) {
+    rutNumeros = rutLimpio.slice(0, 8);
+    dv = rutLimpio.slice(8, 9).toUpperCase();
+    
+    // Validar y corregir el DV si es necesario
+    const dvCalculado = calcularDigitoVerificador(rutNumeros);
+    if (dv !== dvCalculado) {
+      dv = dvCalculado;
+    }
+  }
+  // Si el RUT tiene entre 2 y 8 caracteres, separar números del DV
+  else if (rutLimpio.length >= 2) {
+    rutNumeros = rutLimpio.slice(0, -1);
+    dv = rutLimpio.slice(-1).toUpperCase();
+    
+    // Validar que el DV sea correcto
+    const dvCalculado = calcularDigitoVerificador(rutNumeros);
+    if (dv !== dvCalculado) {
+      // Si el DV no coincide, usar el calculado
+      dv = dvCalculado;
+    }
+  } 
+  // RUT muy corto (menos de 2 caracteres), calcular DV
+  else {
+    rutNumeros = rutLimpio;
+    dv = calcularDigitoVerificador(rutNumeros);
+  }
+  
+  // Formatear números con puntos
+  let rutFormateado = '';
+  let contador = 0;
+  
+  // Agregar puntos de miles de derecha a izquierda
+  for (let i = rutNumeros.length - 1; i >= 0; i--) {
+    if (contador === 3) {
+      rutFormateado = '.' + rutFormateado;
+      contador = 0;
+    }
+    rutFormateado = rutNumeros.charAt(i) + rutFormateado;
+    contador++;
+  }
+  
+  // Retornar con formato xx.xxx.xxx-x
+  return rutFormateado + '-' + dv;
+}
+

@@ -4,6 +4,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { createTurno, deleteTurno, getTurno, updateTurno } from "../api/turno.api";
 import { getAllEmpleado } from "../api/empleado.api";
 import { toast } from "react-hot-toast";
+import { formatearRUTParaMostrar } from "../utils/rutUtils";
 
 export function TurnosFormPage() {
   const {
@@ -252,7 +253,7 @@ export function TurnosFormPage() {
               <option value="">Seleccione un empleado</option>
               {empleados.map((emp) => (
                 <option key={emp.rut} value={emp.rut}>
-                  {emp.nombre} {emp.apellido} - {emp.rut}
+                  {emp.nombre} {emp.apellido} - {formatearRUTParaMostrar(emp.rut)}
                 </option>
               ))}
             </select>
@@ -346,7 +347,7 @@ export function TurnosFormPage() {
               type="number"
               step="0.01"
               min="0"
-              placeholder="Se calcula automáticamente"
+              placeholder="Se calcula según la hora de entrada y salida -1 hora de almuerzo/descanzo"
               {...register("horas_trabajo")}
               onKeyDown={(e) => handleFieldKeyDown(e, descripcionRef)}
               className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500"

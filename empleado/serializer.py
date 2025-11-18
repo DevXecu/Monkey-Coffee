@@ -16,6 +16,12 @@ class EmpleadoSerializer(serializers.ModelSerializer):
             'password': {'write_only': True}
         }
     
+    def to_representation(self, instance):
+        """Asegurar que el password nunca se incluya en las respuestas"""
+        representation = super().to_representation(instance)
+        representation.pop('password', None)
+        return representation
+    
     def validate_password(self, value):
         # Si es creación y no hay password, lanzar error
         if not self.instance and not value:
@@ -56,36 +62,40 @@ class EmpleadoSerializer(serializers.ModelSerializer):
 class AsistenciaSerializer(serializers.ModelSerializer):
     empleado_nombre = serializers.SerializerMethodField()
     empleado_apellido = serializers.SerializerMethodField()
+    empleado_rut = serializers.CharField(write_only=True, required=True)
+    empleado_rut_display = serializers.CharField(source='empleado_rut.rut', read_only=True)
     
     class Meta:
         model = Asistencia
-        fields = '__all__'
-        read_only_fields = ('fecha_creacion', 'fecha_actualizacion')
+        fields = [
+            'id', 'empleado_rut', 'empleado_rut_display', 'empleado_nombre', 'empleado_apellido',
+            'fecha', 'hora_entrada', 'hora_salida', 'tipo_entrada', 'tipo_salida',
+            'minutos_tarde', 'minutos_extras', 'horas_trabajadas', 'estado', 'observaciones',
+            'ubicacion_entrada', 'ubicacion_salida', 'ip_entrada', 'ip_salida',
+            'validado_por', 'fecha_validacion', 'fecha_creacion', 'fecha_actualizacion'
+        ]
+        read_only_fields = ('fecha_creacion', 'fecha_actualizacion', 'empleado_rut_display', 'empleado_nombre', 'empleado_apellido')
     
     def get_empleado_nombre(self, obj):
-        try:
-            empleado = Empleado.objects.get(rut=obj.empleado_rut)
-            return empleado.nombre
-        except Empleado.DoesNotExist:
-            return None
+        if obj.empleado_rut:
+            return obj.empleado_rut.nombre
+        return None
     
     def get_empleado_apellido(self, obj):
-        try:
-            empleado = Empleado.objects.get(rut=obj.empleado_rut)
-            return empleado.apellido
-        except Empleado.DoesNotExist:
-            return None
-    
-    def validate(self, data):
-        # Validar que si hay hora_salida, debe ser después de hora_entrada
-        if data.get('hora_entrada') and data.get('hora_salida'):
-            if data['hora_salida'] <= data['hora_entrada']:
-                raise serializers.ValidationError({
-                    'hora_salida': 'La hora de salida debe ser posterior a la hora de entrada'
-                })
-        return data
+        if obj.empleado_rut:
+            return obj.empleado_rut.apellido
+        return None
     
     def create(self, validated_data):
+        # Extraer el RUT del validated_data
+        rut = validated_data.pop('empleado_rut')
+        # Buscar el empleado por RUT
+        try:
+            empleado = Empleado.objects.get(rut=rut)
+            validated_data['empleado_rut'] = empleado
+        except Empleado.DoesNotExist:
+            raise serializers.ValidationError({'empleado_rut': 'No existe un empleado con este RUT'})
+        
         # Si no se proporciona fecha, usar la fecha actual
         if 'fecha' not in validated_data or not validated_data.get('fecha'):
             validated_data['fecha'] = date.today()
@@ -99,6 +109,15 @@ class AsistenciaSerializer(serializers.ModelSerializer):
         return super().create(validated_data)
     
     def update(self, instance, validated_data):
+        # Si se proporciona un nuevo RUT, buscar el empleado
+        if 'empleado_rut' in validated_data:
+            rut = validated_data.pop('empleado_rut')
+            try:
+                empleado = Empleado.objects.get(rut=rut)
+                validated_data['empleado_rut'] = empleado
+            except Empleado.DoesNotExist:
+                raise serializers.ValidationError({'empleado_rut': 'No existe un empleado con este RUT'})
+        
         # Recalcular horas trabajadas si se actualizan las horas
         if 'hora_entrada' in validated_data or 'hora_salida' in validated_data:
             hora_entrada = validated_data.get('hora_entrada', instance.hora_entrada)
@@ -110,30 +129,57 @@ class AsistenciaSerializer(serializers.ModelSerializer):
                 validated_data['horas_trabajadas'] = round(horas, 2)
         
         return super().update(instance, validated_data)
+    
+    def to_representation(self, instance):
+        """Personalizar la representación para mostrar el RUT como string"""
+        representation = super().to_representation(instance)
+        # Reemplazar el objeto empleado_rut con el RUT como string
+        if instance.empleado_rut:
+            representation['empleado_rut'] = instance.empleado_rut.rut
+        return representation
+    
+    def validate(self, data):
+        # Validar que si hay hora_salida, debe ser después de hora_entrada
+        if data.get('hora_entrada') and data.get('hora_salida'):
+            if data['hora_salida'] <= data['hora_entrada']:
+                raise serializers.ValidationError({
+                    'hora_salida': 'La hora de salida debe ser posterior a la hora de entrada'
+                })
+        return data
 
 
 class TurnoSerializer(serializers.ModelSerializer):
     empleado_nombre = serializers.SerializerMethodField()
     empleado_apellido = serializers.SerializerMethodField()
+    empleados_rut = serializers.CharField(write_only=True, required=True)
+    empleados_rut_display = serializers.CharField(source='empleados_rut.rut', read_only=True)
     
     class Meta:
         model = Turno
-        fields = '__all__'
-        read_only_fields = ('fecha_creacion',)
+        fields = [
+            'id', 'empleados_rut', 'empleados_rut_display', 'empleado_nombre', 'empleado_apellido',
+            'nombre_turno', 'hora_entrada', 'hora_salida', 'tolerancia_minutos', 'horas_trabajo',
+            'descripcion', 'dias_semana', 'activo', 'fecha_creacion'
+        ]
+        read_only_fields = ('fecha_creacion', 'empleados_rut_display', 'empleado_nombre', 'empleado_apellido')
     
     def get_empleado_nombre(self, obj):
-        try:
-            empleado = Empleado.objects.get(rut=obj.empleados_rut)
-            return empleado.nombre
-        except Empleado.DoesNotExist:
-            return None
+        if obj.empleados_rut:
+            return obj.empleados_rut.nombre
+        return None
     
     def get_empleado_apellido(self, obj):
-        try:
-            empleado = Empleado.objects.get(rut=obj.empleados_rut)
-            return empleado.apellido
-        except Empleado.DoesNotExist:
-            return None
+        if obj.empleados_rut:
+            return obj.empleados_rut.apellido
+        return None
+    
+    def to_representation(self, instance):
+        """Personalizar la representación para mostrar el RUT como string"""
+        representation = super().to_representation(instance)
+        # Reemplazar el objeto empleados_rut con el RUT como string
+        if instance.empleados_rut:
+            representation['empleados_rut'] = instance.empleados_rut.rut
+        return representation
     
     def validate(self, data):
         # Validar que hora_salida sea posterior a hora_entrada
@@ -145,6 +191,15 @@ class TurnoSerializer(serializers.ModelSerializer):
         return data
     
     def create(self, validated_data):
+        # Extraer el RUT del validated_data
+        rut = validated_data.pop('empleados_rut')
+        # Buscar el empleado por RUT
+        try:
+            empleado = Empleado.objects.get(rut=rut)
+            validated_data['empleados_rut'] = empleado
+        except Empleado.DoesNotExist:
+            raise serializers.ValidationError({'empleados_rut': 'No existe un empleado con este RUT'})
+        
         # Calcular horas_trabajo si no se proporciona
         if 'horas_trabajo' not in validated_data or not validated_data.get('horas_trabajo'):
             if validated_data.get('hora_entrada') and validated_data.get('hora_salida'):
@@ -162,6 +217,15 @@ class TurnoSerializer(serializers.ModelSerializer):
         return super().create(validated_data)
     
     def update(self, instance, validated_data):
+        # Si se proporciona un nuevo RUT, buscar el empleado
+        if 'empleados_rut' in validated_data:
+            rut = validated_data.pop('empleados_rut')
+            try:
+                empleado = Empleado.objects.get(rut=rut)
+                validated_data['empleados_rut'] = empleado
+            except Empleado.DoesNotExist:
+                raise serializers.ValidationError({'empleados_rut': 'No existe un empleado con este RUT'})
+        
         # Recalcular horas_trabajo si se actualizan las horas
         if 'hora_entrada' in validated_data or 'hora_salida' in validated_data:
             hora_entrada = validated_data.get('hora_entrada', instance.hora_entrada)

@@ -489,9 +489,28 @@ export function EmpleadoFormPage() {
           
           // El backend devuelve: nombre, apellido, correo, celular
           // (Django mapea automáticamente desde nombres, apellidos, email, telefono)
+          // Limpiar el RUT de la BD y formatearlo correctamente
           const rutLimpio = limpiarRUT(data.rut);
-          // Si el RUT ya tiene DV, usarlo; si no, formatearlo completo
-          const rutFormateado = data.rut.includes('-') ? data.rut : formatearRUTCompleto(rutLimpio);
+          
+          // Si el RUT limpio tiene 9 caracteres (8 números + 1 DV), formatearlo correctamente
+          // Si tiene menos, calcular el DV
+          let rutFormateado;
+          if (rutLimpio.length >= 9) {
+            // RUT con DV: tomar los primeros 8 dígitos y el 9º como DV
+            const rutNumeros = rutLimpio.slice(0, 8);
+            const dv = rutLimpio.slice(8, 9).toUpperCase();
+            // Formatear solo los números con puntos y agregar el DV
+            rutFormateado = formatearRUT(rutNumeros) + '-' + dv;
+          } else if (rutLimpio.length >= 2) {
+            // RUT con menos de 9 caracteres: separar números del DV y formatear
+            const rutNumeros = rutLimpio.slice(0, -1);
+            const dv = rutLimpio.slice(-1).toUpperCase();
+            rutFormateado = formatearRUT(rutNumeros) + '-' + dv;
+          } else {
+            // RUT muy corto, calcular DV
+            rutFormateado = formatearRUTCompleto(rutLimpio);
+          }
+          
           setRutValue(rutFormateado);
           setValue("rut", rutFormateado);
           
@@ -581,12 +600,12 @@ export function EmpleadoFormPage() {
           {/* Nombre */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Nombre *
+              Nombres *
             </label>
             <input
               ref={nombreRef}
               type="text"
-              placeholder="Juan Carlos"
+              placeholder="Miguel Carlos"
               value={nombreValue}
               onChange={handleNombreChange}
               onKeyDown={(e) => handleFieldKeyDown(e, apellidoRef)}
@@ -607,7 +626,7 @@ export function EmpleadoFormPage() {
             <input
               ref={apellidoRef}
               type="text"
-              placeholder="Pérez González"
+              placeholder="Valdivia González"
               value={apellidoValue}
               onChange={handleApellidoChange}
               onKeyDown={(e) => handleFieldKeyDown(e, fechaNacimientoRef)}

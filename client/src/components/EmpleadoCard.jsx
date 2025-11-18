@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom";
+import { formatearRUTParaMostrar } from "../utils/rutUtils";
 
 export function EmpleadoCard({ empleado }) {
   const navigate = useNavigate();
@@ -73,7 +74,7 @@ export function EmpleadoCard({ empleado }) {
               <h3 className="text-lg font-semibold text-gray-900">
                 {empleado.nombre} {empleado.apellido}
               </h3>
-              <p className="text-sm text-gray-500">RUT: {empleado.rut}</p>
+              <p className="text-sm text-gray-500">RUT: {formatearRUTParaMostrar(empleado.rut)}</p>
             </div>
           </div>
           

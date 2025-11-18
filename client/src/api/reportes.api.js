@@ -161,7 +161,7 @@ export const generarReporteAsistencia = async (fechaInicio, fechaFin) => {
         empleado: `${emp.nombre} ${emp.apellido}`,
         rut: emp.rut,
         cargo: emp.cargo,
-        diasTrabajados: 0, // Se calcularía con datos reales
+        diasTrabajados: 0,
         horasTrabajadas: 0,
         ausencias: 0,
         tardanzas: 0,
