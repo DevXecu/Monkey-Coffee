@@ -10,7 +10,6 @@ import { InventarioPage } from "./pages/InventarioPage";
 import { InventarioFormPage } from "./pages/InventarioFormPage";
 import { TurnosPage } from "./pages/TurnosPage";
 import { TurnosFormPage } from "./pages/TurnosFormPage";
-import { AsistenciaPage } from "./pages/AsistenciaPage";
 import { ReportesPage } from "./pages/ReportesPage";
 import { ConfiguracionPage } from "./pages/ConfiguracionPage";
 import { Toaster } from "react-hot-toast";
@@ -43,7 +42,6 @@ function App() {
             <Route path="turnos" element={<TurnosPage />} />
             <Route path="turnos/:id" element={<TurnosFormPage />} />
             <Route path="turnos-create" element={<TurnosFormPage />} />
-            <Route path="asistencia" element={<AsistenciaPage />} />
             <Route path="inventario" element={<InventarioPage />} />
             <Route path="inventario/:id" element={<InventarioFormPage />} />
             <Route path="inventario-create" element={<InventarioFormPage />} />

@@ -94,26 +94,6 @@ export function ReportesPage() {
             prod.activo ? "Sí" : "No",
           ]);
           break;
-        case "asistencia":
-          headers = [
-            "Empleado",
-            "RUT",
-            "Cargo",
-            "Días Trabajados",
-            "Horas Trabajadas",
-            "Ausencias",
-            "Tardanzas",
-          ];
-          rows = reporte.datos.map((item) => [
-            item.empleado || "",
-            formatearRUTParaMostrar(item.rut) || "",
-            item.cargo || "",
-            item.diasTrabajados || 0,
-            item.horasTrabajadas || 0,
-            item.ausencias || 0,
-            item.tardanzas || 0,
-          ]);
-          break;
         default:
           toast.error("Tipo de reporte no válido para exportar");
           return;
@@ -189,7 +169,6 @@ export function ReportesPage() {
               onChange={(e) => setTipoReporte(e.target.value)}
               className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm rounded-md"
             >
-              <option>Asistencia</option>
               <option>Inventario</option>
               <option>Empleados</option>
             </select>
@@ -381,31 +360,6 @@ export function ReportesPage() {
                         </th>
                       </>
                     )}
-                    {reporte.tipo === "asistencia" && (
-                      <>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Empleado
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          RUT
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Cargo
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Días Trabajados
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Horas Trabajadas
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Ausencias
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Tardanzas
-                        </th>
-                      </>
-                    )}
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
@@ -495,31 +449,6 @@ export function ReportesPage() {
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                               {item.proveedor || "N/A"}
-                            </td>
-                          </>
-                        )}
-                        {reporte.tipo === "asistencia" && (
-                          <>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                              {item.empleado}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                              {formatearRUTParaMostrar(item.rut)}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                              {item.cargo}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                              {item.diasTrabajados}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                              {item.horasTrabajadas}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                              {item.ausencias}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                              {item.tardanzas}
                             </td>
                           </>
                         )}

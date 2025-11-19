@@ -144,42 +144,6 @@ export const generarReporteInventario = async (fechaInicio, fechaFin) => {
   }
 };
 
-// Función para generar reporte de asistencia (placeholder - se puede expandir)
-export const generarReporteAsistencia = async (fechaInicio, fechaFin) => {
-  try {
-    // Por ahora retornamos datos de ejemplo
-    // En el futuro esto se conectará con un endpoint de asistencia
-    const empleadosResponse = await getAllEmpleado();
-    const empleados = empleadosResponse.data.filter((e) => e.activo);
-
-    return {
-      tipo: "asistencia",
-      fechaGeneracion: new Date().toISOString(),
-      fechaInicio,
-      fechaFin,
-      datos: empleados.map((emp) => ({
-        empleado: `${emp.nombre} ${emp.apellido}`,
-        rut: emp.rut,
-        cargo: emp.cargo,
-        diasTrabajados: 0,
-        horasTrabajadas: 0,
-        ausencias: 0,
-        tardanzas: 0,
-      })),
-      estadisticas: {
-        totalEmpleados: empleados.length,
-        totalDiasTrabajados: 0,
-        totalHorasTrabajadas: 0,
-        totalAusencias: 0,
-        totalTardanzas: 0,
-      },
-    };
-  } catch (error) {
-    console.error("Error generando reporte de asistencia:", error);
-    throw error;
-  }
-};
-
 // Función principal para generar reportes
 export const generarReporte = async (tipoReporte, fechaInicio, fechaFin) => {
   switch (tipoReporte) {
@@ -187,8 +151,6 @@ export const generarReporte = async (tipoReporte, fechaInicio, fechaFin) => {
       return await generarReporteEmpleados(fechaInicio, fechaFin);
     case "Inventario":
       return await generarReporteInventario(fechaInicio, fechaFin);
-    case "Asistencia":
-      return await generarReporteAsistencia(fechaInicio, fechaFin);
     default:
       throw new Error(`Tipo de reporte no válido: ${tipoReporte}`);
   }
