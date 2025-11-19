@@ -12,6 +12,10 @@ import { TurnosPage } from "./pages/TurnosPage";
 import { TurnosFormPage } from "./pages/TurnosFormPage";
 import { AsistenciaPage } from "./pages/AsistenciaPage";
 import { AsistenciaFormPage } from "./pages/AsistenciaFormPage";
+import { SolicitudesPage } from "./pages/SolicitudesPage";
+import { SolicitudesFormPage } from "./pages/SolicitudesFormPage";
+import { TareasPage } from "./pages/TareasPage";
+import { TareasFormPage } from "./pages/TareasFormPage";
 import { ReportesPage } from "./pages/ReportesPage";
 import { ConfiguracionPage } from "./pages/ConfiguracionPage";
 import { Toaster } from "react-hot-toast";
@@ -50,6 +54,12 @@ function App() {
             <Route path="inventario" element={<InventarioPage />} />
             <Route path="inventario/:id" element={<InventarioFormPage />} />
             <Route path="inventario-create" element={<InventarioFormPage />} />
+            <Route path="solicitudes" element={<SolicitudesPage />} />
+            <Route path="solicitudes/:id" element={<SolicitudesFormPage />} />
+            <Route path="solicitudes-create" element={<SolicitudesFormPage />} />
+            <Route path="tareas" element={<TareasPage />} />
+            <Route path="tareas/:id" element={<TareasFormPage />} />
+            <Route path="tareas-create" element={<TareasFormPage />} />
             <Route path="reportes" element={<ReportesPage />} />
             <Route path="configuracion" element={<ConfiguracionPage />} />
           </Route>

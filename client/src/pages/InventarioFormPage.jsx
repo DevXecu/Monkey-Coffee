@@ -50,18 +50,30 @@ export function InventarioFormPage() {
 
   const onSubmit = handleSubmit(async (data) => {
     try {
+      // Formatear fechas correctamente
+      let fecha_vencimiento = null;
+      if (data.fecha_vencimiento) {
+        fecha_vencimiento = data.fecha_vencimiento;
+      }
+
+      let fecha_ultimo_ingreso = null;
+      if (data.fecha_ultimo_ingreso) {
+        // Convertir datetime-local a formato ISO para el backend
+        fecha_ultimo_ingreso = new Date(data.fecha_ultimo_ingreso).toISOString();
+      }
+
       // Convertir campos numéricos a enteros
       const formData = {
         ...data,
         cantidad_actual: Math.round(parseFloat(data.cantidad_actual) || 0),
-        cantidad_minima: Math.round(parseFloat(data.cantidad_minima)),
-        cantidad_maxima: data.cantidad_maxima ? Math.round(parseFloat(data.cantidad_maxima)) : null,
-        precio_unitario: data.precio_unitario ? Math.round(parseFloat(data.precio_unitario)) : null,
-        precio_venta: data.precio_venta ? Math.round(parseFloat(data.precio_venta)) : null,
+        cantidad_minima: Math.round(parseFloat(data.cantidad_minima) || 0),
+        cantidad_maxima: (data.cantidad_maxima && data.cantidad_maxima !== "") ? Math.round(parseFloat(data.cantidad_maxima)) : null,
+        precio_unitario: (data.precio_unitario && data.precio_unitario !== "") ? Math.round(parseFloat(data.precio_unitario)) : null,
+        precio_venta: (data.precio_venta && data.precio_venta !== "") ? Math.round(parseFloat(data.precio_venta)) : null,
         requiere_alerta: data.requiere_alerta || false,
-        activo: data.activo !== false,
-        fecha_vencimiento: data.fecha_vencimiento || null,
-        fecha_ultimo_ingreso: data.fecha_ultimo_ingreso || null,
+        activo: data.activo !== undefined ? data.activo : true,
+        fecha_vencimiento: fecha_vencimiento || null,
+        fecha_ultimo_ingreso: fecha_ultimo_ingreso || null,
       };
 
       if (params.id) {
@@ -80,8 +92,34 @@ export function InventarioFormPage() {
       navigate("/inventario");
     } catch (error) {
       console.error("Error saving inventario:", error);
-      toast.error("Error al guardar producto", {
+      let errorMessage = "Error al guardar producto";
+      
+      // Intentar extraer mensaje de error más específico
+      if (error.message) {
+        try {
+          const errorData = JSON.parse(error.message);
+          if (errorData.detail) {
+            errorMessage = errorData.detail;
+          } else if (typeof errorData === 'object') {
+            // Si hay múltiples errores de validación
+            const errorMessages = Object.values(errorData).flat();
+            if (errorMessages.length > 0) {
+              errorMessage = errorMessages.join(", ");
+            }
+          }
+        } catch (e) {
+          // Si no se puede parsear, usar el mensaje original
+          if (error.message.includes("HTTP error")) {
+            errorMessage = "Error de conexión con el servidor";
+          } else {
+            errorMessage = error.message;
+          }
+        }
+      }
+      
+      toast.error(errorMessage, {
         position: "bottom-right",
+        duration: 5000,
       });
     }
   });
@@ -107,42 +145,68 @@ export function InventarioFormPage() {
           setValue("ubicacion", data.ubicacion || "");
           setValue("proveedor", data.proveedor || "");
           setValue("contacto_proveedor", data.contacto_proveedor || "");
-          setValue("fecha_ultimo_ingreso", data.fecha_ultimo_ingreso ? data.fecha_ultimo_ingreso.split('T')[0] : "");
-          setValue("fecha_vencimiento", data.fecha_vencimiento || "");
+          
+          // Formatear fecha_ultimo_ingreso para datetime-local
+          if (data.fecha_ultimo_ingreso) {
+            const fechaIngreso = new Date(data.fecha_ultimo_ingreso);
+            // Formato: YYYY-MM-DDTHH:mm (datetime-local requiere este formato)
+            const fechaFormateada = fechaIngreso.toISOString().slice(0, 16);
+            setValue("fecha_ultimo_ingreso", fechaFormateada);
+          } else {
+            setValue("fecha_ultimo_ingreso", "");
+          }
+          
+          // Formatear fecha_vencimiento para date input
+          if (data.fecha_vencimiento) {
+            const fechaVencimiento = new Date(data.fecha_vencimiento);
+            // Formato: YYYY-MM-DD (date input requiere este formato)
+            const fechaFormateada = fechaVencimiento.toISOString().split('T')[0];
+            setValue("fecha_vencimiento", fechaFormateada);
+          } else {
+            setValue("fecha_vencimiento", "");
+          }
+          
           setValue("lote", data.lote || "");
           setValue("estado", data.estado);
-          setValue("requiere_alerta", data.requiere_alerta);
+          setValue("requiere_alerta", data.requiere_alerta || false);
           setValue("imagen_producto", data.imagen_producto || "");
           setValue("notas", data.notas || "");
-          setValue("activo", data.activo);
+          setValue("activo", data.activo !== undefined ? data.activo : true);
         } catch (error) {
           console.error("Error loading inventario:", error);
           toast.error("Error al cargar producto", {
             position: "bottom-right",
           });
         }
+      } else {
+        // Inicializar valores por defecto para nuevo producto
+        setValue("cantidad_actual", 0);
+        setValue("requiere_alerta", false);
+        setValue("activo", true);
+        setValue("estado", "disponible");
       }
     }
     loadInventario();
   }, [params.id, setValue]);
 
   return (
-    <div className="max-w-4xl mx-auto">
-      {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">
-          {params.id ? 'Editar Producto' : 'Nuevo Producto'}
-        </h1>
-        <p className="text-gray-600">
-          {params.id ? 'Modifica la información del producto' : 'Agrega un nuevo producto al inventario'}
-        </p>
-      </div>
+    <div className="min-h-screen bg-gray-50 py-8">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Header Simplificado */}
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-gray-900">
+            {params.id ? 'Editar Producto' : 'Nuevo Producto'}
+          </h1>
+          <p className="text-gray-600 mt-1 text-sm">
+            {params.id ? 'Modifica la información del producto' : 'Agrega un nuevo producto al inventario'}
+          </p>
+        </div>
 
-      <form onSubmit={onSubmit} className="bg-white shadow-sm border border-gray-200 rounded-lg p-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <form onSubmit={onSubmit} className="bg-white rounded-lg border border-gray-200 p-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Información Básica */}
           <div className="md:col-span-2">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Información Básica</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-4 pb-2 border-b border-gray-200">Información Básica</h3>
           </div>
 
           {/* Código Producto */}
@@ -154,13 +218,18 @@ export function InventarioFormPage() {
               type="text"
               placeholder="PROD-001"
               {...register("codigo_producto", { required: "El código del producto es requerido" })}
-              className={`block w-full px-3 py-2 border rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500 ${
-                errors.codigo_producto ? 'border-red-300' : 'border-gray-300'
+              className={`block w-full px-3 py-2 border rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
+                errors.codigo_producto ? 'border-red-300 bg-red-50' : 'border-gray-300'
               }`}
               autoFocus
             />
             {errors.codigo_producto && (
-              <p className="mt-1 text-sm text-red-600">{errors.codigo_producto.message}</p>
+              <p className="mt-2 text-sm text-red-600 flex items-center gap-1">
+                <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+                {errors.codigo_producto.message}
+              </p>
             )}
           </div>
 
@@ -173,8 +242,8 @@ export function InventarioFormPage() {
               type="text"
               placeholder="Café Americano"
               {...register("nombre_producto", { required: "El nombre del producto es requerido" })}
-              className={`block w-full px-3 py-2 border rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500 ${
-                errors.nombre_producto ? 'border-red-300' : 'border-gray-300'
+              className={`block w-full px-3 py-2 border rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
+                errors.nombre_producto ? 'border-red-300 bg-red-50' : 'border-gray-300'
               }`}
             />
             {errors.nombre_producto && (
@@ -189,8 +258,8 @@ export function InventarioFormPage() {
             </label>
             <select
               {...register("categoria", { required: "La categoría es requerida" })}
-              className={`block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 ${
-                errors.categoria ? 'border-red-300' : 'border-gray-300'
+              className={`block w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
+                errors.categoria ? 'border-red-300 bg-red-50' : 'border-gray-300'
               }`}
             >
               <option value="">Seleccione una categoría</option>
@@ -212,8 +281,8 @@ export function InventarioFormPage() {
             </label>
             <select
               {...register("estado", { required: "El estado es requerido" })}
-              className={`block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 ${
-                errors.estado ? 'border-red-300' : 'border-gray-300'
+              className={`block w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
+                errors.estado ? 'border-red-300 bg-red-50' : 'border-gray-300'
               }`}
             >
               <option value="">Seleccione un estado</option>
@@ -237,13 +306,13 @@ export function InventarioFormPage() {
               rows={3}
               placeholder="Descripción del producto..."
               {...register("descripcion")}
-              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+              className="block w-full px-3 py-2 border border-gray-300 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
             />
           </div>
 
           {/* Stock y Medidas */}
-          <div className="md:col-span-2">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Stock y Medidas</h3>
+          <div className="md:col-span-2 pt-6 mt-6 border-t border-gray-200">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4 pb-2 border-b border-gray-200">Stock y Medidas</h3>
           </div>
 
           {/* Cantidad Actual */}
@@ -259,8 +328,8 @@ export function InventarioFormPage() {
                 required: "La cantidad actual es requerida",
                 min: { value: 0, message: "La cantidad debe ser mayor o igual a 0" }
               })}
-              className={`block w-full px-3 py-2 border rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500 ${
-                errors.cantidad_actual ? 'border-red-300' : 'border-gray-300'
+              className={`block w-full px-3 py-2 border rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
+                errors.cantidad_actual ? 'border-red-300 bg-red-50' : 'border-gray-300'
               }`}
             />
             {errors.cantidad_actual && (
@@ -275,8 +344,8 @@ export function InventarioFormPage() {
             </label>
             <select
               {...register("unidad_medida", { required: "La unidad de medida es requerida" })}
-              className={`block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 ${
-                errors.unidad_medida ? 'border-red-300' : 'border-gray-300'
+              className={`block w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
+                errors.unidad_medida ? 'border-red-300 bg-red-50' : 'border-gray-300'
               }`}
             >
               <option value="">Seleccione una unidad</option>
@@ -304,8 +373,8 @@ export function InventarioFormPage() {
                 required: "La cantidad mínima es requerida",
                 min: { value: 0, message: "La cantidad debe ser mayor o igual a 0" }
               })}
-              className={`block w-full px-3 py-2 border rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500 ${
-                errors.cantidad_minima ? 'border-red-300' : 'border-gray-300'
+              className={`block w-full px-3 py-2 border rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
+                errors.cantidad_minima ? 'border-red-300 bg-red-50' : 'border-gray-300'
               }`}
             />
             {errors.cantidad_minima && (
@@ -325,7 +394,7 @@ export function InventarioFormPage() {
               {...register("cantidad_maxima", {
                 min: { value: 0, message: "La cantidad debe ser mayor o igual a 0" }
               })}
-              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+              className="block w-full px-3 py-2 border border-gray-300 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
             />
             {errors.cantidad_maxima && (
               <p className="mt-1 text-sm text-red-600">{errors.cantidad_maxima.message}</p>
@@ -333,8 +402,8 @@ export function InventarioFormPage() {
           </div>
 
           {/* Precios */}
-          <div className="md:col-span-2">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Precios</h3>
+          <div className="md:col-span-2 pt-6 mt-6 border-t border-gray-200">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4 pb-2 border-b border-gray-200">Precios</h3>
           </div>
 
           {/* Precio Unitario */}
@@ -349,7 +418,7 @@ export function InventarioFormPage() {
               {...register("precio_unitario", {
                 min: { value: 0, message: "El precio debe ser mayor o igual a 0" }
               })}
-              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+              className="block w-full px-3 py-2 border border-gray-300 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
             />
             {errors.precio_unitario && (
               <p className="mt-1 text-sm text-red-600">{errors.precio_unitario.message}</p>
@@ -368,7 +437,7 @@ export function InventarioFormPage() {
               {...register("precio_venta", {
                 min: { value: 0, message: "El precio debe ser mayor o igual a 0" }
               })}
-              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+              className="block w-full px-3 py-2 border border-gray-300 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
             />
             {errors.precio_venta && (
               <p className="mt-1 text-sm text-red-600">{errors.precio_venta.message}</p>
@@ -376,8 +445,8 @@ export function InventarioFormPage() {
           </div>
 
           {/* Códigos y Ubicación */}
-          <div className="md:col-span-2">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Códigos y Ubicación</h3>
+          <div className="md:col-span-2 pt-6 mt-6 border-t border-gray-200">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4 pb-2 border-b border-gray-200">Códigos y Ubicación</h3>
           </div>
 
           {/* Código QR */}
@@ -389,7 +458,7 @@ export function InventarioFormPage() {
               type="text"
               placeholder="QR-123456"
               {...register("codigo_qr")}
-              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+              className="block w-full px-3 py-2 border border-gray-300 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
             />
           </div>
 
@@ -402,7 +471,7 @@ export function InventarioFormPage() {
               type="text"
               placeholder="1234567890123"
               {...register("codigo_barra")}
-              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+              className="block w-full px-3 py-2 border border-gray-300 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
             />
           </div>
 
@@ -415,7 +484,7 @@ export function InventarioFormPage() {
               type="text"
               placeholder="Estante A-1"
               {...register("ubicacion")}
-              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+              className="block w-full px-3 py-2 border border-gray-300 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
             />
           </div>
 
@@ -428,13 +497,13 @@ export function InventarioFormPage() {
               type="url"
               placeholder="https://ejemplo.com/imagen.jpg"
               {...register("imagen_producto")}
-              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+              className="block w-full px-3 py-2 border border-gray-300 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
             />
           </div>
 
           {/* Proveedor */}
-          <div className="md:col-span-2">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Proveedor</h3>
+          <div className="md:col-span-2 pt-6 mt-6 border-t border-gray-200">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4 pb-2 border-b border-gray-200">Proveedor</h3>
           </div>
 
           {/* Proveedor */}
@@ -446,7 +515,7 @@ export function InventarioFormPage() {
               type="text"
               placeholder="Café del Sur S.A."
               {...register("proveedor")}
-              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+              className="block w-full px-3 py-2 border border-gray-300 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
             />
           </div>
 
@@ -459,13 +528,13 @@ export function InventarioFormPage() {
               type="text"
               placeholder="+56 9 1234 5678"
               {...register("contacto_proveedor")}
-              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+              className="block w-full px-3 py-2 border border-gray-300 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
             />
           </div>
 
           {/* Fechas */}
-          <div className="md:col-span-2">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Fechas</h3>
+          <div className="md:col-span-2 pt-6 mt-6 border-t border-gray-200">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4 pb-2 border-b border-gray-200">Fechas</h3>
           </div>
 
           {/* Fecha Último Ingreso */}
@@ -476,7 +545,7 @@ export function InventarioFormPage() {
             <input
               type="datetime-local"
               {...register("fecha_ultimo_ingreso")}
-              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+              className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
             />
           </div>
 
@@ -488,7 +557,7 @@ export function InventarioFormPage() {
             <input
               type="date"
               {...register("fecha_vencimiento")}
-              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+              className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
             />
           </div>
 
@@ -501,7 +570,7 @@ export function InventarioFormPage() {
               type="text"
               placeholder="LOTE-2024-001"
               {...register("lote")}
-              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+              className="block w-full px-3 py-2 border border-gray-300 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
             />
           </div>
 
@@ -514,13 +583,13 @@ export function InventarioFormPage() {
               rows={3}
               placeholder="Notas adicionales sobre el producto..."
               {...register("notas")}
-              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+              className="block w-full px-3 py-2 border border-gray-300 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
             />
           </div>
 
           {/* Opciones */}
-          <div className="md:col-span-2">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Opciones</h3>
+          <div className="md:col-span-2 pt-6 mt-6 border-t border-gray-200">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4 pb-2 border-b border-gray-200">Opciones</h3>
           </div>
 
           {/* Requiere Alerta */}
@@ -550,19 +619,17 @@ export function InventarioFormPage() {
               </label>
             </div>
           </div>
-        </div>
+          </div>
 
-        {/* Buttons */}
-        <div className="mt-6 flex items-center justify-between">
-          <button
-            type="button"
-            onClick={() => navigate("/inventario")}
-            className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
-          >
-            Cancelar
-          </button>
-          
-          <div className="flex space-x-3">
+          {/* Botones */}
+          <div className="mt-8 pt-6 border-t border-gray-200 flex flex-col sm:flex-row items-center justify-end gap-3">
+            <button
+              type="button"
+              onClick={() => navigate("/inventario")}
+              className="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+            >
+              Cancelar
+            </button>
             {params.id && (
               <button
                 type="button"
@@ -585,21 +652,20 @@ export function InventarioFormPage() {
                     }
                   }
                 }}
-                className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                className="w-full sm:w-auto px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
               >
                 Eliminar
               </button>
             )}
-            
             <button
               type="submit"
-              className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-500 hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+              className="w-full sm:w-auto px-6 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
             >
               {params.id ? 'Actualizar' : 'Crear'} Producto
             </button>
           </div>
-        </div>
-      </form>
+        </form>
+      </div>
     </div>
   );
 }

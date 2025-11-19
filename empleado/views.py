@@ -1,10 +1,16 @@
-from rest_framework import viewsets, status
+from rest_framework import viewsets, status, filters
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, permission_classes, action
 from rest_framework.permissions import AllowAny
-from .serializer import EmpleadoSerializer, AsistenciaSerializer, TurnoSerializer
-from .models import Empleado, Asistencia, Turno
+from django_filters.rest_framework import DjangoFilterBackend
+from django.db.models import Q, Count, Sum
+from .serializer import (
+    EmpleadoSerializer, AsistenciaSerializer, TurnoSerializer,
+    SolicitudesSerializer, SolicitudesListSerializer, TiposSolicitudesSerializer,
+    TareasSerializer, TareasListSerializer
+)
+from .models import Empleado, Asistencia, Turno, Solicitudes, TiposSolicitudes, Tareas
 from django.db import connection, transaction
 from django.utils import timezone
 from datetime import date, datetime, timedelta
@@ -504,6 +510,142 @@ class TurnoView(viewsets.ModelViewSet):
             )
         except Exception as e:
             print("Error al desactivar turno:", str(e))
+            print("Traceback:", traceback.format_exc())
+            return Response(
+                {"error": str(e), "detail": traceback.format_exc()},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
+class SolicitudesViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet para gestionar las solicitudes
+    """
+    queryset = Solicitudes.objects.all()
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ['estado', 'tipo_solicitud_id', 'empleado_id']
+    search_fields = ['motivo', 'empleado_id__nombre', 'empleado_id__apellido']
+    ordering_fields = ['fecha_creacion', 'fecha_inicio', 'fecha_fin']
+    ordering = ['-fecha_creacion']
+
+    def get_serializer_class(self):
+        """Retornar el serializer apropiado según la acción"""
+        if self.action == 'list':
+            return SolicitudesListSerializer
+        return SolicitudesSerializer
+
+    @action(detail=True, methods=['post'])
+    def aprobar(self, request, pk=None):
+        """Aprobar una solicitud"""
+        solicitud = self.get_object()
+        comentario = request.data.get('comentario_aprobacion', '')
+        
+        solicitud.estado = 'aprobada'
+        solicitud.aprobado_por_id = request.data.get('aprobado_por')
+        solicitud.fecha_aprobacion = timezone.now()
+        solicitud.comentario_aprobacion = comentario
+        solicitud.save()
+        
+        serializer = self.get_serializer(solicitud)
+        return Response(serializer.data)
+
+    @action(detail=True, methods=['post'])
+    def rechazar(self, request, pk=None):
+        """Rechazar una solicitud"""
+        solicitud = self.get_object()
+        comentario = request.data.get('comentario_aprobacion', '')
+        
+        solicitud.estado = 'rechazada'
+        solicitud.aprobado_por_id = request.data.get('aprobado_por')
+        solicitud.fecha_aprobacion = timezone.now()
+        solicitud.comentario_aprobacion = comentario
+        solicitud.save()
+        
+        serializer = self.get_serializer(solicitud)
+        return Response(serializer.data)
+
+
+class TiposSolicitudesViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet para gestionar los tipos de solicitudes
+    """
+    queryset = TiposSolicitudes.objects.filter(activo=True)
+    serializer_class = TiposSolicitudesSerializer
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
+    filterset_fields = ['activo', 'requiere_aprobacion']
+    search_fields = ['nombre', 'descripcion']
+
+
+class TareasViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet para gestionar las tareas
+    """
+    queryset = Tareas.objects.filter(activo=True)
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ['estado', 'prioridad', 'tipo_tarea', 'asignada_a_rut', 'creada_por_rut']
+    search_fields = ['titulo', 'descripcion', 'asignada_a_rut__nombre', 'asignada_a_rut__apellido']
+    ordering_fields = ['fecha_creacion', 'fecha_vencimiento', 'prioridad']
+    ordering = ['-fecha_creacion']
+
+    def get_serializer_class(self):
+        """Retornar el serializer apropiado según la acción"""
+        if self.action == 'list':
+            return TareasListSerializer
+        return TareasSerializer
+
+    @action(detail=True, methods=['post'])
+    def completar(self, request, pk=None):
+        """Marcar una tarea como completada"""
+        tarea = self.get_object()
+        porcentaje = request.data.get('porcentaje_completado', 100)
+        
+        tarea.estado = 'completada'
+        tarea.porcentaje_completado = porcentaje
+        tarea.fecha_completada = timezone.now()
+        tarea.save()
+        
+        serializer = self.get_serializer(tarea)
+        return Response(serializer.data)
+
+    @action(detail=True, methods=['post'])
+    def actualizar_progreso(self, request, pk=None):
+        """Actualizar el progreso de una tarea"""
+        tarea = self.get_object()
+        porcentaje = request.data.get('porcentaje_completado', tarea.porcentaje_completado)
+        
+        if porcentaje < 0 or porcentaje > 100:
+            return Response(
+                {'error': 'El porcentaje debe estar entre 0 y 100'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        tarea.porcentaje_completado = porcentaje
+        
+        # Actualizar estado según el progreso
+        if porcentaje == 100:
+            tarea.estado = 'completada'
+            tarea.fecha_completada = timezone.now()
+        elif porcentaje > 0 and tarea.estado == 'pendiente':
+            tarea.estado = 'en_proceso'
+        
+        tarea.save()
+        
+        serializer = self.get_serializer(tarea)
+        return Response(serializer.data)
+
+    def destroy(self, request, *args, **kwargs):
+        """Soft delete: En lugar de eliminar físicamente, cambiar activo a False"""
+        try:
+            instance = self.get_object()
+            instance.activo = False
+            instance.save()
+            
+            return Response(
+                {"message": "Tarea desactivada correctamente"},
+                status=status.HTTP_200_OK
+            )
+        except Exception as e:
+            print("Error al desactivar tarea:", str(e))
             print("Traceback:", traceback.format_exc())
             return Response(
                 {"error": str(e), "detail": traceback.format_exc()},

@@ -120,10 +120,14 @@ class InventarioSerializer(serializers.ModelSerializer):
         return value
 
     def validate_fecha_vencimiento(self, value):
-        """Validar que la fecha de vencimiento no sea en el pasado"""
-        from django.utils import timezone
-        if value and value < timezone.now().date():
-            raise serializers.ValidationError("La fecha de vencimiento no puede ser en el pasado.")
+        """Validar que la fecha de vencimiento no sea en el pasado (solo para nuevos productos)"""
+        # Permitir fechas pasadas si se está actualizando un producto existente
+        # Esto permite editar productos que ya tienen fechas de vencimiento pasadas
+        if self.instance is None and value:
+            # Solo validar para productos nuevos
+            from django.utils import timezone
+            if value < timezone.now().date():
+                raise serializers.ValidationError("La fecha de vencimiento no puede ser en el pasado.")
         return value
 
 
@@ -213,3 +217,5 @@ class InventarioStatsSerializer(serializers.Serializer):
     stock_bajo = serializers.IntegerField()
     valor_total_inventario = serializers.IntegerField()
     categorias_distribucion = serializers.DictField()
+
+

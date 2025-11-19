@@ -324,18 +324,25 @@ export function AsistenciaFormPage() {
   }, [params.id, setValue]);
 
   return (
-    <div className="max-w-2xl mx-auto">
+    <div className="max-w-4xl mx-auto">
       {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">
-          {params.id ? 'Editar Asistencia' : 'Nueva Asistencia'}
-        </h1>
-        <p className="text-gray-600">
-          {params.id ? 'Modifica la información de la asistencia' : 'Registra una nueva asistencia'}
+      <div className="mb-8">
+        <div className="flex items-center gap-3 mb-2">
+          <div className="p-2 bg-primary-100 rounded-lg">
+            <svg className="h-6 w-6 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <h1 className="text-3xl font-bold text-gray-900">
+            {params.id ? 'Editar Asistencia' : 'Nueva Asistencia'}
+          </h1>
+        </div>
+        <p className="text-gray-600 ml-11">
+          {params.id ? 'Modifica la información de la asistencia' : 'Registra una nueva asistencia de empleado'}
         </p>
       </div>
 
-      <form onSubmit={onSubmit} className="bg-white shadow-sm border border-gray-200 rounded-lg p-6">
+      <form onSubmit={onSubmit} className="bg-white shadow-lg border border-gray-200 rounded-xl p-8">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Empleado */}
           <div className="md:col-span-2">
@@ -414,8 +421,13 @@ export function AsistenciaFormPage() {
           </div>
 
           {/* Separador - Horarios */}
-          <div className="md:col-span-2 pt-4 border-t border-gray-200">
-            <h3 className="text-lg font-medium text-gray-900">Horarios</h3>
+          <div className="md:col-span-2 pt-6 border-t border-gray-200">
+            <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+              <svg className="h-5 w-5 text-primary-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              Horarios
+            </h3>
           </div>
 
           {/* Hora de Entrada */}
@@ -457,8 +469,13 @@ export function AsistenciaFormPage() {
           </div>
 
           {/* Separador - Tipo de Registro */}
-          <div className="md:col-span-2 pt-4 border-t border-gray-200">
-            <h3 className="text-lg font-medium text-gray-900">Tipo de Registro</h3>
+          <div className="md:col-span-2 pt-6 border-t border-gray-200">
+            <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+              <svg className="h-5 w-5 text-primary-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+              </svg>
+              Tipo de Registro
+            </h3>
           </div>
 
           {/* Tipo de Entrada */}
@@ -496,8 +513,13 @@ export function AsistenciaFormPage() {
           </div>
 
           {/* Separador - Tiempos */}
-          <div className="md:col-span-2 pt-4 border-t border-gray-200">
-            <h3 className="text-lg font-medium text-gray-900">Tiempos</h3>
+          <div className="md:col-span-2 pt-6 border-t border-gray-200">
+            <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+              <svg className="h-5 w-5 text-primary-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+              Tiempos
+            </h3>
           </div>
 
           {/* Minutos Tarde */}
@@ -533,8 +555,14 @@ export function AsistenciaFormPage() {
           </div>
 
           {/* Separador - Ubicación */}
-          <div className="md:col-span-2 pt-4 border-t border-gray-200">
-            <h3 className="text-lg font-medium text-gray-900">Ubicación</h3>
+          <div className="md:col-span-2 pt-6 border-t border-gray-200">
+            <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+              <svg className="h-5 w-5 text-primary-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+              Ubicación
+            </h3>
           </div>
 
           {/* Ubicación Entrada */}
@@ -568,8 +596,13 @@ export function AsistenciaFormPage() {
           </div>
 
           {/* Separador - Información de Red */}
-          <div className="md:col-span-2 pt-4 border-t border-gray-200">
-            <h3 className="text-lg font-medium text-gray-900">Información de Red</h3>
+          <div className="md:col-span-2 pt-6 border-t border-gray-200">
+            <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+              <svg className="h-5 w-5 text-primary-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
+              </svg>
+              Información de Red
+            </h3>
           </div>
 
           {/* IP Entrada */}
@@ -625,12 +658,15 @@ export function AsistenciaFormPage() {
         </div>
 
         {/* Buttons */}
-        <div className="mt-6 flex items-center justify-between">
+        <div className="mt-8 pt-6 border-t border-gray-200 flex items-center justify-between">
           <button
             type="button"
             onClick={() => navigate("/asistencia")}
-            className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+            className="px-6 py-2.5 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-all duration-200 flex items-center gap-2"
           >
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
             Cancelar
           </button>
           
@@ -666,8 +702,11 @@ export function AsistenciaFormPage() {
                     }
                   }
                 }}
-                className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                className="px-6 py-2.5 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all duration-200 flex items-center gap-2"
               >
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
                 Eliminar
               </button>
             )}
@@ -675,8 +714,11 @@ export function AsistenciaFormPage() {
             <button
               ref={submitButtonRef}
               type="submit"
-              className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-500 hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+              className="px-6 py-2.5 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-primary-500 hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-all duration-200 flex items-center gap-2"
             >
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
               {params.id ? 'Actualizar' : 'Crear'} Asistencia
             </button>
           </div>

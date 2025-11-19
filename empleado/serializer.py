@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Empleado, Asistencia, Turno
+from .models import Empleado, Asistencia, Turno, Solicitudes, TiposSolicitudes, Tareas
 from datetime import date, datetime, time
 from argon2 import PasswordHasher
 
@@ -261,4 +261,203 @@ class TurnoSerializer(serializers.ModelSerializer):
                 validated_data['horas_trabajo'] = round(horas, 2)
         
         return super().update(instance, validated_data)
+
+
+class TiposSolicitudesSerializer(serializers.ModelSerializer):
+    """Serializer para tipos de solicitudes"""
+    
+    class Meta:
+        model = TiposSolicitudes
+        fields = '__all__'
+        read_only_fields = ['id', 'fecha_creacion']
+
+
+class SolicitudesSerializer(serializers.ModelSerializer):
+    """Serializer para solicitudes"""
+    empleado_nombre = serializers.SerializerMethodField()
+    empleado_apellido = serializers.SerializerMethodField()
+    empleado_rut_display = serializers.SerializerMethodField()
+    tipo_solicitud_nombre = serializers.CharField(source='tipo_solicitud_id.nombre', read_only=True)
+    requiere_aprobacion = serializers.SerializerMethodField()
+    aprobado_por_nombre = serializers.SerializerMethodField()
+    aprobado_por_apellido = serializers.SerializerMethodField()
+    estado_display = serializers.CharField(source='get_estado_display', read_only=True)
+    
+    def get_empleado_nombre(self, obj):
+        if obj.empleado_id:
+            return obj.empleado_id.nombre
+        return None
+    
+    def get_empleado_apellido(self, obj):
+        if obj.empleado_id:
+            return obj.empleado_id.apellido
+        return None
+    
+    def get_empleado_rut_display(self, obj):
+        if obj.empleado_id:
+            return obj.empleado_id.rut
+        return obj.empleado_rut
+    
+    def get_requiere_aprobacion(self, obj):
+        if obj.tipo_solicitud_id:
+            return obj.tipo_solicitud_id.requiere_aprobacion
+        return True
+    
+    def get_aprobado_por_nombre(self, obj):
+        if obj.aprobado_por:
+            return obj.aprobado_por.nombre
+        return None
+    
+    def get_aprobado_por_apellido(self, obj):
+        if obj.aprobado_por:
+            return obj.aprobado_por.apellido
+        return None
+    
+    class Meta:
+        model = Solicitudes
+        fields = [
+            'id', 'empleado_rut', 'empleado_id', 'empleado_nombre', 'empleado_apellido',
+            'empleado_rut_display', 'tipo_solicitud_id', 'tipo_solicitud_nombre',
+            'fecha_inicio', 'fecha_fin', 'motivo', 'estado', 'estado_display',
+            'aprobado_por', 'aprobado_por_nombre', 'aprobado_por_apellido',
+            'fecha_aprobacion', 'comentario_aprobacion', 'documento_adjunto',
+            'requiere_aprobacion', 'fecha_creacion', 'fecha_actualizacion'
+        ]
+        read_only_fields = ['id', 'fecha_creacion', 'fecha_actualizacion']
+    
+    def validate_fecha_fin(self, value):
+        """Validar que fecha_fin sea posterior a fecha_inicio"""
+        fecha_inicio = self.initial_data.get('fecha_inicio')
+        if fecha_inicio and value:
+            if value < fecha_inicio:
+                raise serializers.ValidationError("La fecha de fin debe ser posterior a la fecha de inicio.")
+        return value
+
+
+class SolicitudesListSerializer(serializers.ModelSerializer):
+    """Serializer simplificado para listar solicitudes"""
+    empleado_nombre = serializers.SerializerMethodField()
+    empleado_apellido = serializers.SerializerMethodField()
+    tipo_solicitud_nombre = serializers.CharField(source='tipo_solicitud_id.nombre', read_only=True)
+    requiere_aprobacion = serializers.SerializerMethodField()
+    estado_display = serializers.CharField(source='get_estado_display', read_only=True)
+    
+    def get_empleado_nombre(self, obj):
+        if obj.empleado_id:
+            return obj.empleado_id.nombre
+        return None
+    
+    def get_empleado_apellido(self, obj):
+        if obj.empleado_id:
+            return obj.empleado_id.apellido
+        return None
+    
+    def get_requiere_aprobacion(self, obj):
+        if obj.tipo_solicitud_id:
+            return obj.tipo_solicitud_id.requiere_aprobacion
+        return True
+    
+    class Meta:
+        model = Solicitudes
+        fields = [
+            'id', 'empleado_id', 'empleado_nombre', 'empleado_apellido',
+            'tipo_solicitud_id', 'tipo_solicitud_nombre', 'fecha_inicio',
+            'fecha_fin', 'motivo', 'estado', 'estado_display',
+            'requiere_aprobacion', 'fecha_creacion'
+        ]
+
+
+class TareasSerializer(serializers.ModelSerializer):
+    """Serializer para tareas"""
+    asignada_a_nombre = serializers.SerializerMethodField()
+    asignada_a_apellido = serializers.SerializerMethodField()
+    creada_por_nombre = serializers.SerializerMethodField()
+    creada_por_apellido = serializers.SerializerMethodField()
+    tipo_tarea_display = serializers.CharField(source='get_tipo_tarea_display', read_only=True)
+    prioridad_display = serializers.CharField(source='get_prioridad_display', read_only=True)
+    estado_display = serializers.CharField(source='get_estado_display', read_only=True)
+    
+    def get_asignada_a_nombre(self, obj):
+        if obj.asignada_a_rut:
+            return obj.asignada_a_rut.nombre
+        return None
+    
+    def get_asignada_a_apellido(self, obj):
+        if obj.asignada_a_rut:
+            return obj.asignada_a_rut.apellido
+        return None
+    
+    def get_creada_por_nombre(self, obj):
+        if obj.creada_por_rut:
+            return obj.creada_por_rut.nombre
+        return None
+    
+    def get_creada_por_apellido(self, obj):
+        if obj.creada_por_rut:
+            return obj.creada_por_rut.apellido
+        return None
+    
+    class Meta:
+        model = Tareas
+        fields = [
+            'id', 'titulo', 'descripcion', 'tipo_tarea', 'tipo_tarea_display',
+            'prioridad', 'prioridad_display', 'estado', 'estado_display',
+            'asignada_a_rut', 'asignada_a_nombre', 'asignada_a_apellido',
+            'creada_por_rut', 'creada_por_nombre', 'creada_por_apellido',
+            'fecha_inicio', 'fecha_vencimiento', 'fecha_completada',
+            'es_recurrente', 'frecuencia_recurrencia', 'dias_recurrencia',
+            'ubicacion', 'modulo_relacionado', 'registro_relacionado_id',
+            'tiempo_estimado_minutos', 'tiempo_real_minutos',
+            'porcentaje_completado', 'notas', 'archivo_adjunto',
+            'requiere_aprobacion', 'aprobada_por_rut', 'fecha_aprobacion',
+            'fecha_creacion', 'fecha_actualizacion', 'activo'
+        ]
+        read_only_fields = ['id', 'fecha_creacion', 'fecha_actualizacion']
+    
+    def validate_porcentaje_completado(self, value):
+        """Validar que el porcentaje esté entre 0 y 100"""
+        if value < 0 or value > 100:
+            raise serializers.ValidationError("El porcentaje completado debe estar entre 0 y 100.")
+        return value
+
+
+class TareasListSerializer(serializers.ModelSerializer):
+    """Serializer simplificado para listar tareas"""
+    asignada_a_nombre = serializers.SerializerMethodField()
+    asignada_a_apellido = serializers.SerializerMethodField()
+    creada_por_nombre = serializers.SerializerMethodField()
+    creada_por_apellido = serializers.SerializerMethodField()
+    tipo_tarea_display = serializers.CharField(source='get_tipo_tarea_display', read_only=True)
+    prioridad_display = serializers.CharField(source='get_prioridad_display', read_only=True)
+    estado_display = serializers.CharField(source='get_estado_display', read_only=True)
+    
+    def get_asignada_a_nombre(self, obj):
+        if obj.asignada_a_rut:
+            return obj.asignada_a_rut.nombre
+        return None
+    
+    def get_asignada_a_apellido(self, obj):
+        if obj.asignada_a_rut:
+            return obj.asignada_a_rut.apellido
+        return None
+    
+    def get_creada_por_nombre(self, obj):
+        if obj.creada_por_rut:
+            return obj.creada_por_rut.nombre
+        return None
+    
+    def get_creada_por_apellido(self, obj):
+        if obj.creada_por_rut:
+            return obj.creada_por_rut.apellido
+        return None
+    
+    class Meta:
+        model = Tareas
+        fields = [
+            'id', 'titulo', 'descripcion', 'tipo_tarea', 'tipo_tarea_display',
+            'prioridad', 'prioridad_display', 'estado', 'estado_display',
+            'asignada_a_rut', 'asignada_a_nombre', 'asignada_a_apellido',
+            'creada_por_rut', 'creada_por_nombre', 'creada_por_apellido',
+            'fecha_vencimiento', 'porcentaje_completado', 'fecha_creacion'
+        ]
     

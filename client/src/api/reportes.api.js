@@ -1,6 +1,7 @@
 import axios from "axios";
 import { getAllEmpleado } from "./empleado.api";
 import { inventarioAPI } from "./inventario.api";
+import { getAllAsistencia } from "./asistencia.api";
 
 const URL =
   process.env.NODE_ENV === "production"
@@ -144,6 +145,61 @@ export const generarReporteInventario = async (fechaInicio, fechaFin) => {
   }
 };
 
+// Función para generar reporte de asistencias
+export const generarReporteAsistencias = async (fechaInicio, fechaFin) => {
+  try {
+    const params = {};
+    if (fechaInicio) params.fecha_inicio = fechaInicio;
+    if (fechaFin) params.fecha_fin = fechaFin;
+    
+    const response = await getAllAsistencia(params);
+    let asistencias = response.data;
+
+    // Calcular estadísticas
+    const estadisticas = {
+      total: asistencias.length,
+      presente: asistencias.filter((a) => a.estado === "presente").length,
+      tarde: asistencias.filter((a) => a.estado === "tarde").length,
+      ausente: asistencias.filter((a) => a.estado === "ausente").length,
+      justificado: asistencias.filter((a) => a.estado === "justificado").length,
+      permiso: asistencias.filter((a) => a.estado === "permiso").length,
+      porEstado: {},
+      horasTotalesTrabajadas: asistencias.reduce(
+        (sum, a) => sum + (parseFloat(a.horas_trabajadas) || 0),
+        0
+      ),
+      minutosTardeTotal: asistencias.reduce(
+        (sum, a) => sum + (parseInt(a.minutos_tarde) || 0),
+        0
+      ),
+      minutosExtrasTotal: asistencias.reduce(
+        (sum, a) => sum + (parseInt(a.minutos_extras) || 0),
+        0
+      ),
+    };
+
+    asistencias.forEach((asist) => {
+      // Por estado
+      if (asist.estado) {
+        estadisticas.porEstado[asist.estado] =
+          (estadisticas.porEstado[asist.estado] || 0) + 1;
+      }
+    });
+
+    return {
+      tipo: "asistencias",
+      fechaGeneracion: new Date().toISOString(),
+      fechaInicio,
+      fechaFin,
+      datos: asistencias,
+      estadisticas,
+    };
+  } catch (error) {
+    console.error("Error generando reporte de asistencias:", error);
+    throw error;
+  }
+};
+
 // Función principal para generar reportes
 export const generarReporte = async (tipoReporte, fechaInicio, fechaFin) => {
   switch (tipoReporte) {
@@ -151,6 +207,8 @@ export const generarReporte = async (tipoReporte, fechaInicio, fechaFin) => {
       return await generarReporteEmpleados(fechaInicio, fechaFin);
     case "Inventario":
       return await generarReporteInventario(fechaInicio, fechaFin);
+    case "Asistencias":
+      return await generarReporteAsistencias(fechaInicio, fechaFin);
     default:
       throw new Error(`Tipo de reporte no válido: ${tipoReporte}`);
   }

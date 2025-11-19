@@ -122,7 +122,7 @@ export const LoginPage = () => {
         </div>
 
         {/* Formulario de login */}
-        <div className="bg-white rounded-2xl shadow-xl p-8">
+        <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Campo RUT */}
             <div>
@@ -140,7 +140,7 @@ export const LoginPage = () => {
                 onBlur={handleRutComplete}
                 onKeyDown={handleRutKeyDown}
                 placeholder="12.345.678-9"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none transition-all"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all"
                 disabled={loading}
                 autoComplete="username"
               />
@@ -161,7 +161,7 @@ export const LoginPage = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Ingresa tu contraseña"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none transition-all"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all"
                 disabled={loading}
                 autoComplete="current-password"
               />

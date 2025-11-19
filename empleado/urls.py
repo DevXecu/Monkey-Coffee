@@ -7,6 +7,9 @@ router = routers.DefaultRouter()
 router.register(r'empleado', views.EmpleadoView, 'empleado')
 router.register(r'asistencia', views.AsistenciaView, 'asistencia')
 router.register(r'turno', views.TurnoView, 'turno')
+router.register(r'solicitudes', views.SolicitudesViewSet, 'solicitudes')
+router.register(r'tipos-solicitudes', views.TiposSolicitudesViewSet, 'tipos-solicitudes')
+router.register(r'tareas', views.TareasViewSet, 'tareas')
 
 urlpatterns = [
     # Endpoint de estadísticas de asistencia (debe ir antes del router para evitar conflictos)

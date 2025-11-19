@@ -46,3 +46,12 @@ export const updateAsistencia = (id, asistencia) => asistenciaApi.patch(`/${id}/
 
 export const deleteAsistencia = (id) => asistenciaApi.delete(`/${id}/`);
 
+export const getEstadisticasAsistencia = (fecha = null) => {
+  const params = fecha ? { fecha } : {};
+  const queryString = new URLSearchParams(params).toString();
+  // El endpoint está en /api/asistencia/estadisticas/ 
+  // Usamos axios directamente con la URL completa
+  const url = `${URL}/api/asistencia/estadisticas/${queryString ? `?${queryString}` : ''}`;
+  return axios.get(url);
+};
+

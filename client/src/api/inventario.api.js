@@ -38,7 +38,12 @@ class InventarioAPI {
       });
       
       if (!response.ok) {
-        const errorData = await response.json();
+        let errorData;
+        try {
+          errorData = await response.json();
+        } catch (e) {
+          errorData = { detail: `Error ${response.status}: ${response.statusText}` };
+        }
         throw new Error(`HTTP error! status: ${response.status} - ${JSON.stringify(errorData)}`);
       }
       
@@ -60,7 +65,12 @@ class InventarioAPI {
       });
       
       if (!response.ok) {
-        const errorData = await response.json();
+        let errorData;
+        try {
+          errorData = await response.json();
+        } catch (e) {
+          errorData = { detail: `Error ${response.status}: ${response.statusText}` };
+        }
         throw new Error(`HTTP error! status: ${response.status} - ${JSON.stringify(errorData)}`);
       }
       
