@@ -5,6 +5,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import Q, Sum, Count, F
 from django.utils import timezone
 from datetime import timedelta
+import traceback
 from .models import Inventario
 from .serializer import (
     InventarioSerializer, 

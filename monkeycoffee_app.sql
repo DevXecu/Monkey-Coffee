@@ -1,914 +1,622 @@
 -- MySQL Workbench 8.0 CE Compatible SQL Dump
 -- Base de datos: monkeycoffee_app
+-- Versión mejorada con correcciones y datos adicionales
 -- Generado para MySQL 8.0
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 SET time_zone = "+00:00";
+SET NAMES utf8mb4;
+SET FOREIGN_KEY_CHECKS = 0;
 
--- Crear base de datos si no existe
-CREATE DATABASE IF NOT EXISTS `monkeycoffee_app` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
+-- ============================================================
+-- CREAR BASE DE DATOS
+-- ============================================================
+CREATE DATABASE IF NOT EXISTS `monkeycoffee_app` 
+DEFAULT CHARACTER SET utf8mb4 
+COLLATE utf8mb4_unicode_ci;
+
 USE `monkeycoffee_app`;
 
 START TRANSACTION;
 
-SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT;
-SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS;
-SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION;
-SET NAMES utf8mb4;
-
--- Nota: Este script usa CREATE TABLE IF NOT EXISTS para evitar errores
--- si las tablas ya existen. Si necesitas recrear las tablas desde cero,
--- descomenta las siguientes líneas para eliminar las tablas primero:
---
--- SET FOREIGN_KEY_CHECKS = 0;
--- DROP TABLE IF EXISTS `vista_ventas_inventario`;
--- DROP TABLE IF EXISTS `tareas_historial`;
--- DROP TABLE IF EXISTS `tareas_comentarios`;
--- DROP TABLE IF EXISTS `tareas`;
--- DROP TABLE IF EXISTS `solicitudes`;
--- DROP TABLE IF EXISTS `notificaciones`;
--- DROP TABLE IF EXISTS `movimientos_inventario`;
--- DROP TABLE IF EXISTS `alertas_inventario`;
--- DROP TABLE IF EXISTS `detalle_ventas`;
--- DROP TABLE IF EXISTS `ventas`;
--- DROP TABLE IF EXISTS `horarios`;
--- DROP TABLE IF EXISTS `empleados_turnos`;
--- DROP TABLE IF EXISTS `turnos`;
--- DROP TABLE IF EXISTS `asistencias`;
--- DROP TABLE IF EXISTS `reportes`;
--- DROP TABLE IF EXISTS `logs_actividad`;
--- DROP TABLE IF EXISTS `inventario`;
--- DROP TABLE IF EXISTS `tipos_solicitudes`;
--- DROP TABLE IF EXISTS `configuracion_app`;
--- DROP TABLE IF EXISTS `empleados`;
--- SET FOREIGN_KEY_CHECKS = 1;
-
--- --------------------------------------------------------
-
---
--- Estructura de tabla para la tabla `alertas_inventario`
---
-
-CREATE TABLE IF NOT EXISTS `alertas_inventario` (
-  `id` int NOT NULL,
-  `inventario_id` int NOT NULL,
-  `tipo_alerta` enum('stock_bajo','stock_critico','producto_vencido','por_vencer','sin_stock','sobre_stock') COLLATE utf8mb4_general_ci NOT NULL,
-  `mensaje` text COLLATE utf8mb4_general_ci NOT NULL,
-  `estado` enum('pendiente','revisada','resuelta','ignorada') COLLATE utf8mb4_general_ci DEFAULT 'pendiente',
-  `prioridad` enum('baja','media','alta','critica') COLLATE utf8mb4_general_ci DEFAULT 'media',
-  `fecha_alerta` datetime DEFAULT CURRENT_TIMESTAMP,
-  `fecha_resolucion` datetime DEFAULT NULL,
-  `resuelto_por` int DEFAULT NULL,
-  `notas_resolucion` text COLLATE utf8mb4_general_ci
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
--- --------------------------------------------------------
-
---
--- Estructura de tabla para la tabla `asistencias`
---
-
-CREATE TABLE IF NOT EXISTS `asistencias` (
-  `id` int NOT NULL,
-  `empleado_rut` varchar(12) COLLATE utf8mb4_general_ci NOT NULL,
-  `fecha` date NOT NULL,
-  `hora_entrada` datetime DEFAULT NULL,
-  `hora_salida` datetime DEFAULT NULL,
-  `tipo_entrada` enum('biometrico','manual','app_movil') COLLATE utf8mb4_general_ci DEFAULT 'biometrico',
-  `tipo_salida` enum('biometrico','manual','app_movil') COLLATE utf8mb4_general_ci DEFAULT 'biometrico',
-  `minutos_tarde` int DEFAULT '0',
-  `minutos_extras` int DEFAULT '0',
-  `horas_trabajadas` int DEFAULT NULL,
-  `estado` enum('presente','tarde','ausente','justificado','permiso') COLLATE utf8mb4_general_ci DEFAULT 'presente',
-  `observaciones` text COLLATE utf8mb4_general_ci,
-  `ubicacion_entrada` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
-  `ubicacion_salida` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
-  `ip_entrada` varchar(45) COLLATE utf8mb4_general_ci DEFAULT NULL,
-  `ip_salida` varchar(45) COLLATE utf8mb4_general_ci DEFAULT NULL,
-  `validado_por` int DEFAULT NULL,
-  `fecha_validacion` datetime DEFAULT NULL,
-  `fecha_creacion` datetime DEFAULT CURRENT_TIMESTAMP,
-  `fecha_actualizacion` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Estructura de tabla para la tabla `configuracion_app`
---
-
-CREATE TABLE IF NOT EXISTS `configuracion_app` (
-  `id` int NOT NULL,
-  `clave` varchar(100) COLLATE utf8mb4_general_ci NOT NULL,
-  `valor` text COLLATE utf8mb4_general_ci NOT NULL,
-  `tipo` enum('string','number','boolean','json') COLLATE utf8mb4_general_ci DEFAULT 'string',
-  `descripcion` text COLLATE utf8mb4_general_ci,
-  `categoria` varchar(50) COLLATE utf8mb4_general_ci DEFAULT NULL,
-  `fecha_actualizacion` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
--- --------------------------------------------------------
-
---
--- Estructura de tabla para la tabla `detalle_ventas`
---
-
-CREATE TABLE IF NOT EXISTS `detalle_ventas` (
-  `id` int NOT NULL,
-  `venta_id` int NOT NULL,
-  `inventario_id` int NOT NULL,
-  `cantidad` int NOT NULL,
-  `precio_unitario` int NOT NULL,
-  `subtotal` int NOT NULL,
-  `descuento_item` int DEFAULT '0',
-  `total_item` int NOT NULL,
-  `notas_item` text CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci,
-  `fecha_creacion` datetime DEFAULT CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
--- --------------------------------------------------------
-
---
--- Estructura de tabla para la tabla `empleados`
---
-
+-- ============================================================
+-- TABLA: empleados
+-- ============================================================
 CREATE TABLE IF NOT EXISTS `empleados` (
-  `id` int NOT NULL,
-  `rut` varchar(12) COLLATE utf8mb4_general_ci NOT NULL,
-  `nombres` varchar(100) COLLATE utf8mb4_general_ci NOT NULL,
-  `apellidos` varchar(100) COLLATE utf8mb4_general_ci NOT NULL,
-  `email` varchar(100) COLLATE utf8mb4_general_ci DEFAULT NULL,
-  `telefono` varchar(15) COLLATE utf8mb4_general_ci DEFAULT NULL,
-  `password` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
-  `fecha_nacimiento` date DEFAULT NULL,
-  `direccion` text COLLATE utf8mb4_general_ci,
-  `cargo` varchar(100) COLLATE utf8mb4_general_ci NOT NULL,
-  `departamento` varchar(100) COLLATE utf8mb4_general_ci DEFAULT NULL,
-  `fecha_contratacion` date NOT NULL,
-  `fecha_termino` date DEFAULT NULL,
-  `salario` int DEFAULT NULL,
-  `tipo_contrato` enum('indefinido','plazo_fijo','full_time','part_time') COLLATE utf8mb4_general_ci NOT NULL,
-  `estado` enum('activo','inactivo','vacaciones','licencia','desvinculado') COLLATE utf8mb4_general_ci DEFAULT 'activo',
-  `huella_digital` blob,
-  `foto_perfil` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
-  `observaciones` text COLLATE utf8mb4_general_ci,
-  `fecha_creacion` datetime DEFAULT CURRENT_TIMESTAMP,
-  `fecha_actualizacion` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  `activo` tinyint(1) DEFAULT '1'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `rut` VARCHAR(12) NOT NULL,
+  `nombres` VARCHAR(100) NOT NULL,
+  `apellidos` VARCHAR(100) NOT NULL,
+  `email` VARCHAR(100) DEFAULT NULL,
+  `telefono` VARCHAR(15) DEFAULT NULL,
+  `password` VARCHAR(255) DEFAULT NULL,
+  `fecha_nacimiento` DATE DEFAULT NULL,
+  `direccion` TEXT,
+  `cargo` VARCHAR(100) NOT NULL,
+  `departamento` VARCHAR(100) DEFAULT NULL,
+  `fecha_contratacion` DATE NOT NULL,
+  `fecha_termino` DATE DEFAULT NULL,
+  `salario` INT DEFAULT NULL,
+  `tipo_contrato` ENUM('indefinido','plazo_fijo','full_time','part_time') NOT NULL,
+  `estado` ENUM('activo','inactivo','vacaciones','licencia','desvinculado') DEFAULT 'activo',
+  `huella_digital` BLOB,
+  `foto_perfil` VARCHAR(255) DEFAULT NULL,
+  `observaciones` TEXT,
+  `fecha_creacion` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  `fecha_actualizacion` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `activo` TINYINT(1) DEFAULT 1,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `rut` (`rut`),
+  UNIQUE KEY `email` (`email`),
+  KEY `idx_estado` (`estado`),
+  KEY `idx_cargo` (`cargo`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
---
--- Estructura de tabla para la tabla `empleados_turnos`
---
-
-CREATE TABLE IF NOT EXISTS `empleados_turnos` (
-  `id` int NOT NULL,
-  `empleados_rut` varchar(12) COLLATE utf8mb4_general_ci NOT NULL,
-  `turno_id` int NOT NULL,
-  `fecha_inicio` date NOT NULL,
-  `fecha_fin` date DEFAULT NULL,
-  `activo` tinyint(1) DEFAULT '1',
-  `fecha_creacion` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  `fecha_actualizacion` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
--- --------------------------------------------------------
-
---
--- Estructura de tabla para la tabla `horarios`
---
-
-CREATE TABLE IF NOT EXISTS `horarios` (
-  `id` int NOT NULL,
-  `empleado_rut` varchar(12) COLLATE utf8mb4_general_ci NOT NULL,
-  `turno_id` int NOT NULL,
-  `fecha_inicio` date NOT NULL,
-  `fecha_fin` date DEFAULT NULL,
-  `dias_semana` json DEFAULT NULL,
-  `observaciones` text COLLATE utf8mb4_general_ci,
-  `activo` tinyint(1) DEFAULT '1',
-  `fecha_creacion` datetime DEFAULT CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Volcado de datos para la tabla `horarios`
---
--- Nota: Los datos de ejemplo se insertarán después de crear los empleados y turnos
-
--- --------------------------------------------------------
-
---
--- Estructura de tabla para la tabla `inventario`
---
-
-CREATE TABLE IF NOT EXISTS `inventario` (
-  `id` int NOT NULL,
-  `codigo_producto` varchar(50) COLLATE utf8mb4_general_ci NOT NULL,
-  `nombre_producto` varchar(100) COLLATE utf8mb4_general_ci NOT NULL,
-  `descripcion` text COLLATE utf8mb4_general_ci,
-  `categoria` enum('cafe','insumos','equipamiento','desechables','alimentos','bebidas','limpieza','otros') COLLATE utf8mb4_general_ci NOT NULL,
-  `unidad_medida` enum('unidad','kilogramo','litro','gramo','mililitro','paquete','caja','bolsa') COLLATE utf8mb4_general_ci NOT NULL,
-  `cantidad_actual` int NOT NULL DEFAULT '0',
-  `cantidad_minima` int NOT NULL,
-  `cantidad_maxima` int DEFAULT NULL,
-  `precio_unitario` int DEFAULT NULL,
-  `precio_venta` int DEFAULT NULL,
-  `codigo_qr` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
-  `codigo_barra` varchar(100) COLLATE utf8mb4_general_ci DEFAULT NULL,
-  `ubicacion` varchar(100) COLLATE utf8mb4_general_ci DEFAULT NULL,
-  `proveedor` varchar(100) COLLATE utf8mb4_general_ci DEFAULT NULL,
-  `contacto_proveedor` varchar(100) COLLATE utf8mb4_general_ci DEFAULT NULL,
-  `fecha_ultimo_ingreso` datetime DEFAULT NULL,
-  `fecha_vencimiento` date DEFAULT NULL,
-  `lote` varchar(50) COLLATE utf8mb4_general_ci DEFAULT NULL,
-  `estado` enum('disponible','agotado','por_vencer','vencido','en_pedido','descontinuado') COLLATE utf8mb4_general_ci DEFAULT 'disponible',
-  `requiere_alerta` tinyint(1) DEFAULT '0',
-  `imagen_producto` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
-  `notas` text COLLATE utf8mb4_general_ci,
-  `fecha_creacion` datetime DEFAULT CURRENT_TIMESTAMP,
-  `fecha_actualizacion` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  `creado_por` int DEFAULT NULL,
-  `actualizado_por` int DEFAULT NULL,
-  `activo` tinyint(1) DEFAULT '1'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
--- --------------------------------------------------------
-
---
--- Estructura de tabla para la tabla `logs_actividad`
---
-
-CREATE TABLE IF NOT EXISTS `logs_actividad` (
-  `id` int NOT NULL,
-  `empleado_id` int DEFAULT NULL,
-  `modulo` varchar(50) COLLATE utf8mb4_general_ci NOT NULL,
-  `accion` varchar(100) COLLATE utf8mb4_general_ci NOT NULL,
-  `tabla_afectada` varchar(100) COLLATE utf8mb4_general_ci DEFAULT NULL,
-  `registro_id` int DEFAULT NULL,
-  `descripcion` text COLLATE utf8mb4_general_ci,
-  `datos_anteriores` json DEFAULT NULL,
-  `datos_nuevos` json DEFAULT NULL,
-  `ip_address` varchar(45) COLLATE utf8mb4_general_ci DEFAULT NULL,
-  `user_agent` text COLLATE utf8mb4_general_ci,
-  `fecha_registro` datetime DEFAULT CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
--- --------------------------------------------------------
-
---
--- Estructura de tabla para la tabla `movimientos_inventario`
---
-
-CREATE TABLE IF NOT EXISTS `movimientos_inventario` (
-  `id` int NOT NULL,
-  `inventario_id` int NOT NULL,
-  `tipo_movimiento` enum('ingreso','salida','ajuste','merma','devolucion','transferencia','venta') COLLATE utf8mb4_general_ci NOT NULL,
-  `cantidad` int NOT NULL,
-  `cantidad_anterior` int NOT NULL,
-  `cantidad_nueva` int NOT NULL,
-  `precio_unitario` int DEFAULT NULL,
-  `costo_total` int DEFAULT NULL,
-  `motivo` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
-  `documento_referencia` varchar(100) COLLATE utf8mb4_general_ci DEFAULT NULL,
-  `proveedor` varchar(100) COLLATE utf8mb4_general_ci DEFAULT NULL,
-  `empleado_id` int DEFAULT NULL,
-  `ubicacion_origen` varchar(100) COLLATE utf8mb4_general_ci DEFAULT NULL,
-  `ubicacion_destino` varchar(100) COLLATE utf8mb4_general_ci DEFAULT NULL,
-  `fecha_movimiento` datetime DEFAULT CURRENT_TIMESTAMP,
-  `notas` text COLLATE utf8mb4_general_ci
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
--- --------------------------------------------------------
-
---
--- Estructura de tabla para la tabla `notificaciones`
---
-
-CREATE TABLE IF NOT EXISTS `notificaciones` (
-  `id` int NOT NULL,
-  `empleado_id` int NOT NULL,
-  `tipo` enum('info','alerta','urgente','recordatorio','aprobacion') COLLATE utf8mb4_general_ci NOT NULL,
-  `titulo` varchar(200) COLLATE utf8mb4_general_ci NOT NULL,
-  `mensaje` text COLLATE utf8mb4_general_ci NOT NULL,
-  `modulo` varchar(50) COLLATE utf8mb4_general_ci DEFAULT NULL,
-  `referencia_id` int DEFAULT NULL,
-  `leida` tinyint(1) DEFAULT '0',
-  `fecha_lectura` datetime DEFAULT NULL,
-  `requiere_accion` tinyint(1) DEFAULT '0',
-  `url_accion` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
-  `fecha_creacion` datetime DEFAULT CURRENT_TIMESTAMP,
-  `fecha_expiracion` datetime DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
--- --------------------------------------------------------
-
---
--- Estructura de tabla para la tabla `reportes`
---
-
-CREATE TABLE IF NOT EXISTS `reportes` (
-  `id` int NOT NULL,
-  `nombre_reporte` varchar(200) COLLATE utf8mb4_general_ci NOT NULL,
-  `tipo_reporte` enum('asistencia','inventario','personal','financiero','personalizado') COLLATE utf8mb4_general_ci NOT NULL,
-  `periodo_inicio` date DEFAULT NULL,
-  `periodo_fin` date DEFAULT NULL,
-  `parametros` json DEFAULT NULL,
-  `archivo_generado` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
-  `formato` enum('pdf','excel','csv','json') COLLATE utf8mb4_general_ci DEFAULT 'pdf',
-  `generado_por` int DEFAULT NULL,
-  `fecha_generacion` datetime DEFAULT CURRENT_TIMESTAMP,
-  `tiempo_generacion` int DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
--- --------------------------------------------------------
-
---
--- Estructura de tabla para la tabla `solicitudes`
---
-
-CREATE TABLE IF NOT EXISTS `solicitudes` (
-  `id` int NOT NULL,
-  `empleado_rut` varchar(12) COLLATE utf8mb4_general_ci DEFAULT NULL,
-  `empleado_id` int NOT NULL,
-  `tipo_solicitud_id` int NOT NULL,
-  `fecha_inicio` date NOT NULL,
-  `fecha_fin` date NOT NULL,
-  `motivo` text COLLATE utf8mb4_general_ci NOT NULL,
-  `estado` enum('pendiente','aprobada','rechazada','cancelada') COLLATE utf8mb4_general_ci DEFAULT 'pendiente',
-  `aprobado_por` int DEFAULT NULL,
-  `fecha_aprobacion` datetime DEFAULT NULL,
-  `comentario_aprobacion` text COLLATE utf8mb4_general_ci,
-  `documento_adjunto` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
-  `fecha_creacion` datetime DEFAULT CURRENT_TIMESTAMP,
-  `fecha_actualizacion` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
--- --------------------------------------------------------
-
---
--- Estructura de tabla para la tabla `tareas`
---
-
-CREATE TABLE IF NOT EXISTS `tareas` (
-  `id` int NOT NULL,
-  `titulo` varchar(200) COLLATE utf8mb4_general_ci NOT NULL,
-  `descripcion` text COLLATE utf8mb4_general_ci,
-  `tipo_tarea` enum('general','inventario','mantenimiento','limpieza','atencion_cliente','administrativa','urgente') COLLATE utf8mb4_general_ci NOT NULL DEFAULT 'general',
-  `prioridad` enum('baja','media','alta','critica') COLLATE utf8mb4_general_ci DEFAULT 'media',
-  `estado` enum('pendiente','en_proceso','completada','cancelada','pausada') COLLATE utf8mb4_general_ci DEFAULT 'pendiente',
-  `asignada_a_rut` varchar(12) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
-  `creada_por_rut` varchar(12) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
-  `fecha_inicio` datetime DEFAULT NULL,
-  `fecha_vencimiento` datetime DEFAULT NULL,
-  `fecha_completada` datetime DEFAULT NULL,
-  `es_recurrente` tinyint(1) DEFAULT '0',
-  `frecuencia_recurrencia` enum('diaria','semanal','mensual','anual') COLLATE utf8mb4_general_ci DEFAULT NULL,
-  `dias_recurrencia` json DEFAULT NULL,
-  `ubicacion` varchar(100) COLLATE utf8mb4_general_ci DEFAULT NULL,
-  `modulo_relacionado` varchar(50) COLLATE utf8mb4_general_ci DEFAULT NULL,
-  `registro_relacionado_id` int DEFAULT NULL,
-  `tiempo_estimado_minutos` int DEFAULT NULL,
-  `tiempo_real_minutos` int DEFAULT NULL,
-  `porcentaje_completado` int DEFAULT '0',
-  `notas` text COLLATE utf8mb4_general_ci,
-  `archivo_adjunto` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
-  `requiere_aprobacion` tinyint(1) DEFAULT '0',
-  `aprobada_por_rut` varchar(12) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
-  `fecha_aprobacion` datetime DEFAULT NULL,
-  `fecha_creacion` datetime DEFAULT CURRENT_TIMESTAMP,
-  `fecha_actualizacion` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  `activo` tinyint(1) DEFAULT '1'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
--- --------------------------------------------------------
-
---
--- Estructura de tabla para la tabla `tareas_comentarios`
---
-
-CREATE TABLE IF NOT EXISTS `tareas_comentarios` (
-  `id` int NOT NULL,
-  `tarea_id` int NOT NULL,
-  `empleado_rut` varchar(12) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
-  `comentario` text COLLATE utf8mb4_general_ci NOT NULL,
-  `archivo_adjunto` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
-  `fecha_creacion` datetime DEFAULT CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
--- --------------------------------------------------------
-
---
--- Estructura de tabla para la tabla `tareas_historial`
---
-
-CREATE TABLE IF NOT EXISTS `tareas_historial` (
-  `id` int NOT NULL,
-  `tarea_id` int NOT NULL,
-  `empleado_rut` varchar(12) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
-  `accion` varchar(100) COLLATE utf8mb4_general_ci NOT NULL,
-  `campo_modificado` varchar(50) COLLATE utf8mb4_general_ci DEFAULT NULL,
-  `valor_anterior` text COLLATE utf8mb4_general_ci,
-  `valor_nuevo` text COLLATE utf8mb4_general_ci,
-  `descripcion` text COLLATE utf8mb4_general_ci,
-  `fecha_registro` datetime DEFAULT CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
--- --------------------------------------------------------
-
---
--- Estructura de tabla para la tabla `tipos_solicitudes`
---
-
-CREATE TABLE IF NOT EXISTS `tipos_solicitudes` (
-  `id` int NOT NULL,
-  `nombre` varchar(100) COLLATE utf8mb4_general_ci NOT NULL,
-  `descripcion` text COLLATE utf8mb4_general_ci,
-  `requiere_aprobacion` tinyint(1) DEFAULT '1',
-  `dias_anticipacion` int DEFAULT '1',
-  `color_hex` varchar(7) COLLATE utf8mb4_general_ci DEFAULT '#007bff',
-  `activo` tinyint(1) DEFAULT '1',
-  `fecha_creacion` datetime DEFAULT CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
--- --------------------------------------------------------
-
---
--- Estructura de tabla para la tabla `turnos`
---
-
+-- ============================================================
+-- TABLA: turnos
+-- ============================================================
 CREATE TABLE IF NOT EXISTS `turnos` (
-  `id` int NOT NULL,
-  `empleados_rut` varchar(12) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
-  `nombre_turno` varchar(100) COLLATE utf8mb4_general_ci NOT NULL,
-  `hora_entrada` time NOT NULL,
-  `hora_salida` time NOT NULL,
-  `tolerancia_minutos` int DEFAULT '15',
-  `horas_trabajo` int NOT NULL,
-  `descripcion` text COLLATE utf8mb4_general_ci,
-  `dias_semana` json DEFAULT NULL,
-  `activo` tinyint(1) DEFAULT '1',
-  `fecha_creacion` datetime DEFAULT CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `empleados_rut` VARCHAR(12) NOT NULL,
+  `nombre_turno` VARCHAR(100) NOT NULL,
+  `hora_entrada` TIME NOT NULL,
+  `hora_salida` TIME NOT NULL,
+  `tolerancia_minutos` INT DEFAULT 15,
+  `horas_trabajo` DECIMAL(4,2) NOT NULL,
+  `descripcion` TEXT,
+  `dias_semana` JSON DEFAULT NULL,
+  `activo` TINYINT(1) DEFAULT 1,
+  `fecha_creacion` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_nombre_turno` (`nombre_turno`),
+  KEY `idx_empleados_rut` (`empleados_rut`),
+  CONSTRAINT `fk_turnos_empleados` 
+    FOREIGN KEY (`empleados_rut`) 
+    REFERENCES `empleados` (`rut`) 
+    ON DELETE CASCADE 
+    ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
---
--- Volcado de datos para la tabla `turnos`
---
--- Nota: Los datos de ejemplo se insertarán después de crear los empleados
+-- ============================================================
+-- TABLA: configuracion_app
+-- ============================================================
+CREATE TABLE IF NOT EXISTS `configuracion_app` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `clave` VARCHAR(100) NOT NULL,
+  `valor` TEXT NOT NULL,
+  `tipo` ENUM('string','number','boolean','json') DEFAULT 'string',
+  `descripcion` TEXT,
+  `categoria` VARCHAR(50) DEFAULT NULL,
+  `fecha_actualizacion` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `clave` (`clave`),
+  KEY `idx_categoria` (`categoria`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- --------------------------------------------------------
+-- ============================================================
+-- TABLA: inventario
+-- ============================================================
+CREATE TABLE IF NOT EXISTS `inventario` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `codigo_producto` VARCHAR(50) NOT NULL,
+  `nombre_producto` VARCHAR(100) NOT NULL,
+  `descripcion` TEXT,
+  `categoria` ENUM('cafe','insumos','equipamiento','desechables','alimentos','bebidas','limpieza','otros') NOT NULL,
+  `unidad_medida` ENUM('unidad','kilogramo','litro','gramo','mililitro','paquete','caja','bolsa') NOT NULL,
+  `cantidad_actual` INT NOT NULL DEFAULT 0,
+  `cantidad_minima` INT NOT NULL,
+  `cantidad_maxima` INT DEFAULT NULL,
+  `precio_unitario` INT DEFAULT NULL COMMENT 'Precio en pesos chilenos',
+  `precio_venta` INT DEFAULT NULL COMMENT 'Precio en pesos chilenos',
+  `codigo_qr` VARCHAR(255) DEFAULT NULL,
+  `codigo_barra` VARCHAR(100) DEFAULT NULL,
+  `ubicacion` VARCHAR(100) DEFAULT NULL,
+  `proveedor` VARCHAR(100) DEFAULT NULL,
+  `contacto_proveedor` VARCHAR(100) DEFAULT NULL,
+  `fecha_ultimo_ingreso` DATETIME DEFAULT NULL,
+  `fecha_vencimiento` DATE DEFAULT NULL,
+  `lote` VARCHAR(50) DEFAULT NULL,
+  `estado` ENUM('disponible','agotado','por_vencer','vencido','en_pedido','descontinuado') DEFAULT 'disponible',
+  `requiere_alerta` TINYINT(1) DEFAULT 0,
+  `imagen_producto` VARCHAR(255) DEFAULT NULL,
+  `notas` TEXT,
+  `fecha_creacion` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  `fecha_actualizacion` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `creado_por` INT DEFAULT NULL,
+  `actualizado_por` INT DEFAULT NULL,
+  `activo` TINYINT(1) DEFAULT 1,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `codigo_producto` (`codigo_producto`),
+  KEY `idx_nombre` (`nombre_producto`),
+  KEY `idx_categoria` (`categoria`),
+  KEY `idx_estado` (`estado`),
+  KEY `idx_codigo_qr` (`codigo_qr`),
+  KEY `idx_codigo_barra` (`codigo_barra`),
+  KEY `idx_fecha_vencimiento` (`fecha_vencimiento`),
+  KEY `creado_por` (`creado_por`),
+  KEY `actualizado_por` (`actualizado_por`),
+  CONSTRAINT `inventario_ibfk_1` 
+    FOREIGN KEY (`creado_por`) 
+    REFERENCES `empleados` (`id`) 
+    ON DELETE SET NULL,
+  CONSTRAINT `inventario_ibfk_2` 
+    FOREIGN KEY (`actualizado_por`) 
+    REFERENCES `empleados` (`id`) 
+    ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
---
--- Estructura de tabla para la tabla `ventas`
---
+-- ============================================================
+-- TABLA: tipos_solicitudes
+-- ============================================================
+CREATE TABLE IF NOT EXISTS `tipos_solicitudes` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `nombre` VARCHAR(100) NOT NULL,
+  `descripcion` TEXT,
+  `requiere_aprobacion` TINYINT(1) DEFAULT 1,
+  `dias_anticipacion` INT DEFAULT 1,
+  `color_hex` VARCHAR(7) DEFAULT '#007bff',
+  `activo` TINYINT(1) DEFAULT 1,
+  `fecha_creacion` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_nombre` (`nombre`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- ============================================================
+-- TABLA: asistencias
+-- ============================================================
+CREATE TABLE IF NOT EXISTS `asistencias` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `empleado_rut` VARCHAR(12) NOT NULL,
+  `fecha` DATE NOT NULL,
+  `hora_entrada` DATETIME DEFAULT NULL,
+  `hora_salida` DATETIME DEFAULT NULL,
+  `tipo_entrada` ENUM('biometrico','manual','app_movil') DEFAULT 'biometrico',
+  `tipo_salida` ENUM('biometrico','manual','app_movil') DEFAULT 'biometrico',
+  `minutos_tarde` INT DEFAULT 0,
+  `minutos_extras` INT DEFAULT 0,
+  `horas_trabajadas` DECIMAL(4,2) DEFAULT NULL,
+  `estado` ENUM('presente','tarde','ausente','justificado','permiso') DEFAULT 'presente',
+  `observaciones` TEXT,
+  `ubicacion_entrada` VARCHAR(255) DEFAULT NULL,
+  `ubicacion_salida` VARCHAR(255) DEFAULT NULL,
+  `ip_entrada` VARCHAR(45) DEFAULT NULL,
+  `ip_salida` VARCHAR(45) DEFAULT NULL,
+  `validado_por` INT DEFAULT NULL,
+  `fecha_validacion` DATETIME DEFAULT NULL,
+  `fecha_creacion` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  `fecha_actualizacion` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `unique_empleado_fecha` (`empleado_rut`,`fecha`),
+  KEY `idx_fecha` (`fecha`),
+  KEY `idx_estado` (`estado`),
+  KEY `validado_por` (`validado_por`),
+  CONSTRAINT `fk_asistencias_empleado` 
+    FOREIGN KEY (`empleado_rut`) 
+    REFERENCES `empleados` (`rut`) 
+    ON DELETE CASCADE,
+  CONSTRAINT `asistencias_ibfk_2` 
+    FOREIGN KEY (`validado_por`) 
+    REFERENCES `empleados` (`id`) 
+    ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ============================================================
+-- TABLA: empleados_turnos
+-- ============================================================
+CREATE TABLE IF NOT EXISTS `empleados_turnos` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `empleados_rut` VARCHAR(12) NOT NULL,
+  `turno_id` INT NOT NULL,
+  `fecha_inicio` DATE NOT NULL,
+  `fecha_fin` DATE DEFAULT NULL,
+  `activo` TINYINT(1) DEFAULT 1,
+  `fecha_creacion` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  `fecha_actualizacion` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_empleados_rut` (`empleados_rut`),
+  KEY `idx_turno_id` (`turno_id`),
+  KEY `idx_activo` (`activo`),
+  KEY `idx_fecha_inicio` (`fecha_inicio`),
+  CONSTRAINT `empleados_turnos_ibfk_1` 
+    FOREIGN KEY (`empleados_rut`) 
+    REFERENCES `empleados` (`rut`) 
+    ON DELETE CASCADE,
+  CONSTRAINT `empleados_turnos_ibfk_2` 
+    FOREIGN KEY (`turno_id`) 
+    REFERENCES `turnos` (`id`) 
+    ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ============================================================
+-- TABLA: horarios
+-- ============================================================
+CREATE TABLE IF NOT EXISTS `horarios` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `empleado_rut` VARCHAR(12) NOT NULL,
+  `turno_id` INT NOT NULL,
+  `fecha_inicio` DATE NOT NULL,
+  `fecha_fin` DATE DEFAULT NULL,
+  `dias_semana` JSON DEFAULT NULL,
+  `observaciones` TEXT,
+  `activo` TINYINT(1) DEFAULT 1,
+  `fecha_creacion` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_turno_id` (`turno_id`),
+  KEY `idx_fecha_inicio` (`fecha_inicio`),
+  KEY `idx_empleado_rut` (`empleado_rut`),
+  CONSTRAINT `horarios_ibfk_1` 
+    FOREIGN KEY (`empleado_rut`) 
+    REFERENCES `empleados` (`rut`) 
+    ON DELETE CASCADE,
+  CONSTRAINT `horarios_ibfk_2` 
+    FOREIGN KEY (`turno_id`) 
+    REFERENCES `turnos` (`id`) 
+    ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ============================================================
+-- TABLA: ventas
+-- ============================================================
 CREATE TABLE IF NOT EXISTS `ventas` (
-  `id` int NOT NULL,
-  `numero_venta` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
-  `empleado_id` int NOT NULL,
-  `fecha_venta` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `subtotal` int NOT NULL DEFAULT '0',
-  `descuento` int DEFAULT '0',
-  `impuesto` int DEFAULT '0',
-  `total` int NOT NULL,
-  `metodo_pago` enum('efectivo','tarjeta_debito','tarjeta_credito','transferencia','multiple') CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
-  `estado` enum('completada','cancelada','pendiente','reembolsada') CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT 'completada',
-  `tipo_venta` enum('local','delivery','para_llevar') CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT 'local',
-  `mesa_numero` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
-  `notas` text CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci,
-  `cancelada_por` int DEFAULT NULL,
-  `fecha_cancelacion` datetime DEFAULT NULL,
-  `motivo_cancelacion` text CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci,
-  `fecha_creacion` datetime DEFAULT CURRENT_TIMESTAMP,
-  `fecha_actualizacion` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `numero_venta` VARCHAR(50) NOT NULL,
+  `empleado_id` INT NOT NULL,
+  `fecha_venta` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `subtotal` INT NOT NULL DEFAULT 0,
+  `descuento` INT DEFAULT 0,
+  `impuesto` INT DEFAULT 0,
+  `total` INT NOT NULL,
+  `metodo_pago` ENUM('efectivo','tarjeta_debito','tarjeta_credito','transferencia','multiple') NOT NULL,
+  `estado` ENUM('completada','cancelada','pendiente','reembolsada') DEFAULT 'completada',
+  `tipo_venta` ENUM('local','delivery','para_llevar') DEFAULT 'local',
+  `mesa_numero` VARCHAR(20) DEFAULT NULL,
+  `notas` TEXT,
+  `cancelada_por` INT DEFAULT NULL,
+  `fecha_cancelacion` DATETIME DEFAULT NULL,
+  `motivo_cancelacion` TEXT,
+  `fecha_creacion` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  `fecha_actualizacion` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `numero_venta` (`numero_venta`),
+  KEY `idx_empleado_id` (`empleado_id`),
+  KEY `idx_fecha_venta` (`fecha_venta`),
+  KEY `idx_estado` (`estado`),
+  KEY `idx_metodo_pago` (`metodo_pago`),
+  KEY `cancelada_por` (`cancelada_por`),
+  KEY `idx_fecha_estado` (`fecha_venta`, `estado`),
+  CONSTRAINT `ventas_ibfk_1` 
+    FOREIGN KEY (`empleado_id`) 
+    REFERENCES `empleados` (`id`) 
+    ON DELETE RESTRICT,
+  CONSTRAINT `ventas_ibfk_2` 
+    FOREIGN KEY (`cancelada_por`) 
+    REFERENCES `empleados` (`id`) 
+    ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- --------------------------------------------------------
+-- ============================================================
+-- TABLA: detalle_ventas
+-- ============================================================
+CREATE TABLE IF NOT EXISTS `detalle_ventas` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `venta_id` INT NOT NULL,
+  `inventario_id` INT NOT NULL,
+  `cantidad` INT NOT NULL,
+  `precio_unitario` INT NOT NULL,
+  `subtotal` INT NOT NULL,
+  `descuento_item` INT DEFAULT 0,
+  `total_item` INT NOT NULL,
+  `notas_item` TEXT,
+  `fecha_creacion` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_venta_id` (`venta_id`),
+  KEY `idx_inventario_id` (`inventario_id`),
+  CONSTRAINT `detalle_ventas_ibfk_1` 
+    FOREIGN KEY (`venta_id`) 
+    REFERENCES `ventas` (`id`) 
+    ON DELETE CASCADE,
+  CONSTRAINT `detalle_ventas_ibfk_2` 
+    FOREIGN KEY (`inventario_id`) 
+    REFERENCES `inventario` (`id`) 
+    ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
---
--- Índices para tablas volcadas
---
+-- ============================================================
+-- TABLA: alertas_inventario
+-- ============================================================
+CREATE TABLE IF NOT EXISTS `alertas_inventario` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `inventario_id` INT NOT NULL,
+  `tipo_alerta` ENUM('stock_bajo','stock_critico','producto_vencido','por_vencer','sin_stock','sobre_stock') NOT NULL,
+  `mensaje` TEXT NOT NULL,
+  `estado` ENUM('pendiente','revisada','resuelta','ignorada') DEFAULT 'pendiente',
+  `prioridad` ENUM('baja','media','alta','critica') DEFAULT 'media',
+  `fecha_alerta` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  `fecha_resolucion` DATETIME DEFAULT NULL,
+  `resuelto_por` INT DEFAULT NULL,
+  `notas_resolucion` TEXT,
+  PRIMARY KEY (`id`),
+  KEY `idx_inventario_id` (`inventario_id`),
+  KEY `idx_estado` (`estado`),
+  KEY `idx_tipo_alerta` (`tipo_alerta`),
+  KEY `idx_prioridad` (`prioridad`),
+  KEY `idx_fecha_alerta` (`fecha_alerta`),
+  KEY `resuelto_por` (`resuelto_por`),
+  CONSTRAINT `alertas_inventario_ibfk_1` 
+    FOREIGN KEY (`inventario_id`) 
+    REFERENCES `inventario` (`id`) 
+    ON DELETE CASCADE,
+  CONSTRAINT `alertas_inventario_ibfk_2` 
+    FOREIGN KEY (`resuelto_por`) 
+    REFERENCES `empleados` (`id`) 
+    ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
---
--- Indices de la tabla `alertas_inventario`
---
-ALTER TABLE `alertas_inventario`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `idx_inventario_id` (`inventario_id`),
-  ADD KEY `idx_estado` (`estado`),
-  ADD KEY `idx_tipo_alerta` (`tipo_alerta`),
-  ADD KEY `idx_prioridad` (`prioridad`),
-  ADD KEY `idx_fecha_alerta` (`fecha_alerta`),
-  ADD KEY `resuelto_por` (`resuelto_por`);
+-- ============================================================
+-- TABLA: movimientos_inventario
+-- ============================================================
+CREATE TABLE IF NOT EXISTS `movimientos_inventario` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `inventario_id` INT NOT NULL,
+  `tipo_movimiento` ENUM('ingreso','salida','ajuste','merma','devolucion','transferencia','venta') NOT NULL,
+  `cantidad` INT NOT NULL,
+  `cantidad_anterior` INT NOT NULL,
+  `cantidad_nueva` INT NOT NULL,
+  `precio_unitario` INT DEFAULT NULL,
+  `costo_total` INT DEFAULT NULL,
+  `motivo` VARCHAR(255) DEFAULT NULL,
+  `documento_referencia` VARCHAR(100) DEFAULT NULL,
+  `proveedor` VARCHAR(100) DEFAULT NULL,
+  `empleado_id` INT DEFAULT NULL,
+  `ubicacion_origen` VARCHAR(100) DEFAULT NULL,
+  `ubicacion_destino` VARCHAR(100) DEFAULT NULL,
+  `fecha_movimiento` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  `notas` TEXT,
+  PRIMARY KEY (`id`),
+  KEY `idx_inventario_id` (`inventario_id`),
+  KEY `idx_tipo_movimiento` (`tipo_movimiento`),
+  KEY `idx_fecha_movimiento` (`fecha_movimiento`),
+  KEY `idx_empleado_id` (`empleado_id`),
+  KEY `idx_inventario_fecha_tipo` (`inventario_id`, `fecha_movimiento`, `tipo_movimiento`),
+  CONSTRAINT `movimientos_inventario_ibfk_1` 
+    FOREIGN KEY (`inventario_id`) 
+    REFERENCES `inventario` (`id`) 
+    ON DELETE CASCADE,
+  CONSTRAINT `movimientos_inventario_ibfk_2` 
+    FOREIGN KEY (`empleado_id`) 
+    REFERENCES `empleados` (`id`) 
+    ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
---
--- Indices de la tabla `asistencias`
---
-ALTER TABLE `asistencias`
-  ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `unique_empleado_fecha` (`empleado_rut`,`fecha`),
-  ADD KEY `idx_fecha` (`fecha`),
-  ADD KEY `idx_estado` (`estado`),
-  ADD KEY `validado_por` (`validado_por`);
+-- ============================================================
+-- TABLA: notificaciones
+-- ============================================================
+CREATE TABLE IF NOT EXISTS `notificaciones` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `empleado_id` INT NOT NULL,
+  `tipo` ENUM('info','alerta','urgente','recordatorio','aprobacion') NOT NULL,
+  `titulo` VARCHAR(200) NOT NULL,
+  `mensaje` TEXT NOT NULL,
+  `modulo` VARCHAR(50) DEFAULT NULL,
+  `referencia_id` INT DEFAULT NULL,
+  `leida` TINYINT(1) DEFAULT 0,
+  `fecha_lectura` DATETIME DEFAULT NULL,
+  `requiere_accion` TINYINT(1) DEFAULT 0,
+  `url_accion` VARCHAR(255) DEFAULT NULL,
+  `fecha_creacion` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  `fecha_expiracion` DATETIME DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_empleado_id` (`empleado_id`),
+  KEY `idx_leida` (`leida`),
+  KEY `idx_tipo` (`tipo`),
+  KEY `idx_fecha_creacion` (`fecha_creacion`),
+  CONSTRAINT `notificaciones_ibfk_1` 
+    FOREIGN KEY (`empleado_id`) 
+    REFERENCES `empleados` (`id`) 
+    ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
---
--- Indices de la tabla `configuracion_app`
---
-ALTER TABLE `configuracion_app`
-  ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `clave` (`clave`),
-  ADD KEY `idx_categoria` (`categoria`);
+-- ============================================================
+-- TABLA: solicitudes
+-- ============================================================
+CREATE TABLE IF NOT EXISTS `solicitudes` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `empleado_rut` VARCHAR(12) DEFAULT NULL,
+  `empleado_id` INT NOT NULL,
+  `tipo_solicitud_id` INT NOT NULL,
+  `fecha_inicio` DATE NOT NULL,
+  `fecha_fin` DATE NOT NULL,
+  `motivo` TEXT NOT NULL,
+  `estado` ENUM('pendiente','aprobada','rechazada','cancelada') DEFAULT 'pendiente',
+  `aprobado_por` INT DEFAULT NULL,
+  `fecha_aprobacion` DATETIME DEFAULT NULL,
+  `comentario_aprobacion` TEXT,
+  `documento_adjunto` VARCHAR(255) DEFAULT NULL,
+  `fecha_creacion` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  `fecha_actualizacion` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_empleado_id` (`empleado_id`),
+  KEY `idx_tipo_solicitud` (`tipo_solicitud_id`),
+  KEY `idx_estado` (`estado`),
+  KEY `idx_fechas` (`fecha_inicio`,`fecha_fin`),
+  KEY `aprobado_por` (`aprobado_por`),
+  CONSTRAINT `solicitudes_ibfk_1` 
+    FOREIGN KEY (`empleado_id`) 
+    REFERENCES `empleados` (`id`) 
+    ON DELETE CASCADE,
+  CONSTRAINT `solicitudes_ibfk_2` 
+    FOREIGN KEY (`tipo_solicitud_id`) 
+    REFERENCES `tipos_solicitudes` (`id`) 
+    ON DELETE RESTRICT,
+  CONSTRAINT `solicitudes_ibfk_3` 
+    FOREIGN KEY (`aprobado_por`) 
+    REFERENCES `empleados` (`id`) 
+    ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
---
--- Indices de la tabla `detalle_ventas`
---
-ALTER TABLE `detalle_ventas`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `idx_venta_id` (`venta_id`),
-  ADD KEY `idx_inventario_id` (`inventario_id`);
+-- ============================================================
+-- TABLA: tareas
+-- ============================================================
+CREATE TABLE IF NOT EXISTS `tareas` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `titulo` VARCHAR(200) NOT NULL,
+  `descripcion` TEXT,
+  `tipo_tarea` ENUM('general','inventario','mantenimiento','limpieza','atencion_cliente','administrativa','urgente') NOT NULL DEFAULT 'general',
+  `prioridad` ENUM('baja','media','alta','critica') DEFAULT 'media',
+  `estado` ENUM('pendiente','en_proceso','completada','cancelada','pausada') DEFAULT 'pendiente',
+  `asignada_a_rut` VARCHAR(12) DEFAULT NULL,
+  `creada_por_rut` VARCHAR(12) NOT NULL,
+  `fecha_inicio` DATETIME DEFAULT NULL,
+  `fecha_vencimiento` DATETIME DEFAULT NULL,
+  `fecha_completada` DATETIME DEFAULT NULL,
+  `es_recurrente` TINYINT(1) DEFAULT 0,
+  `frecuencia_recurrencia` ENUM('diaria','semanal','mensual','anual') DEFAULT NULL,
+  `dias_recurrencia` JSON DEFAULT NULL,
+  `ubicacion` VARCHAR(100) DEFAULT NULL,
+  `modulo_relacionado` VARCHAR(50) DEFAULT NULL,
+  `registro_relacionado_id` INT DEFAULT NULL,
+  `tiempo_estimado_minutos` INT DEFAULT NULL,
+  `tiempo_real_minutos` INT DEFAULT NULL,
+  `porcentaje_completado` INT DEFAULT 0,
+  `notas` TEXT,
+  `archivo_adjunto` VARCHAR(255) DEFAULT NULL,
+  `requiere_aprobacion` TINYINT(1) DEFAULT 0,
+  `aprobada_por_rut` VARCHAR(12) DEFAULT NULL,
+  `fecha_aprobacion` DATETIME DEFAULT NULL,
+  `fecha_creacion` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  `fecha_actualizacion` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `activo` TINYINT(1) DEFAULT 1,
+  PRIMARY KEY (`id`),
+  KEY `asignada_a_rut` (`asignada_a_rut`),
+  KEY `creada_por_rut` (`creada_por_rut`),
+  KEY `aprobada_por_rut` (`aprobada_por_rut`),
+  CONSTRAINT `tareas_ibfk_1` 
+    FOREIGN KEY (`asignada_a_rut`) 
+    REFERENCES `empleados` (`rut`) 
+    ON DELETE SET NULL 
+    ON UPDATE CASCADE,
+  CONSTRAINT `tareas_ibfk_2` 
+    FOREIGN KEY (`creada_por_rut`) 
+    REFERENCES `empleados` (`rut`) 
+    ON DELETE CASCADE 
+    ON UPDATE CASCADE,
+  CONSTRAINT `tareas_ibfk_3` 
+    FOREIGN KEY (`aprobada_por_rut`) 
+    REFERENCES `empleados` (`rut`) 
+    ON DELETE SET NULL 
+    ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
---
--- Indices de la tabla `empleados`
---
-ALTER TABLE `empleados`
-  ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `rut` (`rut`),
-  ADD UNIQUE KEY `email` (`email`),
-  ADD KEY `idx_estado` (`estado`),
-  ADD KEY `idx_cargo` (`cargo`);
+-- ============================================================
+-- TABLA: tareas_comentarios
+-- ============================================================
+CREATE TABLE IF NOT EXISTS `tareas_comentarios` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `tarea_id` INT NOT NULL,
+  `empleado_rut` VARCHAR(12) NOT NULL,
+  `comentario` TEXT NOT NULL,
+  `archivo_adjunto` VARCHAR(255) DEFAULT NULL,
+  `fecha_creacion` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `tarea_id` (`tarea_id`),
+  KEY `empleado_rut` (`empleado_rut`),
+  CONSTRAINT `tareas_comentarios_ibfk_1` 
+    FOREIGN KEY (`tarea_id`) 
+    REFERENCES `tareas` (`id`) 
+    ON DELETE CASCADE 
+    ON UPDATE CASCADE,
+  CONSTRAINT `tareas_comentarios_ibfk_2` 
+    FOREIGN KEY (`empleado_rut`) 
+    REFERENCES `empleados` (`rut`) 
+    ON DELETE CASCADE 
+    ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
---
--- Indices de la tabla `empleados_turnos`
---
-ALTER TABLE `empleados_turnos`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `idx_empleados_rut` (`empleados_rut`),
-  ADD KEY `idx_turno_id` (`turno_id`),
-  ADD KEY `idx_activo` (`activo`),
-  ADD KEY `idx_fecha_inicio` (`fecha_inicio`);
+-- ============================================================
+-- TABLA: tareas_historial
+-- ============================================================
+CREATE TABLE IF NOT EXISTS `tareas_historial` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `tarea_id` INT NOT NULL,
+  `empleado_rut` VARCHAR(12) NOT NULL,
+  `accion` VARCHAR(100) NOT NULL,
+  `campo_modificado` VARCHAR(50) DEFAULT NULL,
+  `valor_anterior` TEXT,
+  `valor_nuevo` TEXT,
+  `descripcion` TEXT,
+  `fecha_registro` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `tarea_id` (`tarea_id`),
+  KEY `empleado_rut` (`empleado_rut`),
+  CONSTRAINT `tareas_historial_ibfk_1` 
+    FOREIGN KEY (`tarea_id`) 
+    REFERENCES `tareas` (`id`) 
+    ON DELETE CASCADE 
+    ON UPDATE CASCADE,
+  CONSTRAINT `tareas_historial_ibfk_2` 
+    FOREIGN KEY (`empleado_rut`) 
+    REFERENCES `empleados` (`rut`) 
+    ON DELETE CASCADE 
+    ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
---
--- Indices de la tabla `horarios`
---
-ALTER TABLE `horarios`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `idx_turno_id` (`turno_id`),
-  ADD KEY `idx_fecha_inicio` (`fecha_inicio`),
-  ADD KEY `idx_empleado_rut` (`empleado_rut`);
+-- ============================================================
+-- TABLA: reportes
+-- ============================================================
+CREATE TABLE IF NOT EXISTS `reportes` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `nombre_reporte` VARCHAR(200) NOT NULL,
+  `tipo_reporte` ENUM('asistencia','inventario','personal','financiero','personalizado') NOT NULL,
+  `periodo_inicio` DATE DEFAULT NULL,
+  `periodo_fin` DATE DEFAULT NULL,
+  `parametros` JSON DEFAULT NULL,
+  `archivo_generado` VARCHAR(255) DEFAULT NULL,
+  `formato` ENUM('pdf','excel','csv','json') DEFAULT 'pdf',
+  `generado_por` INT DEFAULT NULL,
+  `fecha_generacion` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  `tiempo_generacion` INT DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_tipo_reporte` (`tipo_reporte`),
+  KEY `idx_fecha_generacion` (`fecha_generacion`),
+  KEY `idx_generado_por` (`generado_por`),
+  CONSTRAINT `reportes_ibfk_1` 
+    FOREIGN KEY (`generado_por`) 
+    REFERENCES `empleados` (`id`) 
+    ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
---
--- Indices de la tabla `inventario`
---
-ALTER TABLE `inventario`
-  ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `codigo_producto` (`codigo_producto`),
-  ADD KEY `idx_nombre` (`nombre_producto`),
-  ADD KEY `idx_categoria` (`categoria`),
-  ADD KEY `idx_estado` (`estado`),
-  ADD KEY `idx_codigo_qr` (`codigo_qr`),
-  ADD KEY `idx_codigo_barra` (`codigo_barra`),
-  ADD KEY `idx_fecha_vencimiento` (`fecha_vencimiento`),
-  ADD KEY `creado_por` (`creado_por`),
-  ADD KEY `actualizado_por` (`actualizado_por`);
+-- ============================================================
+-- TABLA: logs_actividad
+-- ============================================================
+CREATE TABLE IF NOT EXISTS `logs_actividad` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `empleado_id` INT DEFAULT NULL,
+  `modulo` VARCHAR(50) NOT NULL,
+  `accion` VARCHAR(100) NOT NULL,
+  `tabla_afectada` VARCHAR(100) DEFAULT NULL,
+  `registro_id` INT DEFAULT NULL,
+  `descripcion` TEXT,
+  `datos_anteriores` JSON DEFAULT NULL,
+  `datos_nuevos` JSON DEFAULT NULL,
+  `ip_address` VARCHAR(45) DEFAULT NULL,
+  `user_agent` TEXT,
+  `fecha_registro` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_empleado_id` (`empleado_id`),
+  KEY `idx_modulo` (`modulo`),
+  KEY `idx_fecha` (`fecha_registro`),
+  KEY `idx_tabla_registro` (`tabla_afectada`,`registro_id`),
+  CONSTRAINT `logs_actividad_ibfk_1` 
+    FOREIGN KEY (`empleado_id`) 
+    REFERENCES `empleados` (`id`) 
+    ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
---
--- Indices de la tabla `logs_actividad`
---
-ALTER TABLE `logs_actividad`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `idx_empleado_id` (`empleado_id`),
-  ADD KEY `idx_modulo` (`modulo`),
-  ADD KEY `idx_fecha` (`fecha_registro`),
-  ADD KEY `idx_tabla_registro` (`tabla_afectada`,`registro_id`);
+-- ============================================================
+-- VISTAS
+-- ============================================================
 
---
--- Indices de la tabla `movimientos_inventario`
---
-ALTER TABLE `movimientos_inventario`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `idx_inventario_id` (`inventario_id`),
-  ADD KEY `idx_tipo_movimiento` (`tipo_movimiento`),
-  ADD KEY `idx_fecha_movimiento` (`fecha_movimiento`),
-  ADD KEY `idx_empleado_id` (`empleado_id`);
-
---
--- Indices de la tabla `notificaciones`
---
-ALTER TABLE `notificaciones`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `idx_empleado_id` (`empleado_id`),
-  ADD KEY `idx_leida` (`leida`),
-  ADD KEY `idx_tipo` (`tipo`),
-  ADD KEY `idx_fecha_creacion` (`fecha_creacion`);
-
---
--- Indices de la tabla `reportes`
---
-ALTER TABLE `reportes`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `idx_tipo_reporte` (`tipo_reporte`),
-  ADD KEY `idx_fecha_generacion` (`fecha_generacion`),
-  ADD KEY `idx_generado_por` (`generado_por`);
-
---
--- Indices de la tabla `solicitudes`
---
-ALTER TABLE `solicitudes`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `idx_empleado_id` (`empleado_id`),
-  ADD KEY `idx_tipo_solicitud` (`tipo_solicitud_id`),
-  ADD KEY `idx_estado` (`estado`),
-  ADD KEY `idx_fechas` (`fecha_inicio`,`fecha_fin`),
-  ADD KEY `aprobado_por` (`aprobado_por`);
-
---
--- Indices de la tabla `tareas`
---
-ALTER TABLE `tareas`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `asignada_a_rut` (`asignada_a_rut`),
-  ADD KEY `creada_por_rut` (`creada_por_rut`),
-  ADD KEY `aprobada_por_rut` (`aprobada_por_rut`);
-
---
--- Indices de la tabla `tareas_comentarios`
---
-ALTER TABLE `tareas_comentarios`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `tarea_id` (`tarea_id`),
-  ADD KEY `empleado_rut` (`empleado_rut`);
-
---
--- Indices de la tabla `tareas_historial`
---
-ALTER TABLE `tareas_historial`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `tarea_id` (`tarea_id`),
-  ADD KEY `empleado_rut` (`empleado_rut`);
-
---
--- Indices de la tabla `tipos_solicitudes`
---
-ALTER TABLE `tipos_solicitudes`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `idx_nombre` (`nombre`);
-
---
--- Indices de la tabla `turnos`
---
-ALTER TABLE `turnos`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `idx_nombre_turno` (`nombre_turno`),
-  ADD KEY `idx_empleados_rut` (`empleados_rut`);
-
---
--- Indices de la tabla `ventas`
---
-ALTER TABLE `ventas`
-  ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `numero_venta` (`numero_venta`),
-  ADD KEY `idx_empleado_id` (`empleado_id`),
-  ADD KEY `idx_fecha_venta` (`fecha_venta`),
-  ADD KEY `idx_estado` (`estado`),
-  ADD KEY `idx_metodo_pago` (`metodo_pago`),
-  ADD KEY `cancelada_por` (`cancelada_por`);
-
---
--- AUTO_INCREMENT de las tablas volcadas
---
-
---
--- AUTO_INCREMENT de la tabla `alertas_inventario`
---
-ALTER TABLE `alertas_inventario`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT de la tabla `asistencias`
---
-ALTER TABLE `asistencias`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=27;
-
---
--- AUTO_INCREMENT de la tabla `configuracion_app`
---
-ALTER TABLE `configuracion_app`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT de la tabla `detalle_ventas`
---
-ALTER TABLE `detalle_ventas`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT de la tabla `empleados`
---
-ALTER TABLE `empleados`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
-
---
--- AUTO_INCREMENT de la tabla `empleados_turnos`
---
-ALTER TABLE `empleados_turnos`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT de la tabla `horarios`
---
-ALTER TABLE `horarios`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
-
---
--- AUTO_INCREMENT de la tabla `inventario`
---
-ALTER TABLE `inventario`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=49;
-
---
--- AUTO_INCREMENT de la tabla `logs_actividad`
---
-ALTER TABLE `logs_actividad`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT de la tabla `movimientos_inventario`
---
-ALTER TABLE `movimientos_inventario`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT de la tabla `notificaciones`
---
-ALTER TABLE `notificaciones`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT de la tabla `reportes`
---
-ALTER TABLE `reportes`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT de la tabla `solicitudes`
---
-ALTER TABLE `solicitudes`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT de la tabla `tareas`
---
-ALTER TABLE `tareas`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT de la tabla `tareas_comentarios`
---
-ALTER TABLE `tareas_comentarios`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT de la tabla `tareas_historial`
---
-ALTER TABLE `tareas_historial`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT de la tabla `tipos_solicitudes`
---
-ALTER TABLE `tipos_solicitudes`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT de la tabla `turnos`
---
-ALTER TABLE `turnos`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
-
---
--- AUTO_INCREMENT de la tabla `ventas`
---
-ALTER TABLE `ventas`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT;
-
---
--- Restricciones para tablas volcadas
---
-
---
--- Filtros para la tabla `alertas_inventario`
---
-ALTER TABLE `alertas_inventario`
-  ADD CONSTRAINT `alertas_inventario_ibfk_1` FOREIGN KEY (`inventario_id`) REFERENCES `inventario` (`id`) ON DELETE CASCADE,
-  ADD CONSTRAINT `alertas_inventario_ibfk_2` FOREIGN KEY (`resuelto_por`) REFERENCES `empleados` (`id`) ON DELETE SET NULL;
-
---
--- Filtros para la tabla `asistencias`
---
-ALTER TABLE `asistencias`
-  ADD CONSTRAINT `asistencias_ibfk_2` FOREIGN KEY (`validado_por`) REFERENCES `empleados` (`id`) ON DELETE SET NULL,
-  ADD CONSTRAINT `fk_asistencias_empleado` FOREIGN KEY (`empleado_rut`) REFERENCES `empleados` (`rut`) ON DELETE CASCADE;
-
---
--- Filtros para la tabla `detalle_ventas`
---
-ALTER TABLE `detalle_ventas`
-  ADD CONSTRAINT `detalle_ventas_ibfk_1` FOREIGN KEY (`venta_id`) REFERENCES `ventas` (`id`) ON DELETE CASCADE,
-  ADD CONSTRAINT `detalle_ventas_ibfk_2` FOREIGN KEY (`inventario_id`) REFERENCES `inventario` (`id`) ON DELETE RESTRICT;
-
---
--- Filtros para la tabla `empleados_turnos`
---
-ALTER TABLE `empleados_turnos`
-  ADD CONSTRAINT `empleados_turnos_ibfk_1` FOREIGN KEY (`empleados_rut`) REFERENCES `empleados` (`rut`) ON DELETE CASCADE,
-  ADD CONSTRAINT `empleados_turnos_ibfk_2` FOREIGN KEY (`turno_id`) REFERENCES `turnos` (`id`) ON DELETE CASCADE;
-
---
--- Filtros para la tabla `horarios`
---
-ALTER TABLE `horarios`
-  ADD CONSTRAINT `horarios_ibfk_1` FOREIGN KEY (`empleado_rut`) REFERENCES `empleados` (`rut`) ON DELETE CASCADE,
-  ADD CONSTRAINT `horarios_ibfk_2` FOREIGN KEY (`turno_id`) REFERENCES `turnos` (`id`) ON DELETE RESTRICT;
-
---
--- Filtros para la tabla `inventario`
---
-ALTER TABLE `inventario`
-  ADD CONSTRAINT `inventario_ibfk_1` FOREIGN KEY (`creado_por`) REFERENCES `empleados` (`id`) ON DELETE SET NULL,
-  ADD CONSTRAINT `inventario_ibfk_2` FOREIGN KEY (`actualizado_por`) REFERENCES `empleados` (`id`) ON DELETE SET NULL;
-
---
--- Filtros para la tabla `logs_actividad`
---
-ALTER TABLE `logs_actividad`
-  ADD CONSTRAINT `logs_actividad_ibfk_1` FOREIGN KEY (`empleado_id`) REFERENCES `empleados` (`id`) ON DELETE SET NULL;
-
---
--- Filtros para la tabla `movimientos_inventario`
---
-ALTER TABLE `movimientos_inventario`
-  ADD CONSTRAINT `movimientos_inventario_ibfk_1` FOREIGN KEY (`inventario_id`) REFERENCES `inventario` (`id`) ON DELETE CASCADE,
-  ADD CONSTRAINT `movimientos_inventario_ibfk_2` FOREIGN KEY (`empleado_id`) REFERENCES `empleados` (`id`) ON DELETE SET NULL;
-
---
--- Filtros para la tabla `notificaciones`
---
-ALTER TABLE `notificaciones`
-  ADD CONSTRAINT `notificaciones_ibfk_1` FOREIGN KEY (`empleado_id`) REFERENCES `empleados` (`id`) ON DELETE CASCADE;
-
---
--- Filtros para la tabla `reportes`
---
-ALTER TABLE `reportes`
-  ADD CONSTRAINT `reportes_ibfk_1` FOREIGN KEY (`generado_por`) REFERENCES `empleados` (`id`) ON DELETE SET NULL;
-
---
--- Filtros para la tabla `solicitudes`
---
-ALTER TABLE `solicitudes`
-  ADD CONSTRAINT `solicitudes_ibfk_1` FOREIGN KEY (`empleado_id`) REFERENCES `empleados` (`id`) ON DELETE CASCADE,
-  ADD CONSTRAINT `solicitudes_ibfk_2` FOREIGN KEY (`tipo_solicitud_id`) REFERENCES `tipos_solicitudes` (`id`) ON DELETE RESTRICT,
-  ADD CONSTRAINT `solicitudes_ibfk_3` FOREIGN KEY (`aprobado_por`) REFERENCES `empleados` (`id`) ON DELETE SET NULL;
-
---
--- Filtros para la tabla `tareas`
---
-ALTER TABLE `tareas`
-  ADD CONSTRAINT `tareas_ibfk_1` FOREIGN KEY (`asignada_a_rut`) REFERENCES `empleados` (`rut`) ON DELETE SET NULL ON UPDATE CASCADE,
-  ADD CONSTRAINT `tareas_ibfk_2` FOREIGN KEY (`creada_por_rut`) REFERENCES `empleados` (`rut`) ON DELETE CASCADE ON UPDATE CASCADE,
-  ADD CONSTRAINT `tareas_ibfk_3` FOREIGN KEY (`aprobada_por_rut`) REFERENCES `empleados` (`rut`) ON DELETE SET NULL ON UPDATE CASCADE;
-
---
--- Filtros para la tabla `tareas_comentarios`
---
-ALTER TABLE `tareas_comentarios`
-  ADD CONSTRAINT `tareas_comentarios_ibfk_1` FOREIGN KEY (`tarea_id`) REFERENCES `tareas` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  ADD CONSTRAINT `tareas_comentarios_ibfk_2` FOREIGN KEY (`empleado_rut`) REFERENCES `empleados` (`rut`) ON DELETE CASCADE ON UPDATE CASCADE;
-
---
--- Filtros para la tabla `tareas_historial`
---
-ALTER TABLE `tareas_historial`
-  ADD CONSTRAINT `tareas_historial_ibfk_1` FOREIGN KEY (`tarea_id`) REFERENCES `tareas` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  ADD CONSTRAINT `tareas_historial_ibfk_2` FOREIGN KEY (`empleado_rut`) REFERENCES `empleados` (`rut`) ON DELETE CASCADE ON UPDATE CASCADE;
-
---
--- Filtros para la tabla `turnos`
---
-ALTER TABLE `turnos`
-  ADD CONSTRAINT `fk_turnos_empleados` FOREIGN KEY (`empleados_rut`) REFERENCES `empleados` (`rut`) ON DELETE CASCADE ON UPDATE CASCADE;
-
---
--- Filtros para la tabla `ventas`
---
-ALTER TABLE `ventas`
-  ADD CONSTRAINT `ventas_ibfk_1` FOREIGN KEY (`empleado_id`) REFERENCES `empleados` (`id`) ON DELETE RESTRICT,
-  ADD CONSTRAINT `ventas_ibfk_2` FOREIGN KEY (`cancelada_por`) REFERENCES `empleados` (`id`) ON DELETE SET NULL;
-
--- --------------------------------------------------------
-
---
--- Vista: `vista_ventas_inventario`
---
 DROP VIEW IF EXISTS `vista_ventas_inventario`;
-
 CREATE VIEW `vista_ventas_inventario` AS
 SELECT 
     v.id AS venta_id,
@@ -940,13 +648,7 @@ INNER JOIN empleados e ON v.empleado_id = e.id
 WHERE v.estado = 'completada'
 ORDER BY v.fecha_venta DESC;
 
---
--- Vista: `vista_inventario_precios`
--- Vista que incluye los campos calculados de precios con IVA y ganancia
---
-
 DROP VIEW IF EXISTS `vista_inventario_precios`;
-
 CREATE VIEW `vista_inventario_precios` AS
 SELECT 
     id,
@@ -960,16 +662,9 @@ SELECT
     cantidad_maxima,
     precio_unitario,
     precio_venta,
-    -- Precio con IVA (19% en Chile)
-    CASE 
-        WHEN precio_venta IS NOT NULL THEN CAST(precio_venta * 1.19 AS UNSIGNED)
-        ELSE NULL
-    END AS precio_con_iva,
-    -- Ganancia (precio_venta - precio_unitario)
-    CASE 
-        WHEN precio_venta IS NOT NULL AND precio_unitario IS NOT NULL THEN precio_venta - precio_unitario
-        ELSE NULL
-    END AS ganancia,
+    ROUND(precio_venta * 1.19) AS precio_con_iva,
+    (precio_venta - precio_unitario) AS ganancia,
+    ROUND(((precio_venta - precio_unitario) / precio_unitario) * 100, 2) AS margen_porcentaje,
     codigo_qr,
     codigo_barra,
     ubicacion,
@@ -987,202 +682,258 @@ SELECT
     creado_por,
     actualizado_por,
     activo
-FROM inventario;
+FROM inventario
+WHERE activo = 1;
 
---
--- Volcado de datos para la tabla `inventario`
---
+-- ============================================================
+-- DATOS INICIALES - EMPLEADOS
+-- ============================================================
 
-INSERT IGNORE INTO `inventario` (`id`, `codigo_producto`, `nombre_producto`, `descripcion`, `categoria`, `unidad_medida`, `cantidad_actual`, `cantidad_minima`, `cantidad_maxima`, `precio_unitario`, `precio_venta`, `codigo_qr`, `codigo_barra`, `ubicacion`, `proveedor`, `contacto_proveedor`, `fecha_ultimo_ingreso`, `fecha_vencimiento`, `lote`, `estado`, `requiere_alerta`, `imagen_producto`, `notas`, `fecha_creacion`, `fecha_actualizacion`, `creado_por`, `actualizado_por`, `activo`) VALUES
-(1, 'CAFE-001', 'Marley Coffee - One Love Organic', 'Café orgánico en grano 340g, tueste medio', 'cafe', 'paquete', 50.00, 15.00, 100.00, 8500.00, 12990.00, 'QR-CAFE-001', '7000000000001', 'Bodega A1', 'Distribuidora Marley Chile', NULL, NULL, NULL, NULL, 'disponible', 0, NULL, NULL, '2025-10-02 15:05:47', '2025-10-02 15:07:20', NULL, NULL, 1),
-(2, 'CAFE-002', 'Marley Coffee - Smile Jamaica', 'Café Jamaica Blue Mountain en grano 340g', 'cafe', 'paquete', 30.00, 10.00, 80.00, 9200.00, 13990.00, 'QR-CAFE-002', '7000000000002', 'Bodega A1', 'Distribuidora Marley Chile', NULL, NULL, NULL, NULL, 'disponible', 0, NULL, NULL, '2025-10-02 15:05:47', '2025-10-02 15:07:20', NULL, NULL, 1),
-(3, 'CAFE-003', 'Marley Coffee - Buffalo Soldier', 'Café oscuro intenso en grano 340g', 'cafe', 'paquete', 45.00, 12.00, 90.00, 8800.00, 12990.00, 'QR-CAFE-003', '7000000000003', 'Bodega A1', 'Distribuidora Marley Chile', NULL, NULL, NULL, NULL, 'disponible', 0, NULL, NULL, '2025-10-02 15:05:47', '2025-10-02 15:07:20', NULL, NULL, 1),
-(4, 'CAFE-004', 'Marley Coffee - Lively Up', 'Café espresso en grano 340g', 'cafe', 'paquete', 40.00, 15.00, 100.00, 8600.00, 12790.00, 'QR-CAFE-004', '7000000000004', 'Bodega A1', 'Distribuidora Marley Chile', NULL, NULL, NULL, NULL, 'disponible', 0, NULL, NULL, '2025-10-02 15:05:47', '2025-10-02 15:07:20', NULL, NULL, 1),
-(5, 'CAFE-005', 'Marley Coffee - Mystic Morning', 'Café suave descafeinado en grano 340g', 'cafe', 'paquete', 25.00, 8.00, 60.00, 9500.00, 14490.00, 'QR-CAFE-005', '7000000000005', 'Bodega A1', 'Distribuidora Marley Chile', NULL, NULL, NULL, NULL, 'disponible', 0, NULL, NULL, '2025-10-02 15:05:47', '2025-10-02 15:07:20', NULL, NULL, 1),
-(6, 'CAFE-011', 'Marley Coffee - One Love Molido', 'Café orgánico molido 340g, tueste medio', 'cafe', 'paquete', 60.00, 20.00, 120.00, 8200.00, 12490.00, 'QR-CAFE-011', '7000000000006', 'Bodega A2', 'Distribuidora Marley Chile', NULL, NULL, NULL, NULL, 'disponible', 0, NULL, NULL, '2025-10-02 15:05:57', '2025-10-02 15:07:20', NULL, NULL, 1),
-(7, 'CAFE-012', 'Marley Coffee - Get Up Stand Up', 'Café molido tueste oscuro 340g', 'cafe', 'paquete', 55.00, 18.00, 110.00, 8400.00, 12690.00, 'QR-CAFE-012', '7000000000007', 'Bodega A2', 'Distribuidora Marley Chile', NULL, NULL, NULL, NULL, 'disponible', 0, NULL, NULL, '2025-10-02 15:05:57', '2025-10-02 15:07:20', NULL, NULL, 1),
-(8, 'CAFE-021', 'Marley Coffee - Cápsulas One Love', 'Cápsulas compatibles Nespresso 10 unid.', 'cafe', 'caja', 80.00, 25.00, 150.00, 4200.00, 6990.00, 'QR-CAFE-021', '7000000000008', 'Bodega A3', 'Distribuidora Marley Chile', NULL, NULL, NULL, NULL, 'disponible', 0, NULL, NULL, '2025-10-02 15:06:06', '2025-10-02 15:07:20', NULL, NULL, 1),
-(9, 'CAFE-022', 'Marley Coffee - Cápsulas Lively Up', 'Cápsulas compatibles Nespresso 10 unid.', 'cafe', 'caja', 75.00, 25.00, 150.00, 4200.00, 6990.00, 'QR-CAFE-022', '7000000000009', 'Bodega A3', 'Distribuidora Marley Chile', NULL, NULL, NULL, NULL, 'disponible', 0, NULL, NULL, '2025-10-02 15:06:06', '2025-10-02 15:07:20', NULL, NULL, 1),
-(10, 'MERCH-101', 'Taza Marley Coffee Logo', 'Taza cerámica 350ml con logo Marley', 'otros', 'unidad', 100.00, 20.00, 200.00, 3500.00, 7990.00, 'QR-MERCH-101', '7000000000010', 'Vitrina Principal', 'Importadora Nacional', NULL, NULL, NULL, NULL, 'disponible', 0, NULL, NULL, '2025-10-02 15:06:15', '2025-10-02 15:07:20', NULL, NULL, 1),
-(11, 'MERCH-102', 'Taza One Love Edición Especial', 'Taza cerámica premium 400ml', 'otros', 'unidad', 50.00, 15.00, 100.00, 4200.00, 9990.00, 'QR-MERCH-102', '7000000000011', 'Vitrina Principal', 'Importadora Nacional', NULL, NULL, NULL, NULL, 'disponible', 0, NULL, NULL, '2025-10-02 15:06:15', '2025-10-02 15:07:20', NULL, NULL, 1),
-(12, 'MERCH-103', 'Mug Térmico Marley', 'Vaso térmico acero inoxidable 500ml', 'otros', 'unidad', 40.00, 10.00, 80.00, 6500.00, 14990.00, 'QR-MERCH-103', '7000000000012', 'Vitrina Principal', 'Importadora Nacional', NULL, NULL, NULL, NULL, 'disponible', 0, NULL, NULL, '2025-10-02 15:06:15', '2025-10-02 15:07:20', NULL, NULL, 1),
-(13, 'MERCH-201', 'Polera Marley Coffee - Talla S', 'Polera algodón 100% con estampado', 'otros', 'unidad', 30.00, 8.00, 60.00, 5500.00, 12990.00, 'QR-MERCH-201', '7000000000013', 'Bodega Merchandising', 'Textil Express', NULL, NULL, NULL, NULL, 'disponible', 0, NULL, NULL, '2025-10-02 15:06:26', '2025-10-02 15:07:20', NULL, NULL, 1),
-(14, 'MERCH-202', 'Polera Marley Coffee - Talla M', 'Polera algodón 100% con estampado', 'otros', 'unidad', 40.00, 10.00, 80.00, 5500.00, 12990.00, 'QR-MERCH-202', '7000000000014', 'Bodega Merchandising', 'Textil Express', NULL, NULL, NULL, NULL, 'disponible', 0, NULL, NULL, '2025-10-02 15:06:26', '2025-10-02 15:07:20', NULL, NULL, 1),
-(15, 'MERCH-203', 'Polera Marley Coffee - Talla L', 'Polera algodón 100% con estampado', 'otros', 'unidad', 35.00, 10.00, 70.00, 5500.00, 12990.00, 'QR-MERCH-203', '7000000000015', 'Bodega Merchandising', 'Textil Express', NULL, NULL, NULL, NULL, 'disponible', 0, NULL, NULL, '2025-10-02 15:06:26', '2025-10-02 15:07:20', NULL, NULL, 1),
-(16, 'MERCH-204', 'Polera Marley Coffee - Talla XL', 'Polera algodón 100% con estampado', 'otros', 'unidad', 25.00, 8.00, 50.00, 5500.00, 12990.00, 'QR-MERCH-204', '7000000000016', 'Bodega Merchandising', 'Textil Express', NULL, NULL, NULL, NULL, 'disponible', 0, NULL, NULL, '2025-10-02 15:06:26', '2025-10-02 15:07:20', NULL, NULL, 1),
-(17, 'MERCH-205', 'Gorro Marley Coffee', 'Gorro tejido con logo bordado', 'otros', 'unidad', 45.00, 12.00, 90.00, 4200.00, 9990.00, 'QR-MERCH-205', '7000000000017', 'Bodega Merchandising', 'Textil Express', NULL, NULL, NULL, NULL, 'disponible', 0, NULL, NULL, '2025-10-02 15:06:26', '2025-10-02 15:07:20', NULL, NULL, 1),
-(18, 'MERCH-206', 'Delantal Barista Marley', 'Delantal jean con bolsillos', 'otros', 'unidad', 20.00, 5.00, 40.00, 7800.00, 16990.00, 'QR-MERCH-206', '7000000000018', 'Bodega Merchandising', 'Textil Express', NULL, NULL, NULL, NULL, 'disponible', 0, NULL, NULL, '2025-10-02 15:06:26', '2025-10-02 15:07:20', NULL, NULL, 1),
-(19, 'MERCH-301', 'Llavero Marley Coffee', 'Llavero metal con logo grabado', 'otros', 'unidad', 150.00, 30.00, 300.00, 800.00, 2990.00, 'QR-MERCH-301', '7000000000019', 'Mostrador', 'Importadora Nacional', NULL, NULL, NULL, NULL, 'disponible', 0, NULL, NULL, '2025-10-02 15:06:35', '2025-10-02 15:07:20', NULL, NULL, 1),
-(20, 'MERCH-302', 'Botella Reutilizable Marley', 'Botella plástico libre BPA 750ml', 'otros', 'unidad', 60.00, 15.00, 120.00, 3200.00, 7990.00, 'QR-MERCH-302', '7000000000020', 'Vitrina Principal', 'Importadora Nacional', NULL, NULL, NULL, NULL, 'disponible', 0, NULL, NULL, '2025-10-02 15:06:35', '2025-10-02 15:07:20', NULL, NULL, 1),
-(21, 'MERCH-303', 'Bolsa Tote Marley Coffee', 'Bolsa tela ecológica reutilizable', 'otros', 'unidad', 80.00, 20.00, 150.00, 2500.00, 5990.00, 'QR-MERCH-303', '7000000000021', 'Mostrador', 'Textil Express', NULL, NULL, NULL, NULL, 'disponible', 0, NULL, NULL, '2025-10-02 15:06:35', '2025-10-02 15:07:20', NULL, NULL, 1),
-(22, 'MERCH-304', 'Sticker Pack Marley', 'Pack 5 stickers adhesivos variados', 'otros', 'paquete', 200.00, 50.00, 400.00, 500.00, 1990.00, 'QR-MERCH-304', '7000000000022', 'Mostrador', 'Imprenta Digital', NULL, NULL, NULL, NULL, 'disponible', 0, NULL, NULL, '2025-10-02 15:06:35', '2025-10-02 15:07:20', NULL, NULL, 1),
-(23, 'MERCH-305', 'Imán Refrigerador Marley', 'Imán decorativo con diseños Marley', 'otros', 'unidad', 120.00, 30.00, 250.00, 600.00, 1990.00, 'QR-MERCH-305', '7000000000023', 'Mostrador', 'Imprenta Digital', NULL, NULL, NULL, NULL, 'disponible', 0, NULL, NULL, '2025-10-02 15:06:35', '2025-10-02 15:07:20', NULL, NULL, 1),
-(24, 'MERCH-401', 'Prensa Francesa Marley 1L', 'Cafetera prensa francesa vidrio', 'otros', 'unidad', 15.00, 5.00, 30.00, 12000.00, 24990.00, 'QR-MERCH-401', '7000000000024', 'Vitrina Premium', 'Importadora Nacional', NULL, NULL, NULL, NULL, 'disponible', 0, NULL, '', '2025-10-02 15:06:42', '2025-11-06 18:00:17', NULL, NULL, 1),
-(25, 'MERCH-402', 'Molinillo Manual Marley', 'Molinillo café manual cerámica', 'equipamiento', 'unidad', 12.00, 4.00, 25.00, 18000.00, 34990.00, 'QR-MERCH-402', '7000000000025', 'Vitrina Premium', 'Importadora Nacional', NULL, NULL, NULL, NULL, 'disponible', 0, NULL, NULL, '2025-10-02 15:06:42', '2025-10-02 15:07:20', NULL, NULL, 1),
-(26, 'MERCH-403', 'Set Barista Marley', 'Kit completo: tamper, jarra, cuchara', 'equipamiento', 'unidad', 10.00, 3.00, 20.00, 22000.00, 44990.00, 'QR-MERCH-403', '7000000000026', 'Vitrina Premium', 'Importadora Nacional', NULL, NULL, NULL, NULL, 'disponible', 0, NULL, NULL, '2025-10-02 15:06:42', '2025-10-02 15:07:20', NULL, NULL, 1),
-(27, 'MWLE63109', 'Poleras Marley Coffee', 'Polera algodón 100% con estampado\n', 'equipamiento', 'unidad', 12.00, 0.00, 9999.00, 9990.00, 12990.00, 'MWLE63109', NULL, 'Vitrina ', NULL, NULL, NULL, NULL, NULL, 'disponible', 0, NULL, 'Polera algodón 100% con estampado\n', '2025-11-06 11:06:53', '2025-11-06 18:01:24', NULL, NULL, 1),
-(28, '5391519890707', 'Café Selección ', 'CAFÉ FINA SELECCIÓN ', 'cafe', 'unidad', 20.00, 0.00, 9999.00, 2990.00, 4990.00, '5391519890707', NULL, 'Bodega A', NULL, NULL, NULL, NULL, NULL, 'disponible', 0, NULL, 'CAFÉ FINA SELECCIÓN ', '2025-11-06 14:04:15', '2025-11-06 14:04:15', NULL, NULL, 1);
+INSERT INTO `empleados` (`rut`, `nombres`, `apellidos`, `email`, `telefono`, `password`, `fecha_nacimiento`, `direccion`, `cargo`, `departamento`, `fecha_contratacion`, `salario`, `tipo_contrato`, `estado`, `activo`) VALUES
+('18.234.567-8', 'Maria', 'Gonzalez Perez', 'maria.gonzalez@monkeycoffee.cl', '+56912345678', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '1990-05-15', 'Av. Arturo Prat 1234, Iquique', 'Gerente General', 'Administracion', '2023-01-15', 850000, 'indefinido', 'activo', 1),
+('19.345.678-9', 'Carlos', 'Ramirez Silva', 'carlos.ramirez@monkeycoffee.cl', '+56923456789', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '1992-08-22', 'Calle Baquedano 567, Iquique', 'Barista Senior', 'Operaciones', '2023-02-01', 550000, 'indefinido', 'activo', 1),
+('20.456.789-0', 'Fernanda', 'Torres Morales', 'fernanda.torres@monkeycoffee.cl', '+56934567890', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '1995-11-10', 'Av. Heroes de la Concepcion 890, Alto Hospicio', 'Barista', 'Operaciones', '2023-03-10', 450000, 'indefinido', 'activo', 1),
+('17.567.890-1', 'Diego', 'Vargas Castro', 'diego.vargas@monkeycoffee.cl', '+56945678901', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '1993-03-28', 'Pasaje Los Carrera 234, Iquique', 'Cajero', 'Ventas', '2023-04-05', 420000, 'indefinido', 'activo', 1),
+('18.678.901-2', 'Camila', 'Herrera Rojas', 'camila.herrera@monkeycoffee.cl', '+56956789012', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '1996-07-14', 'Av. La Tirana 1456, Alto Hospicio', 'Barista', 'Operaciones', '2023-05-20', 450000, 'indefinido', 'activo', 1),
+('19.789.012-3', 'Sebastian', 'Mendoza Lopez', 'sebastian.mendoza@monkeycoffee.cl', '+56967890123', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '1991-12-05', 'Calle Sargento Aldea 789, Iquique', 'Supervisor de Turno', 'Operaciones', '2023-01-20', 600000, 'indefinido', 'activo', 1),
+('20.890.123-4', 'Valentina', 'Castro Diaz', 'valentina.castro@monkeycoffee.cl', '+56978901234', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '1994-09-18', 'Av. Esmeralda 321, Iquique', 'Cajera', 'Ventas', '2023-06-01', 420000, 'indefinido', 'activo', 1),
+('17.901.234-5', 'Nicolas', 'Jimenez Flores', 'nicolas.jimenez@monkeycoffee.cl', '+56989012345', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '1997-02-25', 'Calle OHiggins 654, Alto Hospicio', 'Barista', 'Operaciones', '2023-07-15', 450000, 'indefinido', 'activo', 1),
+('18.012.345-6', 'Javiera', 'Soto Martinez', 'javiera.soto@monkeycoffee.cl', '+56990123456', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '1998-06-30', 'Av. Los Rieles 987, Alto Hospicio', 'Auxiliar de Cocina', 'Operaciones', '2023-08-10', 380000, 'indefinido', 'activo', 1),
+('19.123.456-7', 'Andres', 'Contreras Vega', 'andres.contreras@monkeycoffee.cl', '+56901234567', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '1992-10-12', 'Calle Thompson 456, Iquique', 'Encargado de Inventario', 'Logistica', '2023-02-15', 520000, 'indefinido', 'activo', 1),
+('21.234.567-8', 'Sofia', 'Munoz Ortiz', 'sofia.munoz@monkeycoffee.cl', '+56912345679', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '1999-04-12', 'Av. Tarapaca 2345, Iquique', 'Barista Junior', 'Operaciones', '2024-01-10', 420000, 'indefinido', 'activo', 1),
+('16.789.012-3', 'Roberto', 'Paz Salazar', 'roberto.paz@monkeycoffee.cl', '+56923456780', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '1989-11-28', 'Calle Vivar 678, Iquique', 'Encargado de Mantencion', 'Mantencion', '2023-03-01', 480000, 'indefinido', 'activo', 1);
 
--- Productos ficticios
---
--- 10 Productos Agotados
---
+-- ============================================================
+-- DATOS INICIALES - TURNOS
+-- ============================================================
 
-INSERT IGNORE INTO `inventario` (`codigo_producto`, `nombre_producto`, `descripcion`, `categoria`, `unidad_medida`, `cantidad_actual`, `cantidad_minima`, `cantidad_maxima`, `precio_unitario`, `precio_venta`, `codigo_qr`, `codigo_barra`, `ubicacion`, `proveedor`, `contacto_proveedor`, `fecha_ultimo_ingreso`, `fecha_vencimiento`, `lote`, `estado`, `requiere_alerta`, `imagen_producto`, `notas`, `creado_por`, `activo`) VALUES
-('AGOT-001', 'Café Tarapacá Premium', 'Café en grano tostado artesanalmente, origen Tarapacá', 'cafe', 'kilogramo', 0.00, 5.00, 50.00, 12000.00, 18990.00, 'QR-AGOT-001', '7000000000101', 'Bodega A1', 'Cafetalera del Norte', '+56987654321', '2024-12-15 10:00:00', NULL, 'LOTE-2024-12', 'agotado', 1, NULL, 'Producto agotado - Reposición pendiente', NULL, 1),
-('AGOT-002', 'Leche Condensada La Lechera', 'Leche condensada 397g, ideal para postres y café', 'alimentos', 'unidad', 0.00, 20.00, 200.00, 1200.00, 2490.00, 'QR-AGOT-002', '7000000000102', 'Bodega Refrigerada', 'Distribuidora Lácteos Norte', '+56976543210', '2024-12-10 14:30:00', '2026-12-31', 'LOTE-LEC-2024-12', 'agotado', 1, NULL, 'Stock agotado - Alta demanda', NULL, 1),
-('AGOT-003', 'Azúcar Blanca Iansa', 'Azúcar blanca refinada 1kg', 'alimentos', 'kilogramo', 0.00, 10.00, 100.00, 800.00, 1590.00, 'QR-AGOT-003', '7000000000103', 'Bodega Seca', 'Distribuidora Iansa Chile', '+56965432109', '2024-12-05 09:00:00', NULL, 'LOTE-AZU-2024-12', 'agotado', 1, NULL, 'Producto básico agotado', NULL, 1),
-('AGOT-004', 'Vasos Desechables 12oz', 'Vasos desechables para café caliente, 12oz, 100 unidades', 'desechables', 'paquete', 0.00, 5.00, 50.00, 3500.00, 5990.00, 'QR-AGOT-004', '7000000000104', 'Bodega Desechables', 'Papelería del Norte', '+56954321098', '2024-11-28 11:00:00', NULL, 'LOTE-VAS-2024-11', 'agotado', 1, NULL, 'Agotado - Pedido urgente', NULL, 1),
-('AGOT-005', 'Tazas Cerámicas Personalizadas', 'Tazas cerámicas con logo Monkey Coffee, 350ml', 'otros', 'unidad', 0.00, 15.00, 150.00, 4500.00, 8990.00, 'QR-AGOT-005', '7000000000105', 'Vitrina Principal', 'Cerámica Artesanal Iquique', '+56943210987', '2024-11-20 15:00:00', NULL, 'LOTE-TAZ-2024-11', 'agotado', 1, NULL, 'Producto popular agotado', NULL, 1),
-('AGOT-006', 'Café Molido Express', 'Café molido para espresso, 500g', 'cafe', 'kilogramo', 0.00, 8.00, 80.00, 9500.00, 14990.00, 'QR-AGOT-006', '7000000000106', 'Bodega A2', 'Tostaduría del Desierto', '+56932109876', '2024-12-01 08:00:00', NULL, 'LOTE-EXP-2024-12', 'agotado', 1, NULL, 'Alta rotación - Agotado', NULL, 1),
-('AGOT-007', 'Canela Molida Premium', 'Canela molida de calidad premium, 100g', 'alimentos', 'gramo', 0.00, 500.00, 5000.00, 2500.00, 4990.00, 'QR-AGOT-007', '7000000000107', 'Bodega Especias', 'Especias del Norte', '+56921098765', '2024-11-25 12:00:00', '2026-11-25', 'LOTE-CAN-2024-11', 'agotado', 1, NULL, 'Producto estacional agotado', NULL, 1),
-('AGOT-008', 'Servilletas Personalizadas', 'Servilletas con logo Monkey Coffee, 2 capas, 100 unidades', 'desechables', 'paquete', 0.00, 10.00, 100.00, 2800.00, 4990.00, 'QR-AGOT-008', '7000000000108', 'Bodega Desechables', 'Papelería del Norte', '+56910987654', '2024-11-30 10:00:00', NULL, 'LOTE-SER-2024-11', 'agotado', 1, NULL, 'Stock agotado', NULL, 1),
-('AGOT-009', 'Chocolate en Polvo Nestlé', 'Chocolate en polvo para bebidas, 400g', 'alimentos', 'gramo', 0.00, 10.00, 100.00, 3200.00, 5990.00, 'QR-AGOT-009', '7000000000109', 'Bodega Seca', 'Distribuidora Nestlé Chile', '+56909876543', '2024-12-08 13:00:00', '2026-12-08', 'LOTE-CHO-2024-12', 'agotado', 1, NULL, 'Producto agotado', NULL, 1),
-('AGOT-010', 'Filtros para Prensa Francesa', 'Filtros metálicos reutilizables para prensa francesa', 'equipamiento', 'unidad', 0.00, 5.00, 50.00, 8500.00, 14990.00, 'QR-AGOT-010', '7000000000110', 'Vitrina Premium', 'Equipos Barista Chile', '+56998765432', '2024-11-15 16:00:00', NULL, 'LOTE-FIL-2024-11', 'agotado', 1, NULL, 'Equipamiento agotado', NULL, 1);
+INSERT INTO `turnos` (`empleados_rut`, `nombre_turno`, `hora_entrada`, `hora_salida`, `tolerancia_minutos`, `horas_trabajo`, `descripcion`, `dias_semana`, `activo`) VALUES
+('18.234.567-8', 'Turno Administrativo', '08:00:00', '17:00:00', 15, 9.00, 'Turno administrativo de lunes a viernes', '[1, 2, 3, 4, 5]', 1),
+('19.345.678-9', 'Turno Manana Barista', '07:00:00', '16:00:00', 15, 9.00, 'Turno manana para barista senior', '[1, 2, 3, 4, 5, 6]', 1),
+('20.456.789-0', 'Turno Tarde', '13:00:00', '22:00:00', 15, 9.00, 'Turno tarde de lunes a domingo', '[1, 2, 3, 4, 5, 6, 7]', 1),
+('17.567.890-1', 'Turno Manana Cajero', '08:00:00', '17:00:00', 15, 9.00, 'Turno manana para cajero', '[1, 2, 3, 4, 5, 6]', 1),
+('18.678.901-2', 'Turno Tarde Barista', '14:00:00', '23:00:00', 15, 9.00, 'Turno tarde para barista', '[1, 2, 3, 4, 5, 6, 7]', 1),
+('19.789.012-3', 'Turno Supervisor Manana', '06:00:00', '15:00:00', 15, 9.00, 'Turno supervisor manana', '[1, 2, 3, 4, 5, 6]', 1),
+('20.890.123-4', 'Turno Manana Cajera', '08:00:00', '17:00:00', 15, 9.00, 'Turno manana para cajera', '[1, 2, 3, 4, 5, 6]', 1),
+('17.901.234-5', 'Turno Noche', '18:00:00', '02:00:00', 15, 8.00, 'Turno noche de jueves a domingo', '[4, 5, 6, 7]', 1),
+('18.012.345-6', 'Turno Auxiliar', '10:00:00', '19:00:00', 15, 9.00, 'Turno auxiliar de cocina', '[1, 2, 3, 4, 5, 6]', 1),
+('19.123.456-7', 'Turno Logistica', '09:00:00', '18:00:00', 15, 9.00, 'Turno logistica e inventario', '[1, 2, 3, 4, 5]', 1),
+('21.234.567-8', 'Turno Barista Junior', '08:00:00', '17:00:00', 15, 9.00, 'Turno manana barista junior', '[1, 2, 3, 4, 5, 6]', 1),
+('16.789.012-3', 'Turno Mantencion', '09:00:00', '18:00:00', 15, 9.00, 'Turno mantencion y limpieza', '[1, 2, 3, 4, 5]', 1);
 
---
--- 10 Productos Por Vencer
---
+-- ============================================================
+-- DATOS INICIALES - TIPOS DE SOLICITUDES
+-- ============================================================
 
-INSERT IGNORE INTO `inventario` (`codigo_producto`, `nombre_producto`, `descripcion`, `categoria`, `unidad_medida`, `cantidad_actual`, `cantidad_minima`, `cantidad_maxima`, `precio_unitario`, `precio_venta`, `codigo_qr`, `codigo_barra`, `ubicacion`, `proveedor`, `contacto_proveedor`, `fecha_ultimo_ingreso`, `fecha_vencimiento`, `lote`, `estado`, `requiere_alerta`, `imagen_producto`, `notas`, `creado_por`, `activo`) VALUES
-('VEN-001', 'Leche Entera Colun', 'Leche entera pasteurizada 1L, vence en 7 días', 'alimentos', 'litro', 45.00, 20.00, 200.00, 850.00, 1290.00, 'QR-VEN-001', '7000000000201', 'Bodega Refrigerada', 'Colun Chile', '+56987654321', '2024-12-10 08:00:00', DATE_ADD(CURDATE(), INTERVAL 7 DAY), 'LOTE-LEC-2024-12-10', 'por_vencer', 1, NULL, 'Vence en 7 días - Prioridad alta', NULL, 1),
-('VEN-002', 'Yogurt Natural', 'Yogurt natural sin azúcar, 1kg, vence en 5 días', 'alimentos', 'kilogramo', 30.00, 15.00, 150.00, 2200.00, 3990.00, 'QR-VEN-002', '7000000000202', 'Bodega Refrigerada', 'Lácteos del Norte', '+56976543210', '2024-12-08 10:00:00', DATE_ADD(CURDATE(), INTERVAL 5 DAY), 'LOTE-YOG-2024-12-08', 'por_vencer', 1, NULL, 'Vence en 5 días - Urgente', NULL, 1),
-('VEN-003', 'Mermelada de Fresa', 'Mermelada de fresa artesanal, 250g, vence en 10 días', 'alimentos', 'gramo', 25.00, 10.00, 100.00, 1800.00, 3490.00, 'QR-VEN-003', '7000000000203', 'Bodega Seca', 'Mermeladas Artesanales', '+56965432109', '2024-12-05 11:00:00', DATE_ADD(CURDATE(), INTERVAL 10 DAY), 'LOTE-MER-2024-12-05', 'por_vencer', 1, NULL, 'Vence en 10 días', NULL, 1),
-('VEN-004', 'Crema para Batir', 'Crema para batir 500ml, vence en 6 días', 'alimentos', 'mililitro', 40.00, 20.00, 200.00, 2800.00, 4990.00, 'QR-VEN-004', '7000000000204', 'Bodega Refrigerada', 'Lácteos Premium', '+56954321098', '2024-12-09 09:00:00', DATE_ADD(CURDATE(), INTERVAL 6 DAY), 'LOTE-CRE-2024-12-09', 'por_vencer', 1, NULL, 'Vence en 6 días - Revisar', NULL, 1),
-('VEN-005', 'Miel de Abeja Natural', 'Miel de abeja 100% natural, 500g, vence en 15 días', 'alimentos', 'gramo', 35.00, 12.00, 120.00, 4500.00, 7990.00, 'QR-VEN-005', '7000000000205', 'Bodega Seca', 'Apicultura Tarapacá', '+56943210987', '2024-12-01 14:00:00', DATE_ADD(CURDATE(), INTERVAL 15 DAY), 'LOTE-MIE-2024-12-01', 'por_vencer', 1, NULL, 'Vence en 15 días', NULL, 1),
-('VEN-006', 'Queso Crema', 'Queso crema para bagels y tostadas, 200g, vence en 8 días', 'alimentos', 'gramo', 28.00, 15.00, 150.00, 1800.00, 3490.00, 'QR-VEN-006', '7000000000206', 'Bodega Refrigerada', 'Quesería del Norte', '+56932109876', '2024-12-07 12:00:00', DATE_ADD(CURDATE(), INTERVAL 8 DAY), 'LOTE-QUE-2024-12-07', 'por_vencer', 1, NULL, 'Vence en 8 días', NULL, 1),
-('VEN-007', 'Mantequilla sin Sal', 'Mantequilla sin sal 250g, vence en 12 días', 'alimentos', 'gramo', 50.00, 20.00, 200.00, 2200.00, 3990.00, 'QR-VEN-007', '7000000000207', 'Bodega Refrigerada', 'Lácteos Premium', '+56921098765', '2024-12-03 10:00:00', DATE_ADD(CURDATE(), INTERVAL 12 DAY), 'LOTE-MAN-2024-12-03', 'por_vencer', 1, NULL, 'Vence en 12 días', NULL, 1),
-('VEN-008', 'Jugo de Naranja Natural', 'Jugo de naranja 100% natural, 1L, vence en 4 días', 'bebidas', 'litro', 60.00, 25.00, 250.00, 1500.00, 2990.00, 'QR-VEN-008', '7000000000208', 'Bodega Refrigerada', 'Jugos Naturales Chile', '+56910987654', '2024-12-11 08:00:00', DATE_ADD(CURDATE(), INTERVAL 4 DAY), 'LOTE-JUG-2024-12-11', 'por_vencer', 1, NULL, 'Vence en 4 días - Muy urgente', NULL, 1),
-('VEN-009', 'Pan de Molde Integral', 'Pan de molde integral, 600g, vence en 3 días', 'alimentos', 'gramo', 20.00, 10.00, 100.00, 1800.00, 3290.00, 'QR-VEN-009', '7000000000209', 'Bodega Seca', 'Panadería Artesanal', '+56909876543', '2024-12-12 07:00:00', DATE_ADD(CURDATE(), INTERVAL 3 DAY), 'LOTE-PAN-2024-12-12', 'por_vencer', 1, NULL, 'Vence en 3 días - Crítico', NULL, 1),
-('VEN-010', 'Galletas de Avena', 'Galletas de avena caseras, 300g, vence en 9 días', 'alimentos', 'gramo', 42.00, 18.00, 180.00, 2500.00, 4490.00, 'QR-VEN-010', '7000000000210', 'Bodega Seca', 'Repostería del Norte', '+56998765432', '2024-12-06 13:00:00', DATE_ADD(CURDATE(), INTERVAL 9 DAY), 'LOTE-GAL-2024-12-06', 'por_vencer', 1, NULL, 'Vence en 9 días', NULL, 1);
+INSERT INTO `tipos_solicitudes` (`nombre`, `descripcion`, `requiere_aprobacion`, `dias_anticipacion`, `color_hex`, `activo`) VALUES
+('Vacaciones', 'Solicitud de vacaciones anuales', 1, 15, '#4CAF50', 1),
+('Permiso Personal', 'Permiso por motivos personales', 1, 2, '#2196F3', 1),
+('Licencia Medica', 'Licencia por enfermedad o tratamiento medico', 1, 0, '#F44336', 1),
+('Permiso Administrativo', 'Permiso por tramites administrativos', 1, 1, '#FF9800', 1),
+('Cambio de Turno', 'Solicitud de cambio de turno', 1, 3, '#9C27B0', 1),
+('Dia Libre', 'Solicitud de dia libre compensatorio', 1, 7, '#00BCD4', 1);
 
---
--- Empleados ficticios de Iquique/Alto Hospicio
---
+-- ============================================================
+-- DATOS INICIALES - CONFIGURACION
+-- ============================================================
 
-INSERT IGNORE INTO `empleados` (`rut`, `nombres`, `apellidos`, `email`, `telefono`, `password`, `fecha_nacimiento`, `direccion`, `cargo`, `departamento`, `fecha_contratacion`, `salario`, `tipo_contrato`, `estado`, `activo`) VALUES
-('18.234.567-8', 'María', 'González Pérez', 'maria.gonzalez@monkeycoffee.cl', '+56912345678', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '1990-05-15', 'Av. Arturo Prat 1234, Iquique', 'Gerente General', 'Administración', '2023-01-15', 850000.00, 'indefinido', 'activo', 1),
-('19.345.678-9', 'Carlos', 'Ramírez Silva', 'carlos.ramirez@monkeycoffee.cl', '+56923456789', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '1992-08-22', 'Calle Baquedano 567, Iquique', 'Barista Senior', 'Operaciones', '2023-02-01', 550000.00, 'indefinido', 'activo', 1),
-('20.456.789-0', 'Fernanda', 'Torres Morales', 'fernanda.torres@monkeycoffee.cl', '+56934567890', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '1995-11-10', 'Av. Héroes de la Concepción 890, Alto Hospicio', 'Barista', 'Operaciones', '2023-03-10', 450000.00, 'indefinido', 'activo', 1),
-('17.567.890-1', 'Diego', 'Vargas Castro', 'diego.vargas@monkeycoffee.cl', '+56945678901', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '1993-03-28', 'Pasaje Los Carrera 234, Iquique', 'Cajero', 'Ventas', '2023-04-05', 420000.00, 'indefinido', 'activo', 1),
-('18.678.901-2', 'Camila', 'Herrera Rojas', 'camila.herrera@monkeycoffee.cl', '+56956789012', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '1996-07-14', 'Av. La Tirana 1456, Alto Hospicio', 'Barista', 'Operaciones', '2023-05-20', 450000.00, 'indefinido', 'activo', 1),
-('19.789.012-3', 'Sebastián', 'Mendoza López', 'sebastian.mendoza@monkeycoffee.cl', '+56967890123', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '1991-12-05', 'Calle Sargento Aldea 789, Iquique', 'Supervisor de Turno', 'Operaciones', '2023-01-20', 600000.00, 'indefinido', 'activo', 1),
-('20.890.123-4', 'Valentina', 'Castro Díaz', 'valentina.castro@monkeycoffee.cl', '+56978901234', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '1994-09-18', 'Av. Esmeralda 321, Iquique', 'Cajera', 'Ventas', '2023-06-01', 420000.00, 'indefinido', 'activo', 1),
-('17.901.234-5', 'Nicolás', 'Jiménez Flores', 'nicolas.jimenez@monkeycoffee.cl', '+56989012345', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '1997-02-25', 'Calle O''Higgins 654, Alto Hospicio', 'Barista', 'Operaciones', '2023-07-15', 450000.00, 'indefinido', 'activo', 1),
-('18.012.345-6', 'Javiera', 'Soto Martínez', 'javiera.soto@monkeycoffee.cl', '+56990123456', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '1998-06-30', 'Av. Los Rieles 987, Alto Hospicio', 'Auxiliar de Cocina', 'Operaciones', '2023-08-10', 380000.00, 'indefinido', 'activo', 1),
-('19.123.456-7', 'Andrés', 'Contreras Vega', 'andres.contreras@monkeycoffee.cl', '+56901234567', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '1992-10-12', 'Calle Thompson 456, Iquique', 'Encargado de Inventario', 'Logística', '2023-02-15', 520000.00, 'indefinido', 'activo', 1);
+INSERT INTO `configuracion_app` (`clave`, `valor`, `tipo`, `descripcion`, `categoria`) VALUES
+('nombre_empresa', 'Monkey Coffee Iquique', 'string', 'Nombre de la empresa', 'General'),
+('email_contacto', 'contacto@monkeycoffee.cl', 'string', 'Email de contacto principal', 'General'),
+('telefono_contacto', '+56912345678', 'string', 'Telefono de contacto', 'General'),
+('direccion', 'Av. Arturo Prat 1234, Iquique, Chile', 'string', 'Direccion fisica del local', 'General'),
+('iva_porcentaje', '19', 'number', 'Porcentaje de IVA aplicado', 'Finanzas'),
+('stock_minimo_alerta', '10', 'number', 'Cantidad minima para alertas de stock', 'Inventario'),
+('dias_vencimiento_alerta', '7', 'number', 'Dias antes del vencimiento para generar alerta', 'Inventario'),
+('horario_apertura', '07:00', 'string', 'Hora de apertura del local', 'Operaciones'),
+('horario_cierre', '23:00', 'string', 'Hora de cierre del local', 'Operaciones'),
+('modulo_ventas_activo', 'true', 'boolean', 'Modulo de ventas activado', 'Modulos'),
+('modulo_inventario_activo', 'true', 'boolean', 'Modulo de inventario activado', 'Modulos'),
+('modulo_asistencias_activo', 'true', 'boolean', 'Modulo de asistencias activado', 'Modulos');
 
---
--- Turnos para los nuevos empleados
---
+-- ============================================================
+-- DATOS INICIALES - INVENTARIO (Productos principales)
+-- ============================================================
 
-INSERT IGNORE INTO `turnos` (`id`, `empleados_rut`, `nombre_turno`, `hora_entrada`, `hora_salida`, `tolerancia_minutos`, `horas_trabajo`, `descripcion`, `dias_semana`, `activo`) VALUES
-(2, '18.234.567-8', 'Turno Administrativo', '08:00:00', '17:00:00', 15, 9.00, 'Turno administrativo de lunes a viernes', '[1, 2, 3, 4, 5]', 1),
-(3, '19.345.678-9', 'Turno Mañana Barista', '07:00:00', '16:00:00', 15, 9.00, 'Turno mañana para barista senior', '[1, 2, 3, 4, 5, 6]', 1),
-(4, '20.456.789-0', 'Turno Tarde', '13:00:00', '22:00:00', 15, 9.00, 'Turno tarde de lunes a domingo', '[1, 2, 3, 4, 5, 6, 7]', 1),
-(5, '17.567.890-1', 'Turno Mañana Cajero', '08:00:00', '17:00:00', 15, 9.00, 'Turno mañana para cajero', '[1, 2, 3, 4, 5, 6]', 1),
-(6, '18.678.901-2', 'Turno Tarde Barista', '14:00:00', '23:00:00', 15, 9.00, 'Turno tarde para barista', '[1, 2, 3, 4, 5, 6, 7]', 1),
-(7, '19.789.012-3', 'Turno Supervisor Mañana', '06:00:00', '15:00:00', 15, 9.00, 'Turno supervisor mañana', '[1, 2, 3, 4, 5, 6]', 1),
-(8, '20.890.123-4', 'Turno Mañana Cajera', '08:00:00', '17:00:00', 15, 9.00, 'Turno mañana para cajera', '[1, 2, 3, 4, 5, 6]', 1),
-(9, '17.901.234-5', 'Turno Noche', '18:00:00', '02:00:00', 15, 8.00, 'Turno noche de jueves a domingo', '[4, 5, 6, 7]', 1),
-(10, '18.012.345-6', 'Turno Auxiliar', '10:00:00', '19:00:00', 15, 9.00, 'Turno auxiliar de cocina', '[1, 2, 3, 4, 5, 6]', 1),
-(11, '19.123.456-7', 'Turno Logística', '09:00:00', '18:00:00', 15, 9.00, 'Turno logística e inventario', '[1, 2, 3, 4, 5]', 1);
+INSERT INTO `inventario` (`codigo_producto`, `nombre_producto`, `descripcion`, `categoria`, `unidad_medida`, `cantidad_actual`, `cantidad_minima`, `cantidad_maxima`, `precio_unitario`, `precio_venta`, `codigo_qr`, `codigo_barra`, `ubicacion`, `proveedor`, `estado`, `activo`) VALUES
+('CAFE-001', 'Marley Coffee - One Love Organic', 'Cafe organico en grano 340g, tueste medio', 'cafe', 'paquete', 50, 15, 100, 8500, 12990, 'QR-CAFE-001', '7000000000001', 'Bodega A1', 'Distribuidora Marley Chile', 'disponible', 1),
+('CAFE-002', 'Marley Coffee - Smile Jamaica', 'Cafe Jamaica Blue Mountain en grano 340g', 'cafe', 'paquete', 30, 10, 80, 9200, 13990, 'QR-CAFE-002', '7000000000002', 'Bodega A1', 'Distribuidora Marley Chile', 'disponible', 1),
+('CAFE-003', 'Marley Coffee - Buffalo Soldier', 'Cafe oscuro intenso en grano 340g', 'cafe', 'paquete', 45, 12, 90, 8800, 12990, 'QR-CAFE-003', '7000000000003', 'Bodega A1', 'Distribuidora Marley Chile', 'disponible', 1),
+('INS-001', 'Leche Entera Colun 1L', 'Leche entera pasteurizada', 'insumos', 'litro', 150, 50, 300, 850, 1290, NULL, '7801050100015', 'Refrigerador Principal', 'Colun Chile', 'disponible', 1),
+('INS-002', 'Azucar Blanca Iansa 1kg', 'Azucar blanca refinada', 'insumos', 'kilogramo', 80, 20, 150, 800, 1590, NULL, '7802420100011', 'Bodega Seca', 'Iansa', 'disponible', 1),
+('DES-001', 'Vasos Papel 8oz x100', 'Vasos desechables cafe caliente 8oz', 'desechables', 'paquete', 45, 10, 100, 2800, 0, NULL, NULL, 'Bodega Desechables', 'Papeleria del Norte', 'disponible', 1),
+('MERCH-101', 'Taza Marley Coffee Logo', 'Taza ceramica 350ml con logo Marley', 'otros', 'unidad', 100, 20, 200, 3500, 7990, 'QR-MERCH-101', '7000000000010', 'Vitrina Principal', 'Importadora Nacional', 'disponible', 1),
+('EQU-001', 'Prensa Francesa 1L', 'Cafetera prensa francesa vidrio', 'equipamiento', 'unidad', 15, 5, 30, 12000, 24990, 'QR-EQU-001', NULL, 'Vitrina Premium', 'Importadora Nacional', 'disponible', 1);
 
---
--- Asignación de empleados a turnos
---
+-- ============================================================
+-- DATOS INICIALES - ASIGNACION EMPLEADOS A TURNOS
+-- ============================================================
 
-INSERT IGNORE INTO `empleados_turnos` (`empleados_rut`, `turno_id`, `fecha_inicio`, `fecha_fin`, `activo`) VALUES
-('18.234.567-8', 2, '2023-01-15', NULL, 1),
-('19.345.678-9', 3, '2023-02-01', NULL, 1),
-('20.456.789-0', 4, '2023-03-10', NULL, 1),
-('17.567.890-1', 5, '2023-04-05', NULL, 1),
-('18.678.901-2', 6, '2023-05-20', NULL, 1),
-('19.789.012-3', 7, '2023-01-20', NULL, 1),
-('20.890.123-4', 8, '2023-06-01', NULL, 1),
-('17.901.234-5', 9, '2023-07-15', NULL, 1),
-('18.012.345-6', 10, '2023-08-10', NULL, 1),
-('19.123.456-7', 11, '2023-02-15', NULL, 1);
+INSERT INTO `empleados_turnos` (`empleados_rut`, `turno_id`, `fecha_inicio`, `fecha_fin`, `activo`) VALUES
+('18.234.567-8', 1, '2023-01-15', NULL, 1),
+('19.345.678-9', 2, '2023-02-01', NULL, 1),
+('20.456.789-0', 3, '2023-03-10', NULL, 1),
+('17.567.890-1', 4, '2023-04-05', NULL, 1),
+('18.678.901-2', 5, '2023-05-20', NULL, 1),
+('19.789.012-3', 6, '2023-01-20', NULL, 1),
+('20.890.123-4', 7, '2023-06-01', NULL, 1),
+('17.901.234-5', 8, '2023-07-15', NULL, 1),
+('18.012.345-6', 9, '2023-08-10', NULL, 1),
+('19.123.456-7', 10, '2023-02-15', NULL, 1),
+('21.234.567-8', 11, '2024-01-10', NULL, 1),
+('16.789.012-3', 12, '2023-03-01', NULL, 1);
 
---
--- Horarios para los empleados
---
+-- ============================================================
+-- DATOS INICIALES - HORARIOS
+-- ============================================================
 
-INSERT IGNORE INTO `horarios` (`empleado_rut`, `turno_id`, `fecha_inicio`, `fecha_fin`, `dias_semana`, `observaciones`, `activo`) VALUES
-('18.234.567-8', 2, '2023-01-15', NULL, '[1, 2, 3, 4, 5]', 'Horario administrativo', 1),
-('19.345.678-9', 3, '2023-02-01', NULL, '[1, 2, 3, 4, 5, 6]', 'Horario barista senior', 1),
-('20.456.789-0', 4, '2023-03-10', NULL, '[1, 2, 3, 4, 5, 6, 7]', 'Horario turno tarde', 1),
-('17.567.890-1', 5, '2023-04-05', NULL, '[1, 2, 3, 4, 5, 6]', 'Horario cajero mañana', 1),
-('18.678.901-2', 6, '2023-05-20', NULL, '[1, 2, 3, 4, 5, 6, 7]', 'Horario barista tarde', 1),
-('19.789.012-3', 7, '2023-01-20', NULL, '[1, 2, 3, 4, 5, 6]', 'Horario supervisor', 1),
-('20.890.123-4', 8, '2023-06-01', NULL, '[1, 2, 3, 4, 5, 6]', 'Horario cajera mañana', 1),
-('17.901.234-5', 9, '2023-07-15', NULL, '[4, 5, 6, 7]', 'Horario noche fin de semana', 1),
-('18.012.345-6', 10, '2023-08-10', NULL, '[1, 2, 3, 4, 5, 6]', 'Horario auxiliar cocina', 1),
-('19.123.456-7', 11, '2023-02-15', NULL, '[1, 2, 3, 4, 5]', 'Horario logística', 1);
+INSERT INTO `horarios` (`empleado_rut`, `turno_id`, `fecha_inicio`, `fecha_fin`, `dias_semana`, `observaciones`, `activo`) VALUES
+('18.234.567-8', 1, '2023-01-15', NULL, '[1, 2, 3, 4, 5]', 'Horario administrativo', 1),
+('19.345.678-9', 2, '2023-02-01', NULL, '[1, 2, 3, 4, 5, 6]', 'Horario barista senior', 1),
+('20.456.789-0', 3, '2023-03-10', NULL, '[1, 2, 3, 4, 5, 6, 7]', 'Horario turno tarde', 1),
+('17.567.890-1', 4, '2023-04-05', NULL, '[1, 2, 3, 4, 5, 6]', 'Horario cajero manana', 1),
+('18.678.901-2', 5, '2023-05-20', NULL, '[1, 2, 3, 4, 5, 6, 7]', 'Horario barista tarde', 1),
+('19.789.012-3', 6, '2023-01-20', NULL, '[1, 2, 3, 4, 5, 6]', 'Horario supervisor', 1),
+('20.890.123-4', 7, '2023-06-01', NULL, '[1, 2, 3, 4, 5, 6]', 'Horario cajera manana', 1),
+('17.901.234-5', 8, '2023-07-15', NULL, '[4, 5, 6, 7]', 'Horario noche fin de semana', 1),
+('18.012.345-6', 9, '2023-08-10', NULL, '[1, 2, 3, 4, 5, 6]', 'Horario auxiliar cocina', 1),
+('19.123.456-7', 10, '2023-02-15', NULL, '[1, 2, 3, 4, 5]', 'Horario logistica', 1),
+('21.234.567-8', 11, '2024-01-10', NULL, '[1, 2, 3, 4, 5, 6]', 'Horario barista junior', 1),
+('16.789.012-3', 12, '2023-03-01', NULL, '[1, 2, 3, 4, 5]', 'Horario mantencion', 1);
 
---
--- Asistencias de ejemplo para los últimos 7 días
---
+-- ============================================================
+-- DATOS INICIALES - VENTAS DE EJEMPLO
+-- ============================================================
 
-INSERT IGNORE INTO `asistencias` (`empleado_rut`, `fecha`, `hora_entrada`, `hora_salida`, `tipo_entrada`, `tipo_salida`, `minutos_tarde`, `minutos_extras`, `horas_trabajadas`, `estado`, `observaciones`, `ubicacion_entrada`, `ubicacion_salida`) VALUES
-('18.234.567-8', CURDATE() - INTERVAL 5 DAY, CONCAT(CURDATE() - INTERVAL 5 DAY, ' 08:05:00'), CONCAT(CURDATE() - INTERVAL 5 DAY, ' 17:10:00'), 'biometrico', 'biometrico', 5, 5, 9.08, 'presente', NULL, 'Monkey Coffee Iquique', 'Monkey Coffee Iquique'),
-('18.234.567-8', CURDATE() - INTERVAL 4 DAY, CONCAT(CURDATE() - INTERVAL 4 DAY, ' 08:00:00'), CONCAT(CURDATE() - INTERVAL 4 DAY, ' 17:00:00'), 'biometrico', 'biometrico', 0, 0, 9.00, 'presente', NULL, 'Monkey Coffee Iquique', 'Monkey Coffee Iquique'),
-('18.234.567-8', CURDATE() - INTERVAL 3 DAY, CONCAT(CURDATE() - INTERVAL 3 DAY, ' 08:02:00'), CONCAT(CURDATE() - INTERVAL 3 DAY, ' 17:05:00'), 'biometrico', 'biometrico', 2, 3, 9.05, 'presente', NULL, 'Monkey Coffee Iquique', 'Monkey Coffee Iquique'),
-('19.345.678-9', CURDATE() - INTERVAL 6 DAY, CONCAT(CURDATE() - INTERVAL 6 DAY, ' 07:00:00'), CONCAT(CURDATE() - INTERVAL 6 DAY, ' 16:05:00'), 'biometrico', 'biometrico', 0, 5, 9.08, 'presente', NULL, 'Monkey Coffee Iquique', 'Monkey Coffee Iquique'),
-('19.345.678-9', CURDATE() - INTERVAL 5 DAY, CONCAT(CURDATE() - INTERVAL 5 DAY, ' 07:10:00'), CONCAT(CURDATE() - INTERVAL 5 DAY, ' 16:00:00'), 'biometrico', 'biometrico', 10, 0, 8.83, 'tarde', NULL, 'Monkey Coffee Iquique', 'Monkey Coffee Iquique'),
-('19.345.678-9', CURDATE() - INTERVAL 4 DAY, CONCAT(CURDATE() - INTERVAL 4 DAY, ' 07:00:00'), CONCAT(CURDATE() - INTERVAL 4 DAY, ' 16:00:00'), 'biometrico', 'biometrico', 0, 0, 9.00, 'presente', NULL, 'Monkey Coffee Iquique', 'Monkey Coffee Iquique'),
-('19.345.678-9', CURDATE() - INTERVAL 3 DAY, CONCAT(CURDATE() - INTERVAL 3 DAY, ' 07:05:00'), CONCAT(CURDATE() - INTERVAL 3 DAY, ' 16:10:00'), 'biometrico', 'biometrico', 5, 5, 9.08, 'presente', NULL, 'Monkey Coffee Iquique', 'Monkey Coffee Iquique'),
-('19.345.678-9', CURDATE() - INTERVAL 2 DAY, CONCAT(CURDATE() - INTERVAL 2 DAY, ' 07:00:00'), CONCAT(CURDATE() - INTERVAL 2 DAY, ' 16:00:00'), 'biometrico', 'biometrico', 0, 0, 9.00, 'presente', NULL, 'Monkey Coffee Iquique', 'Monkey Coffee Iquique'),
-('19.345.678-9', CURDATE() - INTERVAL 1 DAY, CONCAT(CURDATE() - INTERVAL 1 DAY, ' 07:00:00'), CONCAT(CURDATE() - INTERVAL 1 DAY, ' 16:00:00'), 'biometrico', 'biometrico', 0, 0, 9.00, 'presente', NULL, 'Monkey Coffee Iquique', 'Monkey Coffee Iquique'),
-('20.456.789-0', CURDATE() - INTERVAL 6 DAY, CONCAT(CURDATE() - INTERVAL 6 DAY, ' 13:00:00'), CONCAT(CURDATE() - INTERVAL 6 DAY, ' 22:00:00'), 'biometrico', 'biometrico', 0, 0, 9.00, 'presente', NULL, 'Monkey Coffee Iquique', 'Monkey Coffee Iquique'),
-('20.456.789-0', CURDATE() - INTERVAL 5 DAY, CONCAT(CURDATE() - INTERVAL 5 DAY, ' 13:05:00'), CONCAT(CURDATE() - INTERVAL 5 DAY, ' 22:05:00'), 'biometrico', 'biometrico', 5, 0, 9.00, 'presente', NULL, 'Monkey Coffee Iquique', 'Monkey Coffee Iquique'),
-('20.456.789-0', CURDATE() - INTERVAL 4 DAY, CONCAT(CURDATE() - INTERVAL 4 DAY, ' 13:00:00'), CONCAT(CURDATE() - INTERVAL 4 DAY, ' 22:00:00'), 'biometrico', 'biometrico', 0, 0, 9.00, 'presente', NULL, 'Monkey Coffee Iquique', 'Monkey Coffee Iquique'),
-('20.456.789-0', CURDATE() - INTERVAL 3 DAY, CONCAT(CURDATE() - INTERVAL 3 DAY, ' 13:00:00'), CONCAT(CURDATE() - INTERVAL 3 DAY, ' 22:00:00'), 'biometrico', 'biometrico', 0, 0, 9.00, 'presente', NULL, 'Monkey Coffee Iquique', 'Monkey Coffee Iquique'),
-('20.456.789-0', CURDATE() - INTERVAL 2 DAY, CONCAT(CURDATE() - INTERVAL 2 DAY, ' 13:00:00'), CONCAT(CURDATE() - INTERVAL 2 DAY, ' 22:00:00'), 'biometrico', 'biometrico', 0, 0, 9.00, 'presente', NULL, 'Monkey Coffee Iquique', 'Monkey Coffee Iquique'),
-('20.456.789-0', CURDATE() - INTERVAL 1 DAY, CONCAT(CURDATE() - INTERVAL 1 DAY, ' 13:00:00'), CONCAT(CURDATE() - INTERVAL 1 DAY, ' 22:00:00'), 'biometrico', 'biometrico', 0, 0, 9.00, 'presente', NULL, 'Monkey Coffee Iquique', 'Monkey Coffee Iquique'),
-('20.456.789-0', CURDATE(), CONCAT(CURDATE(), ' 13:00:00'), NULL, 'biometrico', NULL, 0, 0, NULL, 'presente', NULL, 'Monkey Coffee Iquique', NULL),
-('17.567.890-1', CURDATE() - INTERVAL 6 DAY, CONCAT(CURDATE() - INTERVAL 6 DAY, ' 08:00:00'), CONCAT(CURDATE() - INTERVAL 6 DAY, ' 17:00:00'), 'biometrico', 'biometrico', 0, 0, 9.00, 'presente', NULL, 'Monkey Coffee Iquique', 'Monkey Coffee Iquique'),
-('17.567.890-1', CURDATE() - INTERVAL 5 DAY, CONCAT(CURDATE() - INTERVAL 5 DAY, ' 08:10:00'), CONCAT(CURDATE() - INTERVAL 5 DAY, ' 17:00:00'), 'biometrico', 'biometrico', 10, 0, 8.83, 'tarde', NULL, 'Monkey Coffee Iquique', 'Monkey Coffee Iquique'),
-('17.567.890-1', CURDATE() - INTERVAL 4 DAY, CONCAT(CURDATE() - INTERVAL 4 DAY, ' 08:00:00'), CONCAT(CURDATE() - INTERVAL 4 DAY, ' 17:00:00'), 'biometrico', 'biometrico', 0, 0, 9.00, 'presente', NULL, 'Monkey Coffee Iquique', 'Monkey Coffee Iquique'),
-('17.567.890-1', CURDATE() - INTERVAL 3 DAY, CONCAT(CURDATE() - INTERVAL 3 DAY, ' 08:00:00'), CONCAT(CURDATE() - INTERVAL 3 DAY, ' 17:00:00'), 'biometrico', 'biometrico', 0, 0, 9.00, 'presente', NULL, 'Monkey Coffee Iquique', 'Monkey Coffee Iquique'),
-('17.567.890-1', CURDATE() - INTERVAL 2 DAY, CONCAT(CURDATE() - INTERVAL 2 DAY, ' 08:00:00'), CONCAT(CURDATE() - INTERVAL 2 DAY, ' 17:00:00'), 'biometrico', 'biometrico', 0, 0, 9.00, 'presente', NULL, 'Monkey Coffee Iquique', 'Monkey Coffee Iquique'),
-('17.567.890-1', CURDATE() - INTERVAL 1 DAY, CONCAT(CURDATE() - INTERVAL 1 DAY, ' 08:00:00'), CONCAT(CURDATE() - INTERVAL 1 DAY, ' 17:00:00'), 'biometrico', 'biometrico', 0, 0, 9.00, 'presente', NULL, 'Monkey Coffee Iquique', 'Monkey Coffee Iquique'),
-('18.678.901-2', CURDATE() - INTERVAL 6 DAY, CONCAT(CURDATE() - INTERVAL 6 DAY, ' 14:00:00'), CONCAT(CURDATE() - INTERVAL 6 DAY, ' 23:00:00'), 'biometrico', 'biometrico', 0, 0, 9.00, 'presente', NULL, 'Monkey Coffee Iquique', 'Monkey Coffee Iquique'),
-('18.678.901-2', CURDATE() - INTERVAL 5 DAY, CONCAT(CURDATE() - INTERVAL 5 DAY, ' 14:00:00'), CONCAT(CURDATE() - INTERVAL 5 DAY, ' 23:00:00'), 'biometrico', 'biometrico', 0, 0, 9.00, 'presente', NULL, 'Monkey Coffee Iquique', 'Monkey Coffee Iquique'),
-('18.678.901-2', CURDATE() - INTERVAL 4 DAY, CONCAT(CURDATE() - INTERVAL 4 DAY, ' 14:00:00'), CONCAT(CURDATE() - INTERVAL 4 DAY, ' 23:00:00'), 'biometrico', 'biometrico', 0, 0, 9.00, 'presente', NULL, 'Monkey Coffee Iquique', 'Monkey Coffee Iquique'),
-('18.678.901-2', CURDATE() - INTERVAL 3 DAY, CONCAT(CURDATE() - INTERVAL 3 DAY, ' 14:00:00'), CONCAT(CURDATE() - INTERVAL 3 DAY, ' 23:00:00'), 'biometrico', 'biometrico', 0, 0, 9.00, 'presente', NULL, 'Monkey Coffee Iquique', 'Monkey Coffee Iquique'),
-('18.678.901-2', CURDATE() - INTERVAL 2 DAY, CONCAT(CURDATE() - INTERVAL 2 DAY, ' 14:00:00'), CONCAT(CURDATE() - INTERVAL 2 DAY, ' 23:00:00'), 'biometrico', 'biometrico', 0, 0, 9.00, 'presente', NULL, 'Monkey Coffee Iquique', 'Monkey Coffee Iquique'),
-('18.678.901-2', CURDATE() - INTERVAL 1 DAY, CONCAT(CURDATE() - INTERVAL 1 DAY, ' 14:00:00'), CONCAT(CURDATE() - INTERVAL 1 DAY, ' 23:00:00'), 'biometrico', 'biometrico', 0, 0, 9.00, 'presente', NULL, 'Monkey Coffee Iquique', 'Monkey Coffee Iquique'),
-('18.678.901-2', CURDATE(), CONCAT(CURDATE(), ' 14:00:00'), NULL, 'biometrico', NULL, 0, 0, NULL, 'presente', NULL, 'Monkey Coffee Iquique', NULL),
-('19.789.012-3', CURDATE() - INTERVAL 6 DAY, CONCAT(CURDATE() - INTERVAL 6 DAY, ' 06:00:00'), CONCAT(CURDATE() - INTERVAL 6 DAY, ' 15:00:00'), 'biometrico', 'biometrico', 0, 0, 9.00, 'presente', NULL, 'Monkey Coffee Iquique', 'Monkey Coffee Iquique'),
-('19.789.012-3', CURDATE() - INTERVAL 5 DAY, CONCAT(CURDATE() - INTERVAL 5 DAY, ' 06:00:00'), CONCAT(CURDATE() - INTERVAL 5 DAY, ' 15:00:00'), 'biometrico', 'biometrico', 0, 0, 9.00, 'presente', NULL, 'Monkey Coffee Iquique', 'Monkey Coffee Iquique'),
-('19.789.012-3', CURDATE() - INTERVAL 4 DAY, CONCAT(CURDATE() - INTERVAL 4 DAY, ' 06:00:00'), CONCAT(CURDATE() - INTERVAL 4 DAY, ' 15:00:00'), 'biometrico', 'biometrico', 0, 0, 9.00, 'presente', NULL, 'Monkey Coffee Iquique', 'Monkey Coffee Iquique'),
-('19.789.012-3', CURDATE() - INTERVAL 3 DAY, CONCAT(CURDATE() - INTERVAL 3 DAY, ' 06:00:00'), CONCAT(CURDATE() - INTERVAL 3 DAY, ' 15:00:00'), 'biometrico', 'biometrico', 0, 0, 9.00, 'presente', NULL, 'Monkey Coffee Iquique', 'Monkey Coffee Iquique'),
-('19.789.012-3', CURDATE() - INTERVAL 2 DAY, CONCAT(CURDATE() - INTERVAL 2 DAY, ' 06:00:00'), CONCAT(CURDATE() - INTERVAL 2 DAY, ' 15:00:00'), 'biometrico', 'biometrico', 0, 0, 9.00, 'presente', NULL, 'Monkey Coffee Iquique', 'Monkey Coffee Iquique'),
-('19.789.012-3', CURDATE() - INTERVAL 1 DAY, CONCAT(CURDATE() - INTERVAL 1 DAY, ' 06:00:00'), CONCAT(CURDATE() - INTERVAL 1 DAY, ' 15:00:00'), 'biometrico', 'biometrico', 0, 0, 9.00, 'presente', NULL, 'Monkey Coffee Iquique', 'Monkey Coffee Iquique'),
-('20.890.123-4', CURDATE() - INTERVAL 6 DAY, CONCAT(CURDATE() - INTERVAL 6 DAY, ' 08:00:00'), CONCAT(CURDATE() - INTERVAL 6 DAY, ' 17:00:00'), 'biometrico', 'biometrico', 0, 0, 9.00, 'presente', NULL, 'Monkey Coffee Iquique', 'Monkey Coffee Iquique'),
-('20.890.123-4', CURDATE() - INTERVAL 5 DAY, CONCAT(CURDATE() - INTERVAL 5 DAY, ' 08:00:00'), CONCAT(CURDATE() - INTERVAL 5 DAY, ' 17:00:00'), 'biometrico', 'biometrico', 0, 0, 9.00, 'presente', NULL, 'Monkey Coffee Iquique', 'Monkey Coffee Iquique'),
-('20.890.123-4', CURDATE() - INTERVAL 4 DAY, CONCAT(CURDATE() - INTERVAL 4 DAY, ' 08:00:00'), CONCAT(CURDATE() - INTERVAL 4 DAY, ' 17:00:00'), 'biometrico', 'biometrico', 0, 0, 9.00, 'presente', NULL, 'Monkey Coffee Iquique', 'Monkey Coffee Iquique'),
-('20.890.123-4', CURDATE() - INTERVAL 3 DAY, CONCAT(CURDATE() - INTERVAL 3 DAY, ' 08:00:00'), CONCAT(CURDATE() - INTERVAL 3 DAY, ' 17:00:00'), 'biometrico', 'biometrico', 0, 0, 9.00, 'presente', NULL, 'Monkey Coffee Iquique', 'Monkey Coffee Iquique'),
-('20.890.123-4', CURDATE() - INTERVAL 2 DAY, CONCAT(CURDATE() - INTERVAL 2 DAY, ' 08:00:00'), CONCAT(CURDATE() - INTERVAL 2 DAY, ' 17:00:00'), 'biometrico', 'biometrico', 0, 0, 9.00, 'presente', NULL, 'Monkey Coffee Iquique', 'Monkey Coffee Iquique'),
-('20.890.123-4', CURDATE() - INTERVAL 1 DAY, CONCAT(CURDATE() - INTERVAL 1 DAY, ' 08:00:00'), CONCAT(CURDATE() - INTERVAL 1 DAY, ' 17:00:00'), 'biometrico', 'biometrico', 0, 0, 9.00, 'presente', NULL, 'Monkey Coffee Iquique', 'Monkey Coffee Iquique'),
-('17.901.234-5', CURDATE() - INTERVAL 3 DAY, CONCAT(CURDATE() - INTERVAL 3 DAY, ' 18:00:00'), CONCAT(CURDATE() - INTERVAL 2 DAY, ' 02:00:00'), 'biometrico', 'biometrico', 0, 0, 8.00, 'presente', NULL, 'Monkey Coffee Iquique', 'Monkey Coffee Iquique'),
-('17.901.234-5', CURDATE() - INTERVAL 2 DAY, CONCAT(CURDATE() - INTERVAL 2 DAY, ' 18:00:00'), CONCAT(CURDATE() - INTERVAL 1 DAY, ' 02:00:00'), 'biometrico', 'biometrico', 0, 0, 8.00, 'presente', NULL, 'Monkey Coffee Iquique', 'Monkey Coffee Iquique'),
-('17.901.234-5', CURDATE() - INTERVAL 1 DAY, CONCAT(CURDATE() - INTERVAL 1 DAY, ' 18:00:00'), CONCAT(CURDATE(), ' 02:00:00'), 'biometrico', 'biometrico', 0, 0, 8.00, 'presente', NULL, 'Monkey Coffee Iquique', 'Monkey Coffee Iquique'),
-('18.012.345-6', CURDATE() - INTERVAL 6 DAY, CONCAT(CURDATE() - INTERVAL 6 DAY, ' 10:00:00'), CONCAT(CURDATE() - INTERVAL 6 DAY, ' 19:00:00'), 'biometrico', 'biometrico', 0, 0, 9.00, 'presente', NULL, 'Monkey Coffee Iquique', 'Monkey Coffee Iquique'),
-('18.012.345-6', CURDATE() - INTERVAL 5 DAY, CONCAT(CURDATE() - INTERVAL 5 DAY, ' 10:00:00'), CONCAT(CURDATE() - INTERVAL 5 DAY, ' 19:00:00'), 'biometrico', 'biometrico', 0, 0, 9.00, 'presente', NULL, 'Monkey Coffee Iquique', 'Monkey Coffee Iquique'),
-('18.012.345-6', CURDATE() - INTERVAL 4 DAY, CONCAT(CURDATE() - INTERVAL 4 DAY, ' 10:00:00'), CONCAT(CURDATE() - INTERVAL 4 DAY, ' 19:00:00'), 'biometrico', 'biometrico', 0, 0, 9.00, 'presente', NULL, 'Monkey Coffee Iquique', 'Monkey Coffee Iquique'),
-('18.012.345-6', CURDATE() - INTERVAL 3 DAY, CONCAT(CURDATE() - INTERVAL 3 DAY, ' 10:00:00'), CONCAT(CURDATE() - INTERVAL 3 DAY, ' 19:00:00'), 'biometrico', 'biometrico', 0, 0, 9.00, 'presente', NULL, 'Monkey Coffee Iquique', 'Monkey Coffee Iquique'),
-('18.012.345-6', CURDATE() - INTERVAL 2 DAY, CONCAT(CURDATE() - INTERVAL 2 DAY, ' 10:00:00'), CONCAT(CURDATE() - INTERVAL 2 DAY, ' 19:00:00'), 'biometrico', 'biometrico', 0, 0, 9.00, 'presente', NULL, 'Monkey Coffee Iquique', 'Monkey Coffee Iquique'),
-('18.012.345-6', CURDATE() - INTERVAL 1 DAY, CONCAT(CURDATE() - INTERVAL 1 DAY, ' 10:00:00'), CONCAT(CURDATE() - INTERVAL 1 DAY, ' 19:00:00'), 'biometrico', 'biometrico', 0, 0, 9.00, 'presente', NULL, 'Monkey Coffee Iquique', 'Monkey Coffee Iquique'),
-('19.123.456-7', CURDATE() - INTERVAL 5 DAY, CONCAT(CURDATE() - INTERVAL 5 DAY, ' 09:00:00'), CONCAT(CURDATE() - INTERVAL 5 DAY, ' 18:00:00'), 'biometrico', 'biometrico', 0, 0, 9.00, 'presente', NULL, 'Monkey Coffee Iquique', 'Monkey Coffee Iquique'),
-('19.123.456-7', CURDATE() - INTERVAL 4 DAY, CONCAT(CURDATE() - INTERVAL 4 DAY, ' 09:00:00'), CONCAT(CURDATE() - INTERVAL 4 DAY, ' 18:00:00'), 'biometrico', 'biometrico', 0, 0, 9.00, 'presente', NULL, 'Monkey Coffee Iquique', 'Monkey Coffee Iquique'),
-('19.123.456-7', CURDATE() - INTERVAL 3 DAY, CONCAT(CURDATE() - INTERVAL 3 DAY, ' 09:00:00'), CONCAT(CURDATE() - INTERVAL 3 DAY, ' 18:00:00'), 'biometrico', 'biometrico', 0, 0, 9.00, 'presente', NULL, 'Monkey Coffee Iquique', 'Monkey Coffee Iquique'),
-('19.123.456-7', CURDATE() - INTERVAL 2 DAY, CONCAT(CURDATE() - INTERVAL 2 DAY, ' 09:00:00'), CONCAT(CURDATE() - INTERVAL 2 DAY, ' 18:00:00'), 'biometrico', 'biometrico', 0, 0, 9.00, 'presente', NULL, 'Monkey Coffee Iquique', 'Monkey Coffee Iquique'),
-('19.123.456-7', CURDATE() - INTERVAL 1 DAY, CONCAT(CURDATE() - INTERVAL 1 DAY, ' 09:00:00'), CONCAT(CURDATE() - INTERVAL 1 DAY, ' 18:00:00'), 'biometrico', 'biometrico', 0, 0, 9.00, 'presente', NULL, 'Monkey Coffee Iquique', 'Monkey Coffee Iquique');
+INSERT INTO `ventas` (`numero_venta`, `empleado_id`, `fecha_venta`, `subtotal`, `descuento`, `impuesto`, `total`, `metodo_pago`, `estado`, `tipo_venta`) VALUES
+('VTA-2024-0001', 2, DATE_SUB(NOW(), INTERVAL 7 DAY), 15990, 0, 3038, 19028, 'efectivo', 'completada', 'local'),
+('VTA-2024-0002', 3, DATE_SUB(NOW(), INTERVAL 6 DAY), 8990, 0, 1708, 10698, 'tarjeta_debito', 'completada', 'local'),
+('VTA-2024-0003', 4, DATE_SUB(NOW(), INTERVAL 5 DAY), 25980, 2000, 4546, 28526, 'tarjeta_credito', 'completada', 'local'),
+('VTA-2024-0004', 2, DATE_SUB(NOW(), INTERVAL 4 DAY), 12990, 0, 2468, 15458, 'efectivo', 'completada', 'para_llevar'),
+('VTA-2024-0005', 5, DATE_SUB(NOW(), INTERVAL 3 DAY), 34970, 3000, 6074, 38044, 'transferencia', 'completada', 'local'),
+('VTA-2024-0006', 7, DATE_SUB(NOW(), INTERVAL 2 DAY), 19980, 0, 3796, 23776, 'tarjeta_credito', 'completada', 'local'),
+('VTA-2024-0007', 8, DATE_SUB(NOW(), INTERVAL 1 DAY), 7990, 0, 1518, 9508, 'efectivo', 'completada', 'para_llevar'),
+('VTA-2024-0008', 2, NOW(), 28960, 1500, 5217, 32677, 'tarjeta_debito', 'completada', 'local');
 
+-- ============================================================
+-- DATOS INICIALES - DETALLE VENTAS
+-- ============================================================
+
+INSERT INTO `detalle_ventas` (`venta_id`, `inventario_id`, `cantidad`, `precio_unitario`, `subtotal`, `descuento_item`, `total_item`) VALUES
+(1, 1, 1, 12990, 12990, 0, 12990),
+(1, 4, 1, 1290, 1290, 0, 1290),
+(1, 6, 1, 1490, 1490, 0, 1490),
+(2, 2, 1, 7990, 7990, 0, 7990),
+(2, 5, 1, 1000, 1000, 0, 1000),
+(3, 1, 2, 12990, 25980, 0, 25980),
+(4, 2, 1, 13990, 13990, 1000, 12990),
+(5, 1, 2, 12990, 25980, 0, 25980),
+(5, 3, 1, 9990, 9990, 1000, 8990),
+(6, 2, 1, 12790, 12790, 0, 12790),
+(6, 7, 1, 6990, 6990, 0, 6990),
+(7, 3, 1, 7990, 7990, 0, 7990),
+(8, 1, 2, 12990, 25980, 0, 25980),
+(8, 4, 1, 2990, 2990, 0, 2990);
+
+-- ============================================================
+-- DATOS INICIALES - ASISTENCIAS
+-- ============================================================
+
+-- Asistencias con estado 'presente' (mínimo 5)
+INSERT INTO `asistencias` (`empleado_rut`, `fecha`, `hora_entrada`, `hora_salida`, `tipo_entrada`, `tipo_salida`, `minutos_tarde`, `minutos_extras`, `horas_trabajadas`, `estado`, `observaciones`, `ubicacion_entrada`, `ip_entrada`) VALUES
+('19.345.678-9', DATE_SUB(CURDATE(), INTERVAL 10 DAY), CONCAT(DATE_SUB(CURDATE(), INTERVAL 10 DAY), ' 07:05:00'), CONCAT(DATE_SUB(CURDATE(), INTERVAL 10 DAY), ' 16:00:00'), 'biometrico', 'biometrico', 0, 0, 8.92, 'presente', 'Asistencia normal', 'Local Principal', '192.168.1.10'),
+('20.456.789-0', DATE_SUB(CURDATE(), INTERVAL 9 DAY), CONCAT(DATE_SUB(CURDATE(), INTERVAL 9 DAY), ' 13:02:00'), CONCAT(DATE_SUB(CURDATE(), INTERVAL 9 DAY), ' 22:00:00'), 'biometrico', 'biometrico', 0, 0, 8.97, 'presente', 'Turno completo', 'Local Principal', '192.168.1.10'),
+('17.567.890-1', DATE_SUB(CURDATE(), INTERVAL 8 DAY), CONCAT(DATE_SUB(CURDATE(), INTERVAL 8 DAY), ' 08:00:00'), CONCAT(DATE_SUB(CURDATE(), INTERVAL 8 DAY), ' 17:00:00'), 'biometrico', 'biometrico', 0, 0, 9.00, 'presente', 'Asistencia puntual', 'Local Principal', '192.168.1.10'),
+('18.678.901-2', DATE_SUB(CURDATE(), INTERVAL 7 DAY), CONCAT(DATE_SUB(CURDATE(), INTERVAL 7 DAY), ' 14:01:00'), CONCAT(DATE_SUB(CURDATE(), INTERVAL 7 DAY), ' 23:00:00'), 'app_movil', 'app_movil', 0, 0, 8.98, 'presente', 'Registro desde app móvil', 'Local Principal', '192.168.1.15'),
+('19.789.012-3', DATE_SUB(CURDATE(), INTERVAL 6 DAY), CONCAT(DATE_SUB(CURDATE(), INTERVAL 6 DAY), ' 06:00:00'), CONCAT(DATE_SUB(CURDATE(), INTERVAL 6 DAY), ' 15:00:00'), 'biometrico', 'biometrico', 0, 0, 9.00, 'presente', 'Supervisor turno mañana', 'Local Principal', '192.168.1.10');
+
+-- Asistencias con estado 'tarde' (mínimo 5)
+INSERT INTO `asistencias` (`empleado_rut`, `fecha`, `hora_entrada`, `hora_salida`, `tipo_entrada`, `tipo_salida`, `minutos_tarde`, `minutos_extras`, `horas_trabajadas`, `estado`, `observaciones`, `ubicacion_entrada`, `ip_entrada`) VALUES
+('20.890.123-4', DATE_SUB(CURDATE(), INTERVAL 12 DAY), CONCAT(DATE_SUB(CURDATE(), INTERVAL 12 DAY), ' 08:25:00'), CONCAT(DATE_SUB(CURDATE(), INTERVAL 12 DAY), ' 17:00:00'), 'biometrico', 'biometrico', 25, 0, 8.58, 'tarde', 'Llegó 25 minutos tarde', 'Local Principal', '192.168.1.10'),
+('17.901.234-5', DATE_SUB(CURDATE(), INTERVAL 11 DAY), CONCAT(DATE_SUB(CURDATE(), INTERVAL 11 DAY), ' 18:20:00'), CONCAT(DATE_SUB(CURDATE(), INTERVAL 11 DAY), ' 02:00:00'), 'biometrico', 'biometrico', 20, 0, 7.67, 'tarde', 'Retraso por tráfico', 'Local Principal', '192.168.1.10'),
+('21.234.567-8', DATE_SUB(CURDATE(), INTERVAL 13 DAY), CONCAT(DATE_SUB(CURDATE(), INTERVAL 13 DAY), ' 08:18:00'), CONCAT(DATE_SUB(CURDATE(), INTERVAL 13 DAY), ' 17:00:00'), 'biometrico', 'biometrico', 18, 0, 8.70, 'tarde', 'Llegó tarde al turno', 'Local Principal', '192.168.1.10'),
+('18.012.345-6', DATE_SUB(CURDATE(), INTERVAL 14 DAY), CONCAT(DATE_SUB(CURDATE(), INTERVAL 14 DAY), ' 10:22:00'), CONCAT(DATE_SUB(CURDATE(), INTERVAL 14 DAY), ' 19:00:00'), 'manual', 'biometrico', 22, 0, 8.63, 'tarde', 'Registro manual por retraso', 'Local Principal', '192.168.1.10'),
+('19.123.456-7', DATE_SUB(CURDATE(), INTERVAL 15 DAY), CONCAT(DATE_SUB(CURDATE(), INTERVAL 15 DAY), ' 09:30:00'), CONCAT(DATE_SUB(CURDATE(), INTERVAL 15 DAY), ' 18:00:00'), 'biometrico', 'biometrico', 30, 0, 8.50, 'tarde', 'Retraso significativo', 'Local Principal', '192.168.1.10');
+
+-- Asistencias con estado 'ausente' (mínimo 5)
+INSERT INTO `asistencias` (`empleado_rut`, `fecha`, `hora_entrada`, `hora_salida`, `tipo_entrada`, `tipo_salida`, `minutos_tarde`, `minutos_extras`, `horas_trabajadas`, `estado`, `observaciones`) VALUES
+('19.345.678-9', DATE_SUB(CURDATE(), INTERVAL 20 DAY), NULL, NULL, NULL, NULL, 0, 0, 0.00, 'ausente', 'No se presentó al trabajo'),
+('20.456.789-0', DATE_SUB(CURDATE(), INTERVAL 19 DAY), NULL, NULL, NULL, NULL, 0, 0, 0.00, 'ausente', 'Ausencia sin justificación'),
+('17.567.890-1', DATE_SUB(CURDATE(), INTERVAL 18 DAY), NULL, NULL, NULL, NULL, 0, 0, 0.00, 'ausente', 'No asistió al turno'),
+('18.678.901-2', DATE_SUB(CURDATE(), INTERVAL 17 DAY), NULL, NULL, NULL, NULL, 0, 0, 0.00, 'ausente', 'Ausente sin aviso previo'),
+('19.789.012-3', DATE_SUB(CURDATE(), INTERVAL 16 DAY), NULL, NULL, NULL, NULL, 0, 0, 0.00, 'ausente', 'Falta injustificada');
+
+-- Asistencias con estado 'justificado' (mínimo 5)
+INSERT INTO `asistencias` (`empleado_rut`, `fecha`, `hora_entrada`, `hora_salida`, `tipo_entrada`, `tipo_salida`, `minutos_tarde`, `minutos_extras`, `horas_trabajadas`, `estado`, `observaciones`, `validado_por`, `fecha_validacion`) VALUES
+('20.890.123-4', DATE_SUB(CURDATE(), INTERVAL 25 DAY), NULL, NULL, NULL, NULL, 0, 0, 0.00, 'justificado', 'Licencia médica presentada', 1, NOW()),
+('17.901.234-5', DATE_SUB(CURDATE(), INTERVAL 24 DAY), NULL, NULL, NULL, NULL, 0, 0, 0.00, 'justificado', 'Fallecimiento familiar - justificado', 1, NOW()),
+('21.234.567-8', DATE_SUB(CURDATE(), INTERVAL 23 DAY), NULL, NULL, NULL, NULL, 0, 0, 0.00, 'justificado', 'Accidente de tránsito - justificado', 1, NOW()),
+('18.012.345-6', DATE_SUB(CURDATE(), INTERVAL 22 DAY), NULL, NULL, NULL, NULL, 0, 0, 0.00, 'justificado', 'Emergencia médica familiar', 1, NOW()),
+('19.123.456-7', DATE_SUB(CURDATE(), INTERVAL 21 DAY), NULL, NULL, NULL, NULL, 0, 0, 0.00, 'justificado', 'Licencia médica por enfermedad', 1, NOW());
+
+-- Asistencias con estado 'permiso' (mínimo 5)
+INSERT INTO `asistencias` (`empleado_rut`, `fecha`, `hora_entrada`, `hora_salida`, `tipo_entrada`, `tipo_salida`, `minutos_tarde`, `minutos_extras`, `horas_trabajadas`, `estado`, `observaciones`, `validado_por`, `fecha_validacion`) VALUES
+('19.345.678-9', DATE_SUB(CURDATE(), INTERVAL 30 DAY), NULL, NULL, NULL, NULL, 0, 0, 0.00, 'permiso', 'Permiso administrativo aprobado', 1, NOW()),
+('20.456.789-0', DATE_SUB(CURDATE(), INTERVAL 29 DAY), NULL, NULL, NULL, NULL, 0, 0, 0.00, 'permiso', 'Permiso personal autorizado', 1, NOW()),
+('17.567.890-1', DATE_SUB(CURDATE(), INTERVAL 28 DAY), NULL, NULL, NULL, NULL, 0, 0, 0.00, 'permiso', 'Día libre compensatorio', 1, NOW()),
+('18.678.901-2', DATE_SUB(CURDATE(), INTERVAL 27 DAY), NULL, NULL, NULL, NULL, 0, 0, 0.00, 'permiso', 'Permiso por trámite personal', 1, NOW()),
+('19.789.012-3', DATE_SUB(CURDATE(), INTERVAL 26 DAY), NULL, NULL, NULL, NULL, 0, 0, 0.00, 'permiso', 'Permiso aprobado por supervisor', 1, NOW());
+
+-- ============================================================
+-- DATOS INICIALES - INVENTARIO ADICIONAL (por estado)
+-- ============================================================
+
+-- Productos con estado 'disponible' (mínimo 5 adicionales)
+INSERT INTO `inventario` (`codigo_producto`, `nombre_producto`, `descripcion`, `categoria`, `unidad_medida`, `cantidad_actual`, `cantidad_minima`, `cantidad_maxima`, `precio_unitario`, `precio_venta`, `codigo_qr`, `codigo_barra`, `ubicacion`, `proveedor`, `contacto_proveedor`, `fecha_ultimo_ingreso`, `fecha_vencimiento`, `lote`, `estado`, `requiere_alerta`, `activo`) VALUES
+('CAFE-004', 'Marley Coffee - Lively Up', 'Cafe en grano tueste medio 340g', 'cafe', 'paquete', 75, 20, 150, 9000, 13990, 'QR-CAFE-004', '7000000000004', 'Bodega A1', 'Distribuidora Marley Chile', '+56912345678', DATE_SUB(NOW(), INTERVAL 5 DAY), DATE_ADD(CURDATE(), INTERVAL 180 DAY), 'LOT-2024-001', 'disponible', 0, 1),
+('INS-003', 'Leche Deslactosada Colun 1L', 'Leche deslactosada pasteurizada', 'insumos', 'litro', 120, 40, 250, 950, 1390, NULL, '7801050100016', 'Refrigerador Principal', 'Colun Chile', '+56923456789', DATE_SUB(NOW(), INTERVAL 3 DAY), DATE_ADD(CURDATE(), INTERVAL 10 DAY), 'LOT-2024-002', 'disponible', 0, 1),
+('INS-004', 'Leche de Almendras 1L', 'Leche vegetal de almendras', 'insumos', 'litro', 60, 15, 100, 2500, 3990, NULL, '7801050100017', 'Refrigerador Principal', 'Distribuidora Vegana', '+56934567890', DATE_SUB(NOW(), INTERVAL 2 DAY), DATE_ADD(CURDATE(), INTERVAL 30 DAY), 'LOT-2024-003', 'disponible', 0, 1),
+('INS-005', 'Miel Natural 500g', 'Miel de abeja natural', 'insumos', 'gramo', 500, 100, 1000, 3500, 5990, NULL, '7801050100018', 'Bodega Seca', 'Apicultura del Norte', '+56945678901', DATE_SUB(NOW(), INTERVAL 7 DAY), DATE_ADD(CURDATE(), INTERVAL 365 DAY), 'LOT-2024-004', 'disponible', 0, 1),
+('DES-002', 'Vasos Papel 12oz x100', 'Vasos desechables cafe caliente 12oz', 'desechables', 'paquete', 60, 15, 120, 3200, 0, NULL, NULL, 'Bodega Desechables', 'Papeleria del Norte', '+56956789012', DATE_SUB(NOW(), INTERVAL 10 DAY), NULL, NULL, 'disponible', 0, 1);
+
+-- Productos con estado 'agotado' (mínimo 5)
+INSERT INTO `inventario` (`codigo_producto`, `nombre_producto`, `descripcion`, `categoria`, `unidad_medida`, `cantidad_actual`, `cantidad_minima`, `cantidad_maxima`, `precio_unitario`, `precio_venta`, `codigo_qr`, `codigo_barra`, `ubicacion`, `proveedor`, `contacto_proveedor`, `fecha_ultimo_ingreso`, `fecha_vencimiento`, `lote`, `estado`, `requiere_alerta`, `activo`) VALUES
+('CAFE-005', 'Marley Coffee - Get Up Stand Up', 'Cafe en grano tueste oscuro 340g', 'cafe', 'paquete', 0, 15, 100, 9500, 14990, 'QR-CAFE-005', '7000000000005', 'Bodega A1', 'Distribuidora Marley Chile', '+56912345678', DATE_SUB(NOW(), INTERVAL 30 DAY), DATE_ADD(CURDATE(), INTERVAL 150 DAY), 'LOT-2023-050', 'agotado', 1, 1),
+('INS-006', 'Leche Condensada Nestle 397g', 'Leche condensada azucarada', 'insumos', 'gramo', 0, 10, 50, 1200, 2490, NULL, '7801050100019', 'Bodega Seca', 'Nestle Chile', '+56967890123', DATE_SUB(NOW(), INTERVAL 45 DAY), DATE_ADD(CURDATE(), INTERVAL 180 DAY), 'LOT-2023-051', 'agotado', 1, 1),
+('INS-007', 'Canela Molida 100g', 'Canela en polvo para espolvorear', 'insumos', 'gramo', 0, 5, 30, 1500, 2990, NULL, '7801050100020', 'Bodega Seca', 'Especias del Norte', '+56978901234', DATE_SUB(NOW(), INTERVAL 20 DAY), DATE_ADD(CURDATE(), INTERVAL 730 DAY), 'LOT-2023-052', 'agotado', 1, 1),
+('DES-003', 'Tapas Vasos Calientes x100', 'Tapas plásticas para vasos calientes', 'desechables', 'paquete', 0, 10, 80, 1800, 0, NULL, NULL, 'Bodega Desechables', 'Papeleria del Norte', '+56956789012', DATE_SUB(NOW(), INTERVAL 15 DAY), NULL, NULL, 'agotado', 1, 1),
+('EQU-002', 'Molino de Cafe Manual', 'Molino manual para cafe en grano', 'equipamiento', 'unidad', 0, 2, 10, 25000, 49990, 'QR-EQU-002', NULL, 'Vitrina Premium', 'Importadora Nacional', '+56989012345', DATE_SUB(NOW(), INTERVAL 60 DAY), NULL, NULL, 'agotado', 1, 1);
+
+-- Productos con estado 'por_vencer' (mínimo 5)
+INSERT INTO `inventario` (`codigo_producto`, `nombre_producto`, `descripcion`, `categoria`, `unidad_medida`, `cantidad_actual`, `cantidad_minima`, `cantidad_maxima`, `precio_unitario`, `precio_venta`, `codigo_qr`, `codigo_barra`, `ubicacion`, `proveedor`, `contacto_proveedor`, `fecha_ultimo_ingreso`, `fecha_vencimiento`, `lote`, `estado`, `requiere_alerta`, `activo`) VALUES
+('INS-008', 'Leche Entera Colun 1L', 'Leche entera - por vencer', 'insumos', 'litro', 25, 50, 300, 850, 1290, NULL, '7801050100021', 'Refrigerador Principal', 'Colun Chile', '+56912345678', DATE_SUB(NOW(), INTERVAL 5 DAY), DATE_ADD(CURDATE(), INTERVAL 3 DAY), 'LOT-2024-005', 'por_vencer', 1, 1),
+('INS-009', 'Crema de Leche Nestle 200ml', 'Crema para batir', 'insumos', 'mililitro', 200, 50, 500, 1200, 2490, NULL, '7801050100022', 'Refrigerador Principal', 'Nestle Chile', '+56923456789', DATE_SUB(NOW(), INTERVAL 4 DAY), DATE_ADD(CURDATE(), INTERVAL 2 DAY), 'LOT-2024-006', 'por_vencer', 1, 1),
+('INS-010', 'Yogurt Natural 1L', 'Yogurt natural sin azucar', 'insumos', 'litro', 15, 20, 100, 1800, 2990, NULL, '7801050100023', 'Refrigerador Principal', 'Colun Chile', '+56934567890', DATE_SUB(NOW(), INTERVAL 3 DAY), DATE_ADD(CURDATE(), INTERVAL 1 DAY), 'LOT-2024-007', 'por_vencer', 1, 1),
+('ALI-001', 'Croissant Mantequilla x6', 'Croissants de mantequilla', 'alimentos', 'paquete', 8, 5, 30, 3500, 5990, NULL, '7801050100024', 'Refrigerador Pasteleria', 'Panaderia Artesanal', '+56945678901', DATE_SUB(NOW(), INTERVAL 2 DAY), DATE_ADD(CURDATE(), INTERVAL 4 DAY), 'LOT-2024-008', 'por_vencer', 1, 1),
+('ALI-002', 'Muffin Chocolate x4', 'Muffins de chocolate', 'alimentos', 'paquete', 12, 5, 25, 2800, 4990, NULL, '7801050100025', 'Refrigerador Pasteleria', 'Panaderia Artesanal', '+56956789012', DATE_SUB(NOW(), INTERVAL 1 DAY), DATE_ADD(CURDATE(), INTERVAL 5 DAY), 'LOT-2024-009', 'por_vencer', 1, 1);
+
+-- Productos con estado 'vencido' (mínimo 5)
+INSERT INTO `inventario` (`codigo_producto`, `nombre_producto`, `descripcion`, `categoria`, `unidad_medida`, `cantidad_actual`, `cantidad_minima`, `cantidad_maxima`, `precio_unitario`, `precio_venta`, `codigo_qr`, `codigo_barra`, `ubicacion`, `proveedor`, `contacto_proveedor`, `fecha_ultimo_ingreso`, `fecha_vencimiento`, `lote`, `estado`, `requiere_alerta`, `activo`) VALUES
+('INS-011', 'Leche Entera Colun 1L', 'Leche entera vencida', 'insumos', 'litro', 8, 50, 300, 850, 0, NULL, '7801050100026', 'Refrigerador Principal', 'Colun Chile', '+56912345678', DATE_SUB(NOW(), INTERVAL 10 DAY), DATE_SUB(CURDATE(), INTERVAL 2 DAY), 'LOT-2023-060', 'vencido', 1, 1),
+('INS-012', 'Crema de Leche Nestle 200ml', 'Crema vencida', 'insumos', 'mililitro', 200, 50, 500, 1200, 0, NULL, '7801050100027', 'Refrigerador Principal', 'Nestle Chile', '+56923456789', DATE_SUB(NOW(), INTERVAL 8 DAY), DATE_SUB(CURDATE(), INTERVAL 1 DAY), 'LOT-2023-061', 'vencido', 1, 1),
+('ALI-003', 'Croissant Mantequilla x6', 'Croissants vencidos', 'alimentos', 'paquete', 3, 5, 30, 3500, 0, NULL, '7801050100028', 'Refrigerador Pasteleria', 'Panaderia Artesanal', '+56945678901', DATE_SUB(NOW(), INTERVAL 7 DAY), DATE_SUB(CURDATE(), INTERVAL 3 DAY), 'LOT-2023-062', 'vencido', 1, 1),
+('ALI-004', 'Muffin Chocolate x4', 'Muffins vencidos', 'alimentos', 'paquete', 2, 5, 25, 2800, 0, NULL, '7801050100029', 'Refrigerador Pasteleria', 'Panaderia Artesanal', '+56956789012', DATE_SUB(NOW(), INTERVAL 6 DAY), DATE_SUB(CURDATE(), INTERVAL 2 DAY), 'LOT-2023-063', 'vencido', 1, 1),
+('BEB-001', 'Jugo de Naranja Natural 1L', 'Jugo natural vencido', 'bebidas', 'litro', 5, 10, 50, 1500, 0, NULL, '7801050100030', 'Refrigerador Principal', 'Jugos del Norte', '+56967890123', DATE_SUB(NOW(), INTERVAL 5 DAY), DATE_SUB(CURDATE(), INTERVAL 1 DAY), 'LOT-2023-064', 'vencido', 1, 1);
+
+-- Productos con estado 'en_pedido' (mínimo 5)
+INSERT INTO `inventario` (`codigo_producto`, `nombre_producto`, `descripcion`, `categoria`, `unidad_medida`, `cantidad_actual`, `cantidad_minima`, `cantidad_maxima`, `precio_unitario`, `precio_venta`, `codigo_qr`, `codigo_barra`, `ubicacion`, `proveedor`, `contacto_proveedor`, `fecha_ultimo_ingreso`, `fecha_vencimiento`, `lote`, `estado`, `requiere_alerta`, `activo`) VALUES
+('CAFE-006', 'Marley Coffee - Three Little Birds', 'Cafe en grano tueste suave 340g', 'cafe', 'paquete', 0, 15, 100, 9200, 13990, 'QR-CAFE-006', '7000000000006', 'Bodega A1', 'Distribuidora Marley Chile', '+56912345678', NULL, NULL, NULL, 'en_pedido', 0, 1),
+('INS-013', 'Leche de Coco 400ml', 'Leche vegetal de coco', 'insumos', 'mililitro', 0, 20, 100, 2200, 3990, NULL, '7801050100031', 'Bodega Seca', 'Distribuidora Vegana', '+56934567890', NULL, NULL, NULL, 'en_pedido', 0, 1),
+('INS-014', 'Chocolate en Polvo 500g', 'Chocolate en polvo para bebidas', 'insumos', 'gramo', 0, 10, 50, 3500, 5990, NULL, '7801050100032', 'Bodega Seca', 'Nestle Chile', '+56967890123', NULL, NULL, NULL, 'en_pedido', 0, 1),
+('DES-004', 'Sorbetes Biodegradables x500', 'Sorbetes ecológicos', 'desechables', 'paquete', 0, 5, 20, 4500, 0, NULL, NULL, 'Bodega Desechables', 'Papeleria del Norte', '+56956789012', NULL, NULL, NULL, 'en_pedido', 0, 1),
+('EQU-003', 'Tamper para Cafe', 'Pisón profesional para cafe', 'equipamiento', 'unidad', 0, 3, 15, 15000, 29990, 'QR-EQU-003', NULL, 'Vitrina Premium', 'Importadora Nacional', '+56989012345', NULL, NULL, NULL, 'en_pedido', 0, 1);
+
+-- Productos con estado 'descontinuado' (mínimo 5)
+INSERT INTO `inventario` (`codigo_producto`, `nombre_producto`, `descripcion`, `categoria`, `unidad_medida`, `cantidad_actual`, `cantidad_minima`, `cantidad_maxima`, `precio_unitario`, `precio_venta`, `codigo_qr`, `codigo_barra`, `ubicacion`, `proveedor`, `contacto_proveedor`, `fecha_ultimo_ingreso`, `fecha_vencimiento`, `lote`, `estado`, `requiere_alerta`, `activo`) VALUES
+('CAFE-007', 'Marley Coffee - Legend (Descontinuado)', 'Cafe en grano edición limitada', 'cafe', 'paquete', 5, 0, 0, 10000, 0, 'QR-CAFE-007', '7000000000007', 'Bodega A1', 'Distribuidora Marley Chile', '+56912345678', DATE_SUB(NOW(), INTERVAL 90 DAY), DATE_ADD(CURDATE(), INTERVAL 90 DAY), 'LOT-2023-070', 'descontinuado', 0, 0),
+('INS-015', 'Leche de Soya (Descontinuado)', 'Leche vegetal de soya', 'insumos', 'litro', 3, 0, 0, 2000, 0, NULL, '7801050100033', 'Bodega Seca', 'Distribuidora Vegana', '+56934567890', DATE_SUB(NOW(), INTERVAL 60 DAY), DATE_ADD(CURDATE(), INTERVAL 30 DAY), 'LOT-2023-071', 'descontinuado', 0, 0),
+('DES-005', 'Vasos Plásticos 8oz (Descontinuado)', 'Vasos plásticos descontinuados', 'desechables', 'paquete', 8, 0, 0, 2500, 0, NULL, NULL, 'Bodega Desechables', 'Papeleria del Norte', '+56956789012', DATE_SUB(NOW(), INTERVAL 45 DAY), NULL, NULL, 'descontinuado', 0, 0),
+('EQU-004', 'Cafetera Italiana 6 tazas (Descontinuado)', 'Cafetera moka descontinuada', 'equipamiento', 'unidad', 2, 0, 0, 18000, 0, 'QR-EQU-004', NULL, 'Vitrina Premium', 'Importadora Nacional', '+56989012345', DATE_SUB(NOW(), INTERVAL 120 DAY), NULL, NULL, 'descontinuado', 0, 0),
+('MERCH-102', 'Taza Vintage Marley (Descontinuado)', 'Taza edición limitada descontinuada', 'otros', 'unidad', 4, 0, 0, 4000, 0, 'QR-MERCH-102', '7000000000011', 'Vitrina Principal', 'Importadora Nacional', '+56989012345', DATE_SUB(NOW(), INTERVAL 100 DAY), NULL, NULL, 'descontinuado', 0, 0);
+
+-- ============================================================
+-- FINALIZACION
+-- ============================================================
+
+SET FOREIGN_KEY_CHECKS = 1;
 COMMIT;
-
-SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT;
-SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS;
-SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION;

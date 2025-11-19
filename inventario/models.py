@@ -65,3 +65,168 @@ class Inventario(models.Model):
 
     def __str__(self):
         return f"{self.nombre_producto} ({self.codigo_producto})"
+
+
+class AlertasInventario(models.Model):
+    TIPO_ALERTA_CHOICES = [
+        ('stock_bajo', 'Stock Bajo'),
+        ('stock_critico', 'Stock Crítico'),
+        ('producto_vencido', 'Producto Vencido'),
+        ('por_vencer', 'Por Vencer'),
+        ('sin_stock', 'Sin Stock'),
+        ('sobre_stock', 'Sobre Stock'),
+    ]
+    
+    ESTADO_CHOICES = [
+        ('pendiente', 'Pendiente'),
+        ('revisada', 'Revisada'),
+        ('resuelta', 'Resuelta'),
+        ('ignorada', 'Ignorada'),
+    ]
+    
+    PRIORIDAD_CHOICES = [
+        ('baja', 'Baja'),
+        ('media', 'Media'),
+        ('alta', 'Alta'),
+        ('critica', 'Crítica'),
+    ]
+    
+    inventario_id = models.ForeignKey('Inventario', on_delete=models.CASCADE, db_column='inventario_id', related_name='alertas')
+    tipo_alerta = models.CharField(max_length=20, choices=TIPO_ALERTA_CHOICES, db_column='tipo_alerta')
+    mensaje = models.TextField(db_column='mensaje')
+    estado = models.CharField(max_length=20, choices=ESTADO_CHOICES, default='pendiente', db_column='estado')
+    prioridad = models.CharField(max_length=20, choices=PRIORIDAD_CHOICES, default='media', db_column='prioridad')
+    fecha_alerta = models.DateTimeField(auto_now_add=True, db_column='fecha_alerta')
+    fecha_resolucion = models.DateTimeField(blank=True, null=True, db_column='fecha_resolucion')
+    resuelto_por = models.ForeignKey(Empleado, on_delete=models.SET_NULL, blank=True, null=True, db_column='resuelto_por', related_name='alertas_resueltas')
+    notas_resolucion = models.TextField(blank=True, null=True, db_column='notas_resolucion')
+    
+    class Meta:
+        db_table = 'alertas_inventario'
+        indexes = [
+            models.Index(fields=['inventario_id']),
+            models.Index(fields=['estado']),
+            models.Index(fields=['tipo_alerta']),
+            models.Index(fields=['prioridad']),
+            models.Index(fields=['fecha_alerta']),
+        ]
+    
+    def __str__(self):
+        return f"{self.tipo_alerta} - {self.inventario_id.nombre_producto}"
+
+
+class MovimientosInventario(models.Model):
+    TIPO_MOVIMIENTO_CHOICES = [
+        ('ingreso', 'Ingreso'),
+        ('salida', 'Salida'),
+        ('ajuste', 'Ajuste'),
+        ('merma', 'Merma'),
+        ('devolucion', 'Devolución'),
+        ('transferencia', 'Transferencia'),
+        ('venta', 'Venta'),
+    ]
+    
+    inventario_id = models.ForeignKey('Inventario', on_delete=models.CASCADE, db_column='inventario_id', related_name='movimientos')
+    tipo_movimiento = models.CharField(max_length=20, choices=TIPO_MOVIMIENTO_CHOICES, db_column='tipo_movimiento')
+    cantidad = models.IntegerField(db_column='cantidad')
+    cantidad_anterior = models.IntegerField(db_column='cantidad_anterior')
+    cantidad_nueva = models.IntegerField(db_column='cantidad_nueva')
+    precio_unitario = models.IntegerField(blank=True, null=True, db_column='precio_unitario')
+    costo_total = models.IntegerField(blank=True, null=True, db_column='costo_total')
+    motivo = models.CharField(max_length=255, blank=True, null=True, db_column='motivo')
+    documento_referencia = models.CharField(max_length=100, blank=True, null=True, db_column='documento_referencia')
+    proveedor = models.CharField(max_length=100, blank=True, null=True, db_column='proveedor')
+    empleado_id = models.ForeignKey(Empleado, on_delete=models.SET_NULL, blank=True, null=True, db_column='empleado_id', related_name='movimientos_inventario')
+    ubicacion_origen = models.CharField(max_length=100, blank=True, null=True, db_column='ubicacion_origen')
+    ubicacion_destino = models.CharField(max_length=100, blank=True, null=True, db_column='ubicacion_destino')
+    fecha_movimiento = models.DateTimeField(auto_now_add=True, db_column='fecha_movimiento')
+    notas = models.TextField(blank=True, null=True, db_column='notas')
+    
+    class Meta:
+        db_table = 'movimientos_inventario'
+        indexes = [
+            models.Index(fields=['inventario_id']),
+            models.Index(fields=['tipo_movimiento']),
+            models.Index(fields=['fecha_movimiento']),
+            models.Index(fields=['empleado_id']),
+            models.Index(fields=['inventario_id', 'fecha_movimiento', 'tipo_movimiento']),
+        ]
+    
+    def __str__(self):
+        return f"{self.tipo_movimiento} - {self.inventario_id.nombre_producto} - {self.cantidad}"
+
+
+class Ventas(models.Model):
+    METODO_PAGO_CHOICES = [
+        ('efectivo', 'Efectivo'),
+        ('tarjeta_debito', 'Tarjeta Débito'),
+        ('tarjeta_credito', 'Tarjeta Crédito'),
+        ('transferencia', 'Transferencia'),
+        ('multiple', 'Múltiple'),
+    ]
+    
+    ESTADO_CHOICES = [
+        ('completada', 'Completada'),
+        ('cancelada', 'Cancelada'),
+        ('pendiente', 'Pendiente'),
+        ('reembolsada', 'Reembolsada'),
+    ]
+    
+    TIPO_VENTA_CHOICES = [
+        ('local', 'Local'),
+        ('delivery', 'Delivery'),
+        ('para_llevar', 'Para Llevar'),
+    ]
+    
+    numero_venta = models.CharField(max_length=50, unique=True, db_column='numero_venta')
+    empleado_id = models.ForeignKey(Empleado, on_delete=models.RESTRICT, db_column='empleado_id', related_name='ventas')
+    fecha_venta = models.DateTimeField(auto_now_add=True, db_column='fecha_venta')
+    subtotal = models.IntegerField(default=0, db_column='subtotal')
+    descuento = models.IntegerField(default=0, db_column='descuento')
+    impuesto = models.IntegerField(default=0, db_column='impuesto')
+    total = models.IntegerField(db_column='total')
+    metodo_pago = models.CharField(max_length=20, choices=METODO_PAGO_CHOICES, db_column='metodo_pago')
+    estado = models.CharField(max_length=20, choices=ESTADO_CHOICES, default='completada', db_column='estado')
+    tipo_venta = models.CharField(max_length=20, choices=TIPO_VENTA_CHOICES, default='local', db_column='tipo_venta')
+    mesa_numero = models.CharField(max_length=20, blank=True, null=True, db_column='mesa_numero')
+    notas = models.TextField(blank=True, null=True, db_column='notas')
+    cancelada_por = models.ForeignKey(Empleado, on_delete=models.SET_NULL, blank=True, null=True, db_column='cancelada_por', related_name='ventas_canceladas')
+    fecha_cancelacion = models.DateTimeField(blank=True, null=True, db_column='fecha_cancelacion')
+    motivo_cancelacion = models.TextField(blank=True, null=True, db_column='motivo_cancelacion')
+    fecha_creacion = models.DateTimeField(auto_now_add=True, db_column='fecha_creacion')
+    fecha_actualizacion = models.DateTimeField(auto_now=True, db_column='fecha_actualizacion')
+    
+    class Meta:
+        db_table = 'ventas'
+        indexes = [
+            models.Index(fields=['empleado_id']),
+            models.Index(fields=['fecha_venta']),
+            models.Index(fields=['estado']),
+            models.Index(fields=['metodo_pago']),
+            models.Index(fields=['fecha_venta', 'estado']),
+        ]
+    
+    def __str__(self):
+        return f"{self.numero_venta} - {self.total}"
+
+
+class DetalleVentas(models.Model):
+    venta_id = models.ForeignKey('Ventas', on_delete=models.CASCADE, db_column='venta_id', related_name='detalles')
+    inventario_id = models.ForeignKey('Inventario', on_delete=models.RESTRICT, db_column='inventario_id', related_name='detalles_ventas')
+    cantidad = models.IntegerField(db_column='cantidad')
+    precio_unitario = models.IntegerField(db_column='precio_unitario')
+    subtotal = models.IntegerField(db_column='subtotal')
+    descuento_item = models.IntegerField(default=0, db_column='descuento_item')
+    total_item = models.IntegerField(db_column='total_item')
+    notas_item = models.TextField(blank=True, null=True, db_column='notas_item')
+    fecha_creacion = models.DateTimeField(auto_now_add=True, db_column='fecha_creacion')
+    
+    class Meta:
+        db_table = 'detalle_ventas'
+        indexes = [
+            models.Index(fields=['venta_id']),
+            models.Index(fields=['inventario_id']),
+        ]
+    
+    def __str__(self):
+        return f"{self.venta_id.numero_venta} - {self.inventario_id.nombre_producto} x{self.cantidad}"

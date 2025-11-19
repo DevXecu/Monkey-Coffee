@@ -11,6 +11,9 @@ const ACTIVITY_ICONS = {
   inventario_update: '✏️',
   inventario_delete: '🗑️',
   stock_update: '📊',
+  asistencia_create: '📅',
+  asistencia_update: '✏️',
+  asistencia_delete: '🗑️',
   reporte_create: '📄',
   default: '📌',
 };
@@ -104,6 +107,16 @@ export const ActivityLogger = {
   
   stockUpdated: (nombre, cantidad, tipo) => 
     logActivity('stock_update', `Stock ${tipo}: ${nombre} (${cantidad} unidades)`),
+  
+  // Asistencias
+  asistenciaCreated: (nombre) => 
+    logActivity('asistencia_create', `Nueva asistencia registrada: ${nombre}`),
+  
+  asistenciaUpdated: (nombre) => 
+    logActivity('asistencia_update', `Asistencia actualizada: ${nombre}`),
+  
+  asistenciaDeleted: (nombre) => 
+    logActivity('asistencia_delete', `Asistencia eliminada: ${nombre}`),
   
   // Reportes
   reporteCreated: (tipo) => 

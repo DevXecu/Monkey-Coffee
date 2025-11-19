@@ -124,7 +124,7 @@ class AsistenciaSerializer(serializers.ModelSerializer):
         if validated_data.get('hora_entrada') and validated_data.get('hora_salida'):
             diferencia = validated_data['hora_salida'] - validated_data['hora_entrada']
             horas = diferencia.total_seconds() / 3600
-            validated_data['horas_trabajadas'] = int(round(horas))
+            validated_data['horas_trabajadas'] = round(horas, 2)
         
         return super().create(validated_data)
     
@@ -146,7 +146,7 @@ class AsistenciaSerializer(serializers.ModelSerializer):
             if hora_entrada and hora_salida:
                 diferencia = hora_salida - hora_entrada
                 horas = diferencia.total_seconds() / 3600
-                validated_data['horas_trabajadas'] = int(round(horas))
+                validated_data['horas_trabajadas'] = round(horas, 2)
         
         return super().update(instance, validated_data)
     
@@ -232,7 +232,7 @@ class TurnoSerializer(serializers.ModelSerializer):
                 if diferencia_segundos < 0:
                     diferencia_segundos += 24 * 3600  # Si cruza medianoche
                 horas = diferencia_segundos / 3600
-                validated_data['horas_trabajo'] = int(round(horas))
+                validated_data['horas_trabajo'] = round(horas, 2)
         
         return super().create(validated_data)
     
@@ -258,7 +258,7 @@ class TurnoSerializer(serializers.ModelSerializer):
                 if diferencia_segundos < 0:
                     diferencia_segundos += 24 * 3600
                 horas = diferencia_segundos / 3600
-                validated_data['horas_trabajo'] = int(round(horas))
+                validated_data['horas_trabajo'] = round(horas, 2)
         
         return super().update(instance, validated_data)
     
