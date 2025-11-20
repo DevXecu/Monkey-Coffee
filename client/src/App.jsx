@@ -18,6 +18,7 @@ import { TareasPage } from "./pages/TareasPage";
 import { TareasFormPage } from "./pages/TareasFormPage";
 import { ReportesPage } from "./pages/ReportesPage";
 import { ConfiguracionPage } from "./pages/ConfiguracionPage";
+import { ProfilePage } from "./pages/ProfilePage";
 import { Toaster } from "react-hot-toast";
 
 function App() {
@@ -62,6 +63,7 @@ function App() {
             <Route path="tareas-create" element={<TareasFormPage />} />
             <Route path="reportes" element={<ReportesPage />} />
             <Route path="configuracion" element={<ConfiguracionPage />} />
+            <Route path="profile" element={<ProfilePage />} />
           </Route>
         </Routes>
         <Toaster />
