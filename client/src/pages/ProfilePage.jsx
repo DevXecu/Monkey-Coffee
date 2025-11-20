@@ -65,17 +65,18 @@ export function ProfilePage() {
         correo: empleadoData.correo || "",
         celular: empleadoData.celular || "",
         direccion: empleadoData.direccion || "",
+        observaciones: empleadoData.observaciones || "",
       });
 
       // Formatear celular para mostrar
       if (empleadoData.celular) {
-        const celularLimpio = empleadoData.celular.replace(/\+56|\s|-/g, '').replace(/[^0-9]/g, '');
-        const celularSin9 = celularLimpio.startsWith('9') ? celularLimpio.substring(1) : celularLimpio;
-        if (celularSin9.length === 8) {
-          setCelularValue(`${celularSin9.substring(0, 4)} ${celularSin9.substring(4)}`);
-        } else {
-          setCelularValue(celularSin9);
-        }
+        const celularLimpio = limpiarCelular(empleadoData.celular);
+        const celularFormateado = formatearCelularChileno(celularLimpio);
+        setCelularValue(celularFormateado);
+        setValue("celular", celularFormateado ? `+56 9${celularFormateado.replace(/\s/g, '')}` : "");
+      } else {
+        setCelularValue("");
+        setValue("celular", "");
       }
     } catch (error) {
       console.error("Error al cargar empleado:", error);
@@ -95,37 +96,84 @@ export function ProfilePage() {
       .join(' ');
   };
 
+  // Función para limpiar el número de celular (remover +56, espacios, etc.)
   const limpiarCelular = (celular) => {
     if (!celular) return "";
+    // Remover +56, espacios, guiones y otros caracteres no numéricos
     return celular.replace(/\+56|\s|-/g, '').replace(/[^0-9]/g, '');
   };
 
+  // Función para formatear el número de celular chileno (solo los 8 dígitos después del 9)
   const formatearCelularChileno = (numero) => {
     const limpiado = limpiarCelular(numero);
+    
+    // Si está vacío, retornar vacío
     if (!limpiado) return "";
     
+    // Remover el 9 inicial si existe (ya que el prefijo lo incluye)
     let numeroSin9 = limpiado.startsWith('9') ? limpiado.substring(1) : limpiado;
+    
+    // Limitar a 8 dígitos (después del 9)
     if (numeroSin9.length > 8) {
       numeroSin9 = numeroSin9.substring(0, 8);
     }
     
+    // Formatear: 1234 5678
     if (numeroSin9.length === 0) {
       return "";
     } else if (numeroSin9.length <= 4) {
+      // Para 1-4 dígitos: "1", "12", "123", "1234"
       return numeroSin9;
     } else {
+      // Para más de 4 dígitos: "1234 5", "1234 56", etc.
       return `${numeroSin9.substring(0, 4)} ${numeroSin9.substring(4)}`;
     }
   };
 
   const handleCelularChange = (e) => {
     const inputValue = e.target.value;
+    
+    // Limpiar y formatear el número (solo los 8 dígitos después del 9)
     const limpiado = limpiarCelular(inputValue);
     const formateado = formatearCelularChileno(limpiado);
     
     setCelularValue(formateado);
+    
+    // Guardar el valor completo con +56 9 para el formulario
     const valorCompleto = formateado ? `+56 9${formateado.replace(/\s/g, '')}` : "";
     setValue("celular", valorCompleto);
+  };
+
+  const handleCelularKeyDown = (e) => {
+    // Permitir solo números y teclas de control
+    const allowedKeys = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab', 'Enter'];
+    const isNumber = /^[0-9]$/.test(e.key);
+    
+    if (!isNumber && !allowedKeys.includes(e.key) && !e.ctrlKey && !e.metaKey) {
+      e.preventDefault();
+    }
+  };
+
+  const handleCelularFocus = (e) => {
+    // Colocar el cursor al final del texto si hay contenido
+    if (celularValue) {
+      setTimeout(() => {
+        e.target.setSelectionRange(celularValue.length, celularValue.length);
+      }, 0);
+    }
+  };
+
+  // Función para formatear el celular para mostrar (modo no-edición)
+  const formatearCelularParaMostrar = (celular) => {
+    if (!celular || celular.trim() === "") {
+      return "No especificado";
+    }
+    const celularLimpio = limpiarCelular(celular);
+    if (!celularLimpio || celularLimpio.length === 0) {
+      return "No especificado";
+    }
+    const celularFormateado = formatearCelularChileno(celularLimpio);
+    return celularFormateado ? `+56 9 ${celularFormateado}` : "No especificado";
   };
 
   const handlePasswordChange = (e) => {
@@ -155,11 +203,29 @@ export function ProfilePage() {
       if (data.correo !== undefined) {
         updateData.correo = data.correo.trim() || null;
       }
-      if (data.celular !== undefined) {
-        updateData.celular = data.celular.trim() || null;
+      
+      // Limpiar y formatear celular antes de enviar
+      if (data.celular && data.celular !== '') {
+        const celularLimpio = limpiarCelular(data.celular);
+        if (celularLimpio) {
+          // Asegurar que empiece con 9
+          const numeroCompleto = celularLimpio.startsWith('9') ? celularLimpio : '9' + celularLimpio;
+          // Formato: +56 9 + 8 dígitos restantes
+          const digitosRestantes = numeroCompleto.substring(1, 9);
+          updateData.celular = `+56 9${digitosRestantes}`;
+        } else {
+          updateData.celular = null;
+        }
+      } else {
+        updateData.celular = null;
       }
+      
       if (data.direccion !== undefined) {
         updateData.direccion = data.direccion.trim() || null;
+      }
+      
+      if (data.observaciones !== undefined) {
+        updateData.observaciones = data.observaciones.trim() || null;
       }
 
       // Si se está cambiando la contraseña
@@ -213,6 +279,21 @@ export function ProfilePage() {
 
   const formatDate = (dateString) => {
     if (!dateString) return "No especificada";
+    // Parsear la fecha manualmente para evitar problemas de zona horaria
+    // Si la fecha viene en formato YYYY-MM-DD, parsearla como fecha local
+    const dateParts = dateString.split('T')[0].split('-');
+    if (dateParts.length === 3) {
+      const year = parseInt(dateParts[0], 10);
+      const month = parseInt(dateParts[1], 10) - 1; // Los meses en JS son 0-indexados
+      const day = parseInt(dateParts[2], 10);
+      const date = new Date(year, month, day);
+      return date.toLocaleDateString('es-CL', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+    }
+    // Fallback al método original si el formato no es el esperado
     const date = new Date(dateString);
     return date.toLocaleDateString('es-CL', {
       year: 'numeric',
@@ -260,7 +341,19 @@ export function ProfilePage() {
         </div>
         {!isEditing && (
           <button
-            onClick={() => setIsEditing(true)}
+            onClick={() => {
+              setIsEditing(true);
+              // Asegurar que el celular se inicialice correctamente al entrar en modo edición
+              if (empleado?.celular) {
+                const celularLimpio = limpiarCelular(empleado.celular);
+                const celularFormateado = formatearCelularChileno(celularLimpio);
+                setCelularValue(celularFormateado);
+                setValue("celular", celularFormateado ? `+56 9${celularFormateado.replace(/\s/g, '')}` : "");
+              } else {
+                setCelularValue("");
+                setValue("celular", "");
+              }
+            }}
             className="px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors flex items-center space-x-2"
           >
             <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -393,27 +486,34 @@ export function ProfilePage() {
                   </label>
                   {isEditing ? (
                     <div className="relative">
-                      <span className="absolute left-3 top-2 text-gray-500">+56 9</span>
+                      <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 pointer-events-none select-none text-sm">
+                        +56 9
+                      </span>
                       <input
+                        key={`celular-edit-${empleado?.id || 'new'}`}
                         type="text"
-                        value={celularValue}
-                        onChange={handleCelularChange}
-                        onKeyDown={(e) => {
-                          const allowedKeys = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab', 'Enter'];
-                          const isNumber = /^[0-9]$/.test(e.key);
-                          if (!isNumber && !allowedKeys.includes(e.key) && !e.ctrlKey && !e.metaKey) {
-                            e.preventDefault();
-                          }
-                        }}
-                        maxLength={9}
-                        className="w-full pl-16 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 border-gray-300"
                         placeholder="1234 5678"
+                        value={celularValue || ""}
+                        onChange={handleCelularChange}
+                        onKeyDown={handleCelularKeyDown}
+                        onFocus={handleCelularFocus}
+                        onPaste={(e) => {
+                          e.preventDefault();
+                          const pastedText = e.clipboardData.getData('text');
+                          const limpiado = limpiarCelular(pastedText);
+                          const formateado = formatearCelularChileno(limpiado);
+                          setCelularValue(formateado);
+                          const valorCompleto = formateado ? `+56 9${formateado.replace(/\s/g, '')}` : "";
+                          setValue("celular", valorCompleto);
+                        }}
+                        maxLength={11}
+                        className="w-full pl-[3.25rem] pr-4 py-2 border rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500 border-gray-300"
                       />
                     </div>
                   ) : (
                     <input
                       type="text"
-                      value={empleado.celular || "No especificado"}
+                      value={formatearCelularParaMostrar(empleado.celular)}
                       disabled
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-600"
                     />
@@ -434,20 +534,42 @@ export function ProfilePage() {
                 </div>
 
                 {/* Dirección - Editable */}
-                <div className="md:col-span-2">
+                <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Dirección
                   </label>
                   {isEditing ? (
-                    <textarea
+                    <input
+                      type="text"
                       {...register("direccion")}
-                      rows={3}
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                       placeholder="Ingresa tu dirección"
                     />
                   ) : (
-                    <textarea
+                    <input
+                      type="text"
                       value={empleado.direccion || "No especificada"}
+                      disabled
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-600"
+                    />
+                  )}
+                </div>
+
+                {/* Descripción - Editable */}
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Descripción
+                  </label>
+                  {isEditing ? (
+                    <textarea
+                      {...register("observaciones")}
+                      rows={3}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                      placeholder="Ingresa una descripción"
+                    />
+                  ) : (
+                    <textarea
+                      value={empleado.observaciones || "No especificada"}
                       disabled
                       rows={3}
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-600"
