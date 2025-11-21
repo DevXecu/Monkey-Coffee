@@ -5,6 +5,7 @@ import { createEmpleado, deleteEmpleado, getEmpleado, updateEmpleado } from "../
 import { toast } from "react-hot-toast";
 import { ActivityLogger } from "../utils/activityLogger";
 import { formatearRUT, formatearRUTCompleto, validarRUT, limpiarRUT } from "../utils/rutUtils";
+import { formatCurrency } from "../utils/currencyUtils";
 
 export function EmpleadoFormPage() {
   const {
@@ -24,6 +25,7 @@ export function EmpleadoFormPage() {
   const [passwordValue, setPasswordValue] = useState("");
   const [showPasswordValidation, setShowPasswordValidation] = useState(false);
   const [celularValue, setCelularValue] = useState("");
+  const [salarioValue, setSalarioValue] = useState("");
   
   // Referencias para los campos
   const rutRef = useRef(null);
@@ -31,8 +33,8 @@ export function EmpleadoFormPage() {
   const apellidoRef = useRef(null);
   const fechaNacimientoRef = useRef(null);
   const direccionRef = useRef(null);
+  const rolRef = useRef(null);
   const cargoRef = useRef(null);
-  const departamentoRef = useRef(null);
   const fechaContratacionRef = useRef(null);
   const salarioRef = useRef(null);
   const tipoContratoRef = useRef(null);
@@ -43,6 +45,24 @@ export function EmpleadoFormPage() {
   const observacionesRef = useRef(null);
   const activoRef = useRef(null);
   const submitButtonRef = useRef(null);
+
+  // Función para formatear salario mientras se escribe
+  const formatearSalarioInput = (valor) => {
+    if (!valor || valor === '') return '';
+    // Remover todo lo que no sea número
+    const soloNumeros = valor.toString().replace(/\D/g, '');
+    if (soloNumeros === '') return '';
+    // Formatear con separadores de miles
+    const numero = parseInt(soloNumeros, 10);
+    return formatCurrency(numero).replace('$', ''); // Remover $ para el input
+  };
+
+  // Función para obtener el valor numérico del salario formateado
+  const obtenerValorNumericoSalario = (valorFormateado) => {
+    if (!valorFormateado || valorFormateado === '') return '';
+    // Remover puntos y espacios, dejar solo números
+    return valorFormateado.toString().replace(/\D/g, '');
+  };
 
   const capitalizarTexto = (texto) => {
     return texto
@@ -314,6 +334,7 @@ export function EmpleadoFormPage() {
       const cleanData = {
         nombre: nombreValue.trim(),
         apellido: apellidoValue.trim(),
+        rol: data.rol || 'empleado',
         cargo: data.cargo?.trim() || '',
         fecha_contratacion: data.fecha_contratacion || null,
       };
@@ -380,9 +401,10 @@ export function EmpleadoFormPage() {
         cleanData.observaciones = null;
       }
       
-      // Limpiar salario
-      if (data.salario && data.salario !== '' && data.salario !== undefined && data.salario !== null) {
-        cleanData.salario = parseFloat(data.salario);
+      // Limpiar salario - convertir el valor formateado a número
+      const salarioNumerico = obtenerValorNumericoSalario(data.salario || salarioValue);
+      if (salarioNumerico && salarioNumerico !== '') {
+        cleanData.salario = parseInt(salarioNumerico, 10);
       } else {
         cleanData.salario = null;
       }
@@ -529,11 +551,18 @@ export function EmpleadoFormPage() {
           
           setValue("fecha_nacimiento", data.fecha_nacimiento || "");
           setValue("direccion", data.direccion || "");
+          setValue("rol", data.rol || "empleado");
           setValue("cargo", data.cargo || "");
           setValue("departamento", data.departamento || "");
           setValue("fecha_contratacion", data.fecha_contratacion || "");
           setValue("fecha_termino", data.fecha_termino || "");
-          setValue("salario", data.salario || "");
+          if (data.salario) {
+            setSalarioValue(formatearSalarioInput(data.salario.toString()));
+            setValue("salario", data.salario || "");
+          } else {
+            setSalarioValue("");
+            setValue("salario", "");
+          }
           
           // tipo_contrato: 'indefinido','plazo_fijo','full_time','part_time'
           let tipoContrato = data.tipo_contrato || "indefinido";
@@ -613,7 +642,7 @@ export function EmpleadoFormPage() {
           {/* Nombre */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Nombres *
+              Nombre *
             </label>
             <input
               ref={nombreRef}
@@ -722,7 +751,7 @@ export function EmpleadoFormPage() {
               type="text"
               placeholder="Calle Ejemplo #123, Comuna, Ciudad"
               {...register("direccion")}
-              onKeyDown={(e) => handleFieldKeyDown(e, cargoRef)}
+              onKeyDown={(e) => handleFieldKeyDown(e, rolRef)}
               className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500"
             />
           </div>
@@ -732,42 +761,42 @@ export function EmpleadoFormPage() {
             <h3 className="text-lg font-medium text-gray-900">Información Laboral</h3>
           </div>
 
+          {/* Rol */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Rol
+            </label>
+            <select
+              ref={rolRef}
+              {...register("rol")}
+              onKeyDown={(e) => handleFieldKeyDown(e, cargoRef)}
+              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+            >
+              <option value="">Seleccione un rol</option>
+              <option value="empleado">Empleado</option>
+              <option value="gerente">Gerente</option>
+              <option value="administrador">Administrador</option>
+            </select>
+          </div>
+
           {/* Cargo */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Cargo *
             </label>
-            <select
+            <input
               ref={cargoRef}
+              type="text"
+              placeholder="Ej: Barista, Encargado de Barista, Cajera, etc."
               {...register("cargo", { required: "El cargo es requerido" })}
-              onKeyDown={(e) => handleFieldKeyDown(e, departamentoRef)}
-              className={`block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 ${
+              onKeyDown={(e) => handleFieldKeyDown(e, fechaContratacionRef)}
+              className={`block w-full px-3 py-2 border rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500 ${
                 errors.cargo ? 'border-red-300' : 'border-gray-300'
               }`}
-            >
-              <option value="">Seleccione un cargo</option>
-              <option value="Gerente">Gerente</option>
-              <option value="Administrador">Administrador</option>
-              <option value="Trabajador">Trabajador</option>
-            </select>
+            />
             {errors.cargo && (
               <p className="mt-1 text-sm text-red-600">{errors.cargo.message}</p>
             )}
-          </div>
-
-          {/* Departamento */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Departamento
-            </label>
-            <input
-              ref={departamentoRef}
-              type="text"
-              placeholder="Operaciones, Ventas, etc."
-              {...register("departamento")}
-              onKeyDown={(e) => handleFieldKeyDown(e, fechaContratacionRef)}
-              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500"
-            />
           </div>
 
           {/* Fecha de Contratación */}
@@ -831,22 +860,30 @@ export function EmpleadoFormPage() {
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Salario
             </label>
-            <input
-              ref={salarioRef}
-              type="number"
-              step="1"
-              min="0"
-              placeholder="0"
-              {...register("salario")}
-              onKeyDown={(e) => {
-                // Prevenir entrada de punto decimal o coma
-                if (e.key === '.' || e.key === ',') {
-                  e.preventDefault();
-                }
-                handleFieldKeyDown(e, passwordRef);
-              }}
-              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500"
-            />
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 font-medium">$</span>
+              <input
+                ref={salarioRef}
+                type="text"
+                placeholder="0"
+                value={salarioValue}
+                onChange={(e) => {
+                  const valorFormateado = formatearSalarioInput(e.target.value);
+                  setSalarioValue(valorFormateado);
+                  const valorNumerico = obtenerValorNumericoSalario(valorFormateado);
+                  setValue("salario", valorNumerico, { shouldValidate: true });
+                }}
+                onKeyDown={(e) => {
+                  // Permitir solo números, backspace, delete, arrow keys, tab
+                  const allowedKeys = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Tab'];
+                  if (!allowedKeys.includes(e.key) && !/^\d$/.test(e.key)) {
+                    e.preventDefault();
+                  }
+                  handleFieldKeyDown(e, passwordRef);
+                }}
+                className="block w-full pl-8 pr-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+              />
+            </div>
           </div>
 
           {/* Separador - Seguridad y Configuración */}

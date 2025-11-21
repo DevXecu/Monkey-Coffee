@@ -24,6 +24,7 @@ export function TurnosFormPage() {
   const [turnoActual, setTurnoActual] = useState(null);
   const [empleados, setEmpleados] = useState([]);
   const [diasSemana, setDiasSemana] = useState([]);
+  const [isLoadingTurno, setIsLoadingTurno] = useState(false);
 
   const diasSemanaOptions = [
     { value: 0, label: 'Domingo' },
@@ -124,13 +125,34 @@ export function TurnosFormPage() {
     }
 
     try {
+      // Calcular horas de trabajo si no está presente o recalcular si hay horas de entrada y salida
+      let horasTrabajoCalculadas = null;
+      if (data.hora_entrada && data.hora_salida) {
+        const entrada = new Date(`2000-01-01T${data.hora_entrada}`);
+        const salida = new Date(`2000-01-01T${data.hora_salida}`);
+        
+        if (salida > entrada) {
+          const diffMs = salida - entrada;
+          const diffHrs = diffMs / (1000 * 60 * 60);
+          // Restar 1 hora de almuerzo/descanso por defecto
+          const horasTrabajo = Math.max(0, diffHrs - 1);
+          // Redondear a 2 decimales para coincidir con el modelo de base de datos
+          horasTrabajoCalculadas = Math.round(horasTrabajo * 100) / 100;
+        }
+      }
+      
+      // Usar el valor calculado o el valor del formulario si existe
+      const horasTrabajoFinal = horasTrabajoCalculadas !== null 
+        ? horasTrabajoCalculadas 
+        : (data.horas_trabajo ? parseFloat(data.horas_trabajo) : null);
+
       const cleanData = {
         empleados_rut: data.empleados_rut.trim(),
         nombre_turno: data.nombre_turno.trim(),
         hora_entrada: data.hora_entrada,
         hora_salida: data.hora_salida,
         tolerancia_minutos: data.tolerancia_minutos ? parseInt(data.tolerancia_minutos) : 15,
-        horas_trabajo: data.horas_trabajo ? parseInt(data.horas_trabajo, 10) : null,
+        horas_trabajo: horasTrabajoFinal,
         descripcion: data.descripcion && data.descripcion.trim() !== '' ? data.descripcion.trim() : null,
         dias_semana: diasSemana.length > 0 ? diasSemana : null,
         activo: data.activo !== undefined ? Boolean(data.activo) : true,
@@ -200,8 +222,8 @@ export function TurnosFormPage() {
           const diffHrs = diffMs / (1000 * 60 * 60);
           // Restar 1 hora de almuerzo/descanso por defecto
           const horasTrabajo = Math.max(0, diffHrs - 1);
-          // Redondear a entero
-          return Math.round(horasTrabajo);
+          // Redondear a 2 decimales para coincidir con el modelo de base de datos
+          return Math.round(horasTrabajo * 100) / 100;
         }
       } catch (error) {
         console.error("Error calculando horas:", error);
@@ -211,21 +233,28 @@ export function TurnosFormPage() {
   };
 
   // Calcular horas de trabajo automáticamente cuando cambian las horas
+  // Solo si no se está cargando un turno existente
   useEffect(() => {
+    // No recalcular si se está cargando un turno para editar
+    if (isLoadingTurno) return;
+    
     if (horaEntrada && horaSalida) {
       const horasCalculadas = calcularHorasTrabajo();
       if (horasCalculadas !== null) {
         setValue("horas_trabajo", horasCalculadas, { shouldValidate: false });
       }
     } else {
-      // Si falta alguna hora, limpiar el campo
-      setValue("horas_trabajo", "", { shouldValidate: false });
+      // Si falta alguna hora, limpiar el campo solo si no hay turno cargado
+      if (!params.id) {
+        setValue("horas_trabajo", "", { shouldValidate: false });
+      }
     }
-  }, [horaEntrada, horaSalida, setValue]);
+  }, [horaEntrada, horaSalida, setValue, isLoadingTurno, params.id]);
 
   useEffect(() => {
     async function loadTurno() {
       if (params.id) {
+        setIsLoadingTurno(true);
         try {
           const { data } = await getTurno(params.id);
           setTurnoActual(data);
@@ -240,8 +269,8 @@ export function TurnosFormPage() {
           setValue("hora_salida", horaSalida);
           
           setValue("tolerancia_minutos", data.tolerancia_minutos || 15);
-          // Convertir horas de trabajo a entero si existe
-          const horasTrabajo = data.horas_trabajo ? Math.round(parseFloat(data.horas_trabajo)) : "";
+          // Mantener el valor original de horas_trabajo con 2 decimales
+          const horasTrabajo = data.horas_trabajo ? parseFloat(data.horas_trabajo) : "";
           setValue("horas_trabajo", horasTrabajo);
           setValue("descripcion", data.descripcion || "");
           setValue("activo", data.activo !== undefined ? data.activo : true);
@@ -255,9 +284,12 @@ export function TurnosFormPage() {
             setValue("dias_semana", []);
           }
         } catch (error) {
+          console.error("Error loading turno:", error);
           toast.error("Error al cargar turno", {
             position: "bottom-right",
           });
+        } finally {
+          setIsLoadingTurno(false);
         }
       }
     }
@@ -394,12 +426,12 @@ export function TurnosFormPage() {
               <input
                 ref={horasTrabajoRef}
                 type="number"
-                step="1"
+                step="0.01"
                 min="0"
                 readOnly
                 placeholder="Se calcula automáticamente"
                 {...register("horas_trabajo", {
-                  setValueAs: (value) => value === "" ? "" : parseInt(value, 10)
+                  setValueAs: (value) => value === "" ? "" : parseFloat(value)
                 })}
                 className="block w-full px-3 py-2 pr-10 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 bg-gray-50 cursor-not-allowed focus:outline-none"
               />

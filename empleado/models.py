@@ -63,6 +63,12 @@ class Empleado(models.Model):
         ('licencia', 'Licencia'),
         ('desvinculado', 'Desvinculado'),
     ]
+    
+    ROL_CHOICES = [
+        ('administrador', 'Administrador'),
+        ('gerente', 'Gerente'),
+        ('empleado', 'Empleado'),
+    ]
 
     # Campos básicos
     rut = models.CharField(max_length=12, unique=True, db_column='rut')
@@ -74,6 +80,7 @@ class Empleado(models.Model):
     direccion = models.TextField(blank=True, null=True, db_column='direccion')
     
     # Información laboral
+    rol = models.CharField(max_length=20, choices=ROL_CHOICES, default='empleado', blank=True, null=True, db_column='rol')
     cargo = models.CharField(max_length=100, db_column='cargo')
     departamento = models.CharField(max_length=100, blank=True, null=True, db_column='departamento')
     fecha_contratacion = models.DateField(db_column='fecha_contratacion')

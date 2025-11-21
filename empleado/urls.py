@@ -7,8 +7,6 @@ router = routers.DefaultRouter()
 router.register(r'empleado', views.EmpleadoView, 'empleado')
 router.register(r'asistencia', views.AsistenciaView, 'asistencia')
 router.register(r'turno', views.TurnoView, 'turno')
-router.register(r'solicitudes', views.SolicitudesViewSet, 'solicitudes')
-router.register(r'tipos-solicitudes', views.TiposSolicitudesViewSet, 'tipos-solicitudes')
 router.register(r'tareas', views.TareasViewSet, 'tareas')
 
 urlpatterns = [
@@ -17,6 +15,16 @@ urlpatterns = [
     
     # Endpoint de autenticación
     path('auth/login/', views.login, name='login'),
+    
+    # Rutas para solicitudes bajo el prefijo empleado (deben ir antes del router para evitar conflictos)
+    path('empleado/solicitudes/', views.SolicitudesViewSet.as_view({'get': 'list', 'post': 'create'}), name='solicitudes-list'),
+    path('empleado/solicitudes/<int:pk>/', views.SolicitudesViewSet.as_view({'get': 'retrieve', 'put': 'update', 'patch': 'partial_update', 'delete': 'destroy'}), name='solicitudes-detail'),
+    path('empleado/solicitudes/<int:pk>/aprobar/', views.SolicitudesViewSet.as_view({'post': 'aprobar'}), name='solicitudes-aprobar'),
+    path('empleado/solicitudes/<int:pk>/rechazar/', views.SolicitudesViewSet.as_view({'post': 'rechazar'}), name='solicitudes-rechazar'),
+    
+    # Rutas para tipos de solicitudes bajo el prefijo empleado (deben ir antes del router para evitar conflictos)
+    path('empleado/tipos-solicitudes/', views.TiposSolicitudesViewSet.as_view({'get': 'list', 'post': 'create'}), name='tipos-solicitudes-list'),
+    path('empleado/tipos-solicitudes/<int:pk>/', views.TiposSolicitudesViewSet.as_view({'get': 'retrieve', 'put': 'update', 'patch': 'partial_update', 'delete': 'destroy'}), name='tipos-solicitudes-detail'),
     
     # Rutas del router (deben ir después de las rutas personalizadas)
     path("", include(router.urls)),

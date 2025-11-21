@@ -4,6 +4,7 @@ import { formatearRUTParaMostrar } from "../utils/rutUtils";
 import { deleteEmpleado } from "../api/empleado.api";
 import { toast } from "react-hot-toast";
 import { ActivityLogger } from "../utils/activityLogger";
+import { formatCurrency } from "../utils/currencyUtils";
 
 export function EmpleadoCard({ empleado, onDelete }) {
   const navigate = useNavigate();
@@ -169,6 +170,15 @@ export function EmpleadoCard({ empleado, onDelete }) {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
               </svg>
               Contratado: {new Date(empleado.fecha_contratacion).toLocaleDateString('es-CL')}
+            </p>
+          )}
+
+          {empleado.salario && (
+            <p className="text-sm text-gray-700 mt-2 flex items-center font-medium">
+              <svg className="h-4 w-4 mr-1.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              Salario: {formatCurrency(empleado.salario)}
             </p>
           )}
         </div>

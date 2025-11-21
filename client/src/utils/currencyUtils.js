@@ -5,17 +5,19 @@
 /**
  * Formatea un número como moneda chilena (CLP)
  * @param {number} amount - Cantidad a formatear
- * @returns {string} - Cantidad formateada como moneda CLP
+ * @returns {string} - Cantidad formateada como moneda CLP con formato $XXX.XXX
  */
 export function formatCurrency(amount) {
   if (!amount && amount !== 0) return "N/A";
   
-  return new Intl.NumberFormat("es-CL", {
-    style: "currency",
-    currency: "CLP",
+  // Formatear número con puntos como separadores de miles
+  const formattedNumber = new Intl.NumberFormat("es-CL", {
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   }).format(amount);
+  
+  // Agregar "$" al inicio
+  return `$${formattedNumber}`;
 }
 
 /**

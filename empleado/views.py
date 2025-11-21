@@ -430,10 +430,10 @@ def estadisticas_asistencia(request):
 
 class TurnoView(viewsets.ModelViewSet):
     serializer_class = TurnoSerializer
-    queryset = Turno.objects.filter(activo=True)
+    queryset = Turno.objects.all()
     
     def get_queryset(self):
-        queryset = Turno.objects.filter(activo=True).order_by('-fecha_creacion')
+        queryset = Turno.objects.all().order_by('-fecha_creacion')
         
         # Filtros opcionales
         empleado_rut = self.request.query_params.get('empleado_rut', None)
@@ -522,6 +522,7 @@ class SolicitudesViewSet(viewsets.ModelViewSet):
     ViewSet para gestionar las solicitudes
     """
     queryset = Solicitudes.objects.all()
+    permission_classes = [AllowAny]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['estado', 'tipo_solicitud_id', 'empleado_id']
     search_fields = ['motivo', 'empleado_id__nombre', 'empleado_id__apellido']
@@ -533,6 +534,53 @@ class SolicitudesViewSet(viewsets.ModelViewSet):
         if self.action == 'list':
             return SolicitudesListSerializer
         return SolicitudesSerializer
+    
+    def create(self, request, *args, **kwargs):
+        """Crear una nueva solicitud"""
+        try:
+            print("Datos recibidos (CREATE solicitud):", request.data)
+            serializer = self.get_serializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            self.perform_create(serializer)
+            headers = self.get_success_headers(serializer.data)
+            return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+        except ValidationError as e:
+            print("Error de validación (CREATE solicitud):", e.detail)
+            return Response(
+                {"error": e.detail},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        except Exception as e:
+            print("Error al crear solicitud:", str(e))
+            print("Traceback:", traceback.format_exc())
+            return Response(
+                {"error": str(e), "detail": traceback.format_exc()},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+    
+    def update(self, request, *args, **kwargs):
+        """Actualizar una solicitud"""
+        try:
+            print("Datos recibidos (UPDATE solicitud):", request.data)
+            partial = kwargs.pop('partial', False)
+            instance = self.get_object()
+            serializer = self.get_serializer(instance, data=request.data, partial=partial)
+            serializer.is_valid(raise_exception=True)
+            self.perform_update(serializer)
+            return Response(serializer.data)
+        except ValidationError as e:
+            print("Error de validación (UPDATE solicitud):", e.detail)
+            return Response(
+                {"error": e.detail},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        except Exception as e:
+            print("Error al actualizar solicitud:", str(e))
+            print("Traceback:", traceback.format_exc())
+            return Response(
+                {"error": str(e), "detail": traceback.format_exc()},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
     @action(detail=True, methods=['post'])
     def aprobar(self, request, pk=None):
@@ -571,6 +619,7 @@ class TiposSolicitudesViewSet(viewsets.ModelViewSet):
     """
     queryset = TiposSolicitudes.objects.filter(activo=True)
     serializer_class = TiposSolicitudesSerializer
+    permission_classes = [AllowAny]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
     filterset_fields = ['activo', 'requiere_aprobacion']
     search_fields = ['nombre', 'descripcion']

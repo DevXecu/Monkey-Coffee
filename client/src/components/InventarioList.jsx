@@ -317,18 +317,16 @@ export function InventarioList() {
       {/* Header Simplificado */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Inventario</h1>
+          <div className="flex items-center space-x-3">
+            <div className="p-2 bg-primary-100 rounded-lg">
+              <svg className="h-6 w-6 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+              </svg>
+            </div>
+            <h1 className="text-3xl font-bold text-gray-900">Inventario</h1>
+          </div>
           <p className="text-gray-600 mt-1">Gestiona tu inventario de productos</p>
         </div>
-        <button 
-          onClick={() => navigate("/inventario-create")}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors shadow-sm"
-        >
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-          </svg>
-          Nuevo Producto
-        </button>
       </div>
 
       {/* Estadísticas Compactas */}
@@ -744,7 +742,7 @@ export function InventarioList() {
           <h3 className="mt-2 text-sm font-medium text-gray-900">No hay productos</h3>
           <p className="mt-1 text-sm text-gray-500">
             {inventarios.length === 0 
-              ? "Comienza agregando tu primer producto al inventario."
+              ? "Los productos se agregan desde la aplicación móvil."
               : "No se encontraron productos que coincidan con los filtros aplicados."
             }
           </p>

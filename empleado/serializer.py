@@ -9,6 +9,7 @@ class EmpleadoSerializer(serializers.ModelSerializer):
     fecha_nacimiento = serializers.DateField(required=False, allow_null=True)
     fecha_termino = serializers.DateField(required=False, allow_null=True)
     salario = serializers.IntegerField(required=False, allow_null=True)
+    rol = serializers.ChoiceField(choices=Empleado.ROL_CHOICES, required=False, allow_blank=True, allow_null=True, default='empleado')
     
     # Instancia de PasswordHasher para Argon2id
     _ph = PasswordHasher()
@@ -49,6 +50,10 @@ class EmpleadoSerializer(serializers.ModelSerializer):
         # Asegurarse de que los campos booleanos tengan valores por defecto
         if 'activo' not in validated_data:
             validated_data['activo'] = True
+        
+        # Asegurar que el rol tenga un valor por defecto si no se proporciona
+        if 'rol' not in validated_data or not validated_data.get('rol'):
+            validated_data['rol'] = 'empleado'
         
         # Crear el empleado
         empleado = Empleado.objects.create(**validated_data)
@@ -232,7 +237,9 @@ class TurnoSerializer(serializers.ModelSerializer):
                 if diferencia_segundos < 0:
                     diferencia_segundos += 24 * 3600  # Si cruza medianoche
                 horas = diferencia_segundos / 3600
-                validated_data['horas_trabajo'] = round(horas, 2)
+                # Restar 1 hora de almuerzo/descanso por defecto
+                horas_trabajo = max(0, horas - 1)
+                validated_data['horas_trabajo'] = round(horas_trabajo, 2)
         
         return super().create(validated_data)
     
@@ -258,7 +265,9 @@ class TurnoSerializer(serializers.ModelSerializer):
                 if diferencia_segundos < 0:
                     diferencia_segundos += 24 * 3600
                 horas = diferencia_segundos / 3600
-                validated_data['horas_trabajo'] = round(horas, 2)
+                # Restar 1 hora de almuerzo/descanso por defecto
+                horas_trabajo = max(0, horas - 1)
+                validated_data['horas_trabajo'] = round(horas_trabajo, 2)
         
         return super().update(instance, validated_data)
 
@@ -328,19 +337,50 @@ class SolicitudesSerializer(serializers.ModelSerializer):
     def validate_fecha_fin(self, value):
         """Validar que fecha_fin sea posterior a fecha_inicio"""
         fecha_inicio = self.initial_data.get('fecha_inicio')
+        # Si no está en initial_data (actualización parcial), usar el valor de la instancia
+        if not fecha_inicio and self.instance:
+            fecha_inicio = self.instance.fecha_inicio
+        
         if fecha_inicio and value:
+            # Convertir a date si es string
+            if isinstance(fecha_inicio, str):
+                fecha_inicio = datetime.strptime(fecha_inicio, '%Y-%m-%d').date()
+            if isinstance(value, str):
+                value = datetime.strptime(value, '%Y-%m-%d').date()
+            
             if value < fecha_inicio:
                 raise serializers.ValidationError("La fecha de fin debe ser posterior a la fecha de inicio.")
         return value
+    
+    def validate(self, data):
+        """Validación adicional a nivel de objeto"""
+        fecha_inicio = data.get('fecha_inicio')
+        fecha_fin = data.get('fecha_fin')
+        
+        # Si no están en data, usar valores de la instancia (para actualizaciones parciales)
+        if not fecha_inicio and self.instance:
+            fecha_inicio = self.instance.fecha_inicio
+        if not fecha_fin and self.instance:
+            fecha_fin = self.instance.fecha_fin
+        
+        if fecha_inicio and fecha_fin:
+            if fecha_fin < fecha_inicio:
+                raise serializers.ValidationError({
+                    'fecha_fin': "La fecha de fin debe ser posterior a la fecha de inicio."
+                })
+        
+        return data
 
 
 class SolicitudesListSerializer(serializers.ModelSerializer):
     """Serializer simplificado para listar solicitudes"""
     empleado_nombre = serializers.SerializerMethodField()
     empleado_apellido = serializers.SerializerMethodField()
+    empleado_rut = serializers.SerializerMethodField()
     tipo_solicitud_nombre = serializers.CharField(source='tipo_solicitud_id.nombre', read_only=True)
     requiere_aprobacion = serializers.SerializerMethodField()
     estado_display = serializers.CharField(source='get_estado_display', read_only=True)
+    aprobado_por_nombre = serializers.SerializerMethodField()
     
     def get_empleado_nombre(self, obj):
         if obj.empleado_id:
@@ -352,18 +392,29 @@ class SolicitudesListSerializer(serializers.ModelSerializer):
             return obj.empleado_id.apellido
         return None
     
+    def get_empleado_rut(self, obj):
+        if obj.empleado_id:
+            return obj.empleado_id.rut
+        return obj.empleado_rut
+    
     def get_requiere_aprobacion(self, obj):
         if obj.tipo_solicitud_id:
             return obj.tipo_solicitud_id.requiere_aprobacion
         return True
     
+    def get_aprobado_por_nombre(self, obj):
+        if obj.aprobado_por:
+            return obj.aprobado_por.nombre
+        return None
+    
     class Meta:
         model = Solicitudes
         fields = [
-            'id', 'empleado_id', 'empleado_nombre', 'empleado_apellido',
+            'id', 'empleado_id', 'empleado_nombre', 'empleado_apellido', 'empleado_rut',
             'tipo_solicitud_id', 'tipo_solicitud_nombre', 'fecha_inicio',
             'fecha_fin', 'motivo', 'estado', 'estado_display',
-            'requiere_aprobacion', 'fecha_creacion'
+            'requiere_aprobacion', 'fecha_creacion', 'fecha_aprobacion',
+            'aprobado_por', 'aprobado_por_nombre', 'comentario_aprobacion'
         ]
 
 

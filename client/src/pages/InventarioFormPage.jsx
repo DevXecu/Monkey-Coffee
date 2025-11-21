@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { useNavigate, useParams } from "react-router-dom";
 import { inventarioAPI } from "../api/inventario.api";
 import { toast } from "react-hot-toast";
@@ -12,6 +12,7 @@ export function InventarioFormPage() {
     formState: { errors },
     setValue,
     watch,
+    control,
   } = useForm();
   const navigate = useNavigate();
   const params = useParams();
@@ -47,6 +48,23 @@ export function InventarioFormPage() {
     { value: "en_pedido", label: "En pedido" },
     { value: "descontinuado", label: "Descontinuado" }
   ];
+
+  // Funciones para formatear y desformatear precios
+  const formatPriceInput = (value) => {
+    if (!value || value === "") return "";
+    // Remover todo excepto números
+    const numbers = value.toString().replace(/\D/g, "");
+    if (numbers === "") return "";
+    // Formatear con puntos cada 3 dígitos
+    const formatted = numbers.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+    return `$${formatted}`;
+  };
+
+  const unformatPriceInput = (value) => {
+    if (!value || value === "") return "";
+    // Remover todo excepto números
+    return value.toString().replace(/\D/g, "");
+  };
 
   const onSubmit = handleSubmit(async (data) => {
     try {
@@ -409,16 +427,40 @@ export function InventarioFormPage() {
           {/* Precio Unitario */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Precio Unitario (CLP)
+              Precio Unitario
             </label>
-            <input
-              type="number"
-              step="1"
-              placeholder="0"
-              {...register("precio_unitario", {
+            <Controller
+              name="precio_unitario"
+              control={control}
+              rules={{
                 min: { value: 0, message: "El precio debe ser mayor o igual a 0" }
-              })}
-              className="block w-full px-3 py-2 border border-gray-300 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              }}
+              render={({ field }) => (
+                <input
+                  type="text"
+                  placeholder="$0"
+                  value={field.value !== null && field.value !== undefined && field.value !== "" ? formatPriceInput(field.value.toString()) : ""}
+                  onChange={(e) => {
+                    const unformatted = unformatPriceInput(e.target.value);
+                    field.onChange(unformatted === "" ? "" : parseInt(unformatted) || "");
+                  }}
+                  onBlur={(e) => {
+                    const unformatted = unformatPriceInput(e.target.value);
+                    if (unformatted === "") {
+                      field.onChange("");
+                    } else {
+                      const numValue = parseInt(unformatted);
+                      if (numValue >= 0) {
+                        field.onChange(numValue);
+                      }
+                    }
+                    field.onBlur();
+                  }}
+                  className={`block w-full px-3 py-2 border rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
+                    errors.precio_unitario ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                  }`}
+                />
+              )}
             />
             {errors.precio_unitario && (
               <p className="mt-1 text-sm text-red-600">{errors.precio_unitario.message}</p>
@@ -428,16 +470,40 @@ export function InventarioFormPage() {
           {/* Precio Venta */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Precio Venta (CLP)
+              Precio Venta
             </label>
-            <input
-              type="number"
-              step="1"
-              placeholder="0"
-              {...register("precio_venta", {
+            <Controller
+              name="precio_venta"
+              control={control}
+              rules={{
                 min: { value: 0, message: "El precio debe ser mayor o igual a 0" }
-              })}
-              className="block w-full px-3 py-2 border border-gray-300 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              }}
+              render={({ field }) => (
+                <input
+                  type="text"
+                  placeholder="$0"
+                  value={field.value !== null && field.value !== undefined && field.value !== "" ? formatPriceInput(field.value.toString()) : ""}
+                  onChange={(e) => {
+                    const unformatted = unformatPriceInput(e.target.value);
+                    field.onChange(unformatted === "" ? "" : parseInt(unformatted) || "");
+                  }}
+                  onBlur={(e) => {
+                    const unformatted = unformatPriceInput(e.target.value);
+                    if (unformatted === "") {
+                      field.onChange("");
+                    } else {
+                      const numValue = parseInt(unformatted);
+                      if (numValue >= 0) {
+                        field.onChange(numValue);
+                      }
+                    }
+                    field.onBlur();
+                  }}
+                  className={`block w-full px-3 py-2 border rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
+                    errors.precio_venta ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                  }`}
+                />
+              )}
             />
             {errors.precio_venta && (
               <p className="mt-1 text-sm text-red-600">{errors.precio_venta.message}</p>

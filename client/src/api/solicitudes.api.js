@@ -29,6 +29,7 @@ class SolicitudesAPI {
 
   async create(solicitudData) {
     try {
+      console.log('Enviando datos a crear solicitud:', solicitudData);
       const response = await fetch(`${API_BASE_URL}/empleado/solicitudes/`, {
         method: 'POST',
         headers: {
@@ -36,19 +37,41 @@ class SolicitudesAPI {
         },
         body: JSON.stringify(solicitudData),
       });
+      
+      console.log('Respuesta del servidor:', response.status, response.statusText);
+      
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || 'Error al crear la solicitud');
+        let errorData = {};
+        try {
+          errorData = await response.json();
+          console.error('Error data recibido:', errorData);
+        } catch (e) {
+          console.error('No se pudo parsear el error como JSON');
+          const text = await response.text();
+          console.error('Respuesta de error (texto):', text);
+          errorData = { detail: text || `Error ${response.status}: ${response.statusText}` };
+        }
+        
+        const error = new Error(errorData.detail || errorData.error || 'Error al crear la solicitud');
+        error.response = { data: errorData, status: response.status };
+        throw error;
       }
-      return await response.json();
+      
+      const result = await response.json();
+      console.log('Solicitud creada exitosamente:', result);
+      return result;
     } catch (error) {
       console.error('Error en create:', error);
+      if (error.response) {
+        console.error('Error response:', error.response);
+      }
       throw error;
     }
   }
 
   async update(id, solicitudData) {
     try {
+      console.log('Enviando datos para actualizar solicitud:', id, solicitudData);
       const response = await fetch(`${API_BASE_URL}/empleado/solicitudes/${id}/`, {
         method: 'PUT',
         headers: {
@@ -56,13 +79,34 @@ class SolicitudesAPI {
         },
         body: JSON.stringify(solicitudData),
       });
+      
+      console.log('Respuesta del servidor (update):', response.status, response.statusText);
+      
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || 'Error al actualizar la solicitud');
+        let errorData = {};
+        try {
+          errorData = await response.json();
+          console.error('Error data recibido (update):', errorData);
+        } catch (e) {
+          console.error('No se pudo parsear el error como JSON (update)');
+          const text = await response.text();
+          console.error('Respuesta de error (texto):', text);
+          errorData = { detail: text || `Error ${response.status}: ${response.statusText}` };
+        }
+        
+        const error = new Error(errorData.detail || errorData.error || 'Error al actualizar la solicitud');
+        error.response = { data: errorData, status: response.status };
+        throw error;
       }
-      return await response.json();
+      
+      const result = await response.json();
+      console.log('Solicitud actualizada exitosamente:', result);
+      return result;
     } catch (error) {
       console.error('Error en update:', error);
+      if (error.response) {
+        console.error('Error response:', error.response);
+      }
       throw error;
     }
   }
@@ -93,7 +137,10 @@ class SolicitudesAPI {
         method: 'DELETE',
       });
       if (!response.ok) {
-        throw new Error('Error al eliminar la solicitud');
+        const errorData = await response.json().catch(() => ({}));
+        const error = new Error(errorData.detail || errorData.error || 'Error al eliminar la solicitud');
+        error.response = { data: errorData, status: response.status };
+        throw error;
       }
       return true;
     } catch (error) {
