@@ -592,7 +592,9 @@ export function ReportesPage() {
                               key={subKey}
                               className="flex justify-between items-center text-sm bg-white px-3 py-2 rounded-lg"
                             >
-                              <span className="text-gray-600 font-medium">{subKey}:</span>
+                              <span className="text-gray-600 font-medium">
+                                {subKey.charAt(0).toUpperCase() + subKey.slice(1).toLowerCase()}:
+                              </span>
                               <span className="font-bold text-gray-900 bg-primary-50 px-2 py-1 rounded">
                                 {subValue}
                               </span>
@@ -767,7 +769,7 @@ export function ReportesPage() {
                               {item.nombre_producto}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                              {item.categoria || "N/A"}
+                              {item.categoria ? item.categoria.charAt(0).toUpperCase() + item.categoria.slice(1).toLowerCase() : "N/A"}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                               <span

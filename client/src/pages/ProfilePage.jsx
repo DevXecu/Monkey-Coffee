@@ -11,6 +11,7 @@ export function ProfilePage() {
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [showPasswordSection, setShowPasswordSection] = useState(false);
+  const [currentPasswordValue, setCurrentPasswordValue] = useState("");
   const [passwordValue, setPasswordValue] = useState("");
   const [confirmPasswordValue, setConfirmPasswordValue] = useState("");
   const [showPasswordValidation, setShowPasswordValidation] = useState(false);
@@ -230,6 +231,11 @@ export function ProfilePage() {
 
       // Si se está cambiando la contraseña
       if (showPasswordSection && passwordValue) {
+        if (!currentPasswordValue) {
+          toast.error("Debes ingresar tu contraseña actual");
+          return;
+        }
+
         if (passwordValue !== confirmPasswordValue) {
           toast.error("Las contraseñas no coinciden");
           return;
@@ -241,6 +247,7 @@ export function ProfilePage() {
           return;
         }
 
+        updateData.current_password = currentPasswordValue;
         updateData.password = passwordValue;
       }
 
@@ -260,6 +267,7 @@ export function ProfilePage() {
       toast.success("Perfil actualizado correctamente");
       setIsEditing(false);
       setShowPasswordSection(false);
+      setCurrentPasswordValue("");
       setPasswordValue("");
       setConfirmPasswordValue("");
     } catch (error) {
@@ -385,8 +393,10 @@ export function ProfilePage() {
                 {empleado.nombre} {empleado.apellido}
               </h2>
               <p className="text-gray-600 mt-1">{empleado.cargo}</p>
-              {empleado.departamento && (
-                <p className="text-sm text-gray-500 mt-1">{empleado.departamento}</p>
+              {empleado.rol && (
+                <p className="text-sm text-gray-500 mt-1">
+                  {empleado.rol.charAt(0).toUpperCase() + empleado.rol.slice(1)}
+                </p>
               )}
             </div>
 
@@ -603,11 +613,11 @@ export function ProfilePage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Departamento
+                    Rol
                   </label>
                   <input
                     type="text"
-                    value={empleado.departamento || "No especificado"}
+                    value={empleado.rol ? empleado.rol.charAt(0).toUpperCase() + empleado.rol.slice(1) : "No especificado"}
                     disabled
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-600"
                   />
@@ -668,6 +678,7 @@ export function ProfilePage() {
                     onClick={() => {
                       setShowPasswordSection(!showPasswordSection);
                       if (showPasswordSection) {
+                        setCurrentPasswordValue("");
                         setPasswordValue("");
                         setConfirmPasswordValue("");
                         setShowPasswordValidation(false);
@@ -681,6 +692,22 @@ export function ProfilePage() {
 
                 {showPasswordSection && (
                   <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Contraseña Actual
+                      </label>
+                      <input
+                        type="password"
+                        value={currentPasswordValue}
+                        onChange={(e) => {
+                          setCurrentPasswordValue(e.target.value);
+                          setValue("currentPassword", e.target.value);
+                        }}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                        placeholder="Ingresa tu contraseña actual"
+                      />
+                    </div>
+
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         Nueva Contraseña
@@ -770,6 +797,7 @@ export function ProfilePage() {
                   onClick={() => {
                     setIsEditing(false);
                     setShowPasswordSection(false);
+                    setCurrentPasswordValue("");
                     setPasswordValue("");
                     setConfirmPasswordValue("");
                     setShowPasswordValidation(false);
