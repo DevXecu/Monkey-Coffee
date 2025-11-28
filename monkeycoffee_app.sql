@@ -939,3 +939,21 @@ INSERT INTO `inventario` (`codigo_producto`, `nombre_producto`, `descripcion`, `
 
 SET FOREIGN_KEY_CHECKS = 1;
 COMMIT;
+
+-- ============================================================
+-- IMPORTANTE: SINCRONIZACIÓN DE MIGRACIONES DE DJANGO
+-- ============================================================
+-- Después de importar este archivo SQL, necesitas sincronizar
+-- las migraciones de Django para que el proyecto funcione correctamente.
+--
+-- OPCIÓN 1 (Recomendada): Ejecuta el script SQL:
+--   mysql -u root -p monkeycoffee_app < sync_migrations.sql
+--
+-- OPCIÓN 2: Ejecuta el script Python:
+--   python sync_migrations.py
+--
+-- OPCIÓN 3: Manualmente con Django:
+--   python manage.py migrate --fake
+--
+-- Para más detalles, consulta: INSTRUCCIONES_MIGRACIONES.md
+-- ============================================================
