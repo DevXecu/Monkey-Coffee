@@ -18,9 +18,16 @@ export function TurnosList() {
     try {
       setLoading(true);
       const res = await getAllTurnos();
-      setTurnos(res.data);
+      console.log('Turnos recibidos:', res.data);
+      setTurnos(res.data || []);
     } catch (error) {
       console.error('Error loading turnos:', error);
+      console.error('Error response:', error.response);
+      setTurnos([]);
+      // Mostrar mensaje de error al usuario
+      if (error.response) {
+        console.error('Error del servidor:', error.response.data);
+      }
     } finally {
       setLoading(false);
     }

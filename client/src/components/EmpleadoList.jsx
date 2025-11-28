@@ -257,7 +257,7 @@ export function EmpleadoList() {
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-500">Gerentes</p>
               <p className="text-2xl font-bold text-gray-900">
-                {empleados.filter(e => e.cargo === 'Gerente').length}
+                {empleados.filter(e => e.rol === 'gerente').length}
               </p>
             </div>
           </div>

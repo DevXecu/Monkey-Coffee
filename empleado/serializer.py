@@ -88,7 +88,7 @@ class AsistenciaSerializer(serializers.ModelSerializer):
     empleado_nombre = serializers.SerializerMethodField()
     empleado_apellido = serializers.SerializerMethodField()
     empleado_rut = serializers.CharField(write_only=True, required=True)
-    empleado_rut_display = serializers.CharField(source='empleado_rut.rut', read_only=True)
+    empleado_rut_display = serializers.SerializerMethodField()
     
     class Meta:
         model = Asistencia
@@ -102,14 +102,29 @@ class AsistenciaSerializer(serializers.ModelSerializer):
         read_only_fields = ('fecha_creacion', 'fecha_actualizacion', 'empleado_rut_display', 'empleado_nombre', 'empleado_apellido')
     
     def get_empleado_nombre(self, obj):
-        if obj.empleado_rut:
-            return obj.empleado_rut.nombre
-        return None
+        # Usar un try-except amplio para capturar cualquier error al acceder al empleado
+        try:
+            empleado = obj.empleado_rut
+            return empleado.nombre if empleado else None
+        except (Empleado.DoesNotExist, AttributeError, Exception):
+            return None
     
     def get_empleado_apellido(self, obj):
-        if obj.empleado_rut:
-            return obj.empleado_rut.apellido
-        return None
+        # Usar un try-except amplio para capturar cualquier error al acceder al empleado
+        try:
+            empleado = obj.empleado_rut
+            return empleado.apellido if empleado else None
+        except (Empleado.DoesNotExist, AttributeError, Exception):
+            return None
+    
+    def get_empleado_rut_display(self, obj):
+        # Usar un try-except amplio para capturar cualquier error al acceder al empleado
+        try:
+            empleado = obj.empleado_rut
+            return empleado.rut if empleado else None
+        except (Empleado.DoesNotExist, AttributeError, Exception):
+            # Si el empleado no existe, usar el valor del campo directamente
+            return getattr(obj, 'empleado_rut_id', None)
     
     def create(self, validated_data):
         # Extraer el RUT del validated_data
@@ -159,8 +174,10 @@ class AsistenciaSerializer(serializers.ModelSerializer):
         """Personalizar la representación para mostrar el RUT como string"""
         representation = super().to_representation(instance)
         # Reemplazar el objeto empleado_rut con el RUT como string
-        if instance.empleado_rut:
-            representation['empleado_rut'] = instance.empleado_rut.rut
+        # Como to_field='rut', empleado_rut_id contiene el RUT directamente
+        # Usar el valor del campo directamente para evitar consultas que pueden fallar
+        empleado_rut = getattr(instance, 'empleado_rut_id', None)
+        representation['empleado_rut'] = empleado_rut
         return representation
     
     def validate(self, data):
@@ -177,7 +194,7 @@ class TurnoSerializer(serializers.ModelSerializer):
     empleado_nombre = serializers.SerializerMethodField()
     empleado_apellido = serializers.SerializerMethodField()
     empleados_rut = serializers.CharField(write_only=True, required=True)
-    empleados_rut_display = serializers.CharField(source='empleados_rut.rut', read_only=True)
+    empleados_rut_display = serializers.SerializerMethodField()
     
     class Meta:
         model = Turno
@@ -189,21 +206,38 @@ class TurnoSerializer(serializers.ModelSerializer):
         read_only_fields = ('fecha_creacion', 'empleados_rut_display', 'empleado_nombre', 'empleado_apellido')
     
     def get_empleado_nombre(self, obj):
-        if obj.empleados_rut:
-            return obj.empleados_rut.nombre
-        return None
+        # Usar un try-except amplio para capturar cualquier error al acceder al empleado
+        try:
+            empleado = obj.empleados_rut
+            return empleado.nombre if empleado else None
+        except (Empleado.DoesNotExist, AttributeError, Exception):
+            return None
     
     def get_empleado_apellido(self, obj):
-        if obj.empleados_rut:
-            return obj.empleados_rut.apellido
-        return None
+        # Usar un try-except amplio para capturar cualquier error al acceder al empleado
+        try:
+            empleado = obj.empleados_rut
+            return empleado.apellido if empleado else None
+        except (Empleado.DoesNotExist, AttributeError, Exception):
+            return None
+    
+    def get_empleados_rut_display(self, obj):
+        # Usar un try-except amplio para capturar cualquier error al acceder al empleado
+        try:
+            empleado = obj.empleados_rut
+            return empleado.rut if empleado else None
+        except (Empleado.DoesNotExist, AttributeError, Exception):
+            # Si el empleado no existe, usar el valor del campo directamente
+            return getattr(obj, 'empleados_rut_id', None)
     
     def to_representation(self, instance):
         """Personalizar la representación para mostrar el RUT como string"""
         representation = super().to_representation(instance)
         # Reemplazar el objeto empleados_rut con el RUT como string
-        if instance.empleados_rut:
-            representation['empleados_rut'] = instance.empleados_rut.rut
+        # Como to_field='rut', empleados_rut_id contiene el RUT directamente
+        # Usar el valor del campo directamente para evitar consultas que pueden fallar
+        empleado_rut = getattr(instance, 'empleados_rut_id', None)
+        representation['empleados_rut'] = empleado_rut
         return representation
     
     def validate(self, data):

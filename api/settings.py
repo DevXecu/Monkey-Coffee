@@ -95,7 +95,12 @@ DATABASES = {
         'OPTIONS': {
             'charset': 'utf8mb4',
             'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
+            'connect_timeout': 10,
+            'read_timeout': 10,
+            'write_timeout': 10,
         },
+        'CONN_MAX_AGE': 0,  # Desactivar conexiones persistentes para evitar problemas
+        'AUTOCOMMIT': True,
     }
 }
 

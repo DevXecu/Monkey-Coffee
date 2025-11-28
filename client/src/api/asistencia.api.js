@@ -34,7 +34,12 @@ asistenciaApi.interceptors.response.use(
 );
 
 export const getAllAsistencia = (params = {}) => {
-  const queryString = new URLSearchParams(params).toString();
+  // Filtrar parámetros vacíos
+  const cleanParams = Object.fromEntries(
+    Object.entries(params).filter(([_, value]) => value !== '' && value !== null && value !== undefined)
+  );
+  const queryString = new URLSearchParams(cleanParams).toString();
+  // Django REST Framework espera que las rutas terminen con /
   return asistenciaApi.get(`/${queryString ? `?${queryString}` : ''}`);
 };
 

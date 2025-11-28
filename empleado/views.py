@@ -318,6 +318,7 @@ class AsistenciaView(viewsets.ModelViewSet):
     queryset = Asistencia.objects.all()
     
     def get_queryset(self):
+        # Obtener todas las asistencias, pero manejar empleados inexistentes en el serializer
         queryset = Asistencia.objects.all().order_by('-fecha', '-hora_entrada')
         
         # Filtros opcionales
@@ -433,6 +434,7 @@ class TurnoView(viewsets.ModelViewSet):
     queryset = Turno.objects.all()
     
     def get_queryset(self):
+        # Obtener todos los turnos, pero manejar empleados inexistentes en el serializer
         queryset = Turno.objects.all().order_by('-fecha_creacion')
         
         # Filtros opcionales

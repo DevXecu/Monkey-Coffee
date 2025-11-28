@@ -38,6 +38,7 @@ export const getAllTurnos = (params = {}) => {
     Object.entries(params).filter(([_, value]) => value !== '' && value !== null && value !== undefined)
   );
   const queryParams = new URLSearchParams(cleanParams).toString();
+  // Django REST Framework espera que las rutas terminen con /
   return turnoApi.get(`/${queryParams ? `?${queryParams}` : ''}`);
 };
 

@@ -177,9 +177,16 @@ export function AsistenciaList() {
       try {
         setLoading(true);
         const res = await getAllAsistencia();
-        setAsistencias(res.data);
+        console.log('Asistencias recibidas:', res.data);
+        setAsistencias(res.data || []);
       } catch (error) {
         console.error('Error loading asistencias:', error);
+        console.error('Error response:', error.response);
+        setAsistencias([]);
+        // Mostrar mensaje de error al usuario
+        if (error.response) {
+          console.error('Error del servidor:', error.response.data);
+        }
       } finally {
         setLoading(false);
       }
