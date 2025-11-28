@@ -32,6 +32,7 @@ CREATE TABLE IF NOT EXISTS `empleados` (
   `password` VARCHAR(255) DEFAULT NULL,
   `fecha_nacimiento` DATE DEFAULT NULL,
   `direccion` TEXT,
+  `rol` ENUM('administrador','gerente','empleado') DEFAULT 'empleado',
   `cargo` VARCHAR(100) NOT NULL,
   `departamento` VARCHAR(100) DEFAULT NULL,
   `fecha_contratacion` DATE NOT NULL,
@@ -49,7 +50,8 @@ CREATE TABLE IF NOT EXISTS `empleados` (
   UNIQUE KEY `rut` (`rut`),
   UNIQUE KEY `email` (`email`),
   KEY `idx_estado` (`estado`),
-  KEY `idx_cargo` (`cargo`)
+  KEY `idx_cargo` (`cargo`),
+  KEY `idx_rol` (`rol`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ============================================================
@@ -689,37 +691,37 @@ WHERE activo = 1;
 -- DATOS INICIALES - EMPLEADOS
 -- ============================================================
 
-INSERT INTO `empleados` (`rut`, `nombres`, `apellidos`, `email`, `telefono`, `password`, `fecha_nacimiento`, `direccion`, `cargo`, `departamento`, `fecha_contratacion`, `salario`, `tipo_contrato`, `estado`, `activo`) VALUES
-('18.234.567-8', 'Maria', 'Gonzalez Perez', 'maria.gonzalez@monkeycoffee.cl', '+56912345678', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '1990-05-15', 'Av. Arturo Prat 1234, Iquique', 'Gerente General', 'Administracion', '2023-01-15', 850000, 'indefinido', 'activo', 1),
-('19.345.678-9', 'Carlos', 'Ramirez Silva', 'carlos.ramirez@monkeycoffee.cl', '+56923456789', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '1992-08-22', 'Calle Baquedano 567, Iquique', 'Barista Senior', 'Operaciones', '2023-02-01', 550000, 'indefinido', 'activo', 1),
-('20.456.789-0', 'Fernanda', 'Torres Morales', 'fernanda.torres@monkeycoffee.cl', '+56934567890', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '1995-11-10', 'Av. Heroes de la Concepcion 890, Alto Hospicio', 'Barista', 'Operaciones', '2023-03-10', 450000, 'indefinido', 'activo', 1),
-('17.567.890-1', 'Diego', 'Vargas Castro', 'diego.vargas@monkeycoffee.cl', '+56945678901', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '1993-03-28', 'Pasaje Los Carrera 234, Iquique', 'Cajero', 'Ventas', '2023-04-05', 420000, 'indefinido', 'activo', 1),
-('18.678.901-2', 'Camila', 'Herrera Rojas', 'camila.herrera@monkeycoffee.cl', '+56956789012', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '1996-07-14', 'Av. La Tirana 1456, Alto Hospicio', 'Barista', 'Operaciones', '2023-05-20', 450000, 'indefinido', 'activo', 1),
-('19.789.012-3', 'Sebastian', 'Mendoza Lopez', 'sebastian.mendoza@monkeycoffee.cl', '+56967890123', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '1991-12-05', 'Calle Sargento Aldea 789, Iquique', 'Supervisor de Turno', 'Operaciones', '2023-01-20', 600000, 'indefinido', 'activo', 1),
-('20.890.123-4', 'Valentina', 'Castro Diaz', 'valentina.castro@monkeycoffee.cl', '+56978901234', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '1994-09-18', 'Av. Esmeralda 321, Iquique', 'Cajera', 'Ventas', '2023-06-01', 420000, 'indefinido', 'activo', 1),
-('17.901.234-5', 'Nicolas', 'Jimenez Flores', 'nicolas.jimenez@monkeycoffee.cl', '+56989012345', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '1997-02-25', 'Calle OHiggins 654, Alto Hospicio', 'Barista', 'Operaciones', '2023-07-15', 450000, 'indefinido', 'activo', 1),
-('18.012.345-6', 'Javiera', 'Soto Martinez', 'javiera.soto@monkeycoffee.cl', '+56990123456', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '1998-06-30', 'Av. Los Rieles 987, Alto Hospicio', 'Auxiliar de Cocina', 'Operaciones', '2023-08-10', 380000, 'indefinido', 'activo', 1),
-('19.123.456-7', 'Andres', 'Contreras Vega', 'andres.contreras@monkeycoffee.cl', '+56901234567', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '1992-10-12', 'Calle Thompson 456, Iquique', 'Encargado de Inventario', 'Logistica', '2023-02-15', 520000, 'indefinido', 'activo', 1),
-('21.234.567-8', 'Sofia', 'Munoz Ortiz', 'sofia.munoz@monkeycoffee.cl', '+56912345679', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '1999-04-12', 'Av. Tarapaca 2345, Iquique', 'Barista Junior', 'Operaciones', '2024-01-10', 420000, 'indefinido', 'activo', 1),
-('16.789.012-3', 'Roberto', 'Paz Salazar', 'roberto.paz@monkeycoffee.cl', '+56923456780', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '1989-11-28', 'Calle Vivar 678, Iquique', 'Encargado de Mantencion', 'Mantencion', '2023-03-01', 480000, 'indefinido', 'activo', 1);
+INSERT INTO `empleados` (`rut`, `nombres`, `apellidos`, `email`, `telefono`, `password`, `fecha_nacimiento`, `direccion`, `rol`, `cargo`, `departamento`, `fecha_contratacion`, `salario`, `tipo_contrato`, `estado`, `activo`) VALUES
+('18.234.567-9', 'Maria', 'Gonzalez Perez', 'maria.gonzalez@monkeycoffee.cl', '+56912345678', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '1990-05-15', 'Av. Arturo Prat 1234, Iquique', 'gerente', 'Gerente General', 'Administracion', '2023-01-15', 850000, 'indefinido', 'activo', 1),
+('19.345.678-2', 'Carlos', 'Ramirez Silva', 'carlos.ramirez@monkeycoffee.cl', '+56923456789', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '1992-08-22', 'Calle Baquedano 567, Iquique', 'empleado', 'Barista Senior', 'Operaciones', '2023-02-01', 550000, 'indefinido', 'activo', 1),
+('20.456.789-1', 'Fernanda', 'Torres Morales', 'fernanda.torres@monkeycoffee.cl', '+56934567890', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '1995-11-10', 'Av. Heroes de la Concepcion 890, Alto Hospicio', 'empleado', 'Barista', 'Operaciones', '2023-03-10', 450000, 'indefinido', 'activo', 1),
+('17.567.890-5', 'Diego', 'Vargas Castro', 'diego.vargas@monkeycoffee.cl', '+56945678901', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '1993-03-28', 'Pasaje Los Carrera 234, Iquique', 'empleado', 'Cajero', 'Ventas', '2023-04-05', 420000, 'indefinido', 'activo', 1),
+('18.678.901-6', 'Camila', 'Herrera Rojas', 'camila.herrera@monkeycoffee.cl', '+56956789012', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '1996-07-14', 'Av. La Tirana 1456, Alto Hospicio', 'empleado', 'Barista', 'Operaciones', '2023-05-20', 450000, 'indefinido', 'activo', 1),
+('19.789.012-6', 'Sebastian', 'Mendoza Lopez', 'sebastian.mendoza@monkeycoffee.cl', '+56967890123', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '1991-12-05', 'Calle Sargento Aldea 789, Iquique', 'gerente', 'Supervisor de Turno', 'Operaciones', '2023-01-20', 600000, 'indefinido', 'activo', 1),
+('20.890.123-0', 'Valentina', 'Castro Diaz', 'valentina.castro@monkeycoffee.cl', '+56978901234', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '1994-09-18', 'Av. Esmeralda 321, Iquique', 'empleado', 'Cajera', 'Ventas', '2023-06-01', 420000, 'indefinido', 'activo', 1),
+('17.901.234-0', 'Nicolas', 'Jimenez Flores', 'nicolas.jimenez@monkeycoffee.cl', '+56989012345', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '1997-02-25', 'Calle OHiggins 654, Alto Hospicio', 'empleado', 'Barista', 'Operaciones', '2023-07-15', 450000, 'indefinido', 'activo', 1),
+('18.012.345-8', 'Javiera', 'Soto Martinez', 'javiera.soto@monkeycoffee.cl', '+56990123456', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '1998-06-30', 'Av. Los Rieles 987, Alto Hospicio', 'empleado', 'Auxiliar de Cocina', 'Operaciones', '2023-08-10', 380000, 'indefinido', 'activo', 1),
+('19.123.456-1', 'Andres', 'Contreras Vega', 'andres.contreras@monkeycoffee.cl', '+56901234567', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '1992-10-12', 'Calle Thompson 456, Iquique', 'empleado', 'Encargado de Inventario', 'Logistica', '2023-02-15', 520000, 'indefinido', 'activo', 1),
+('21.234.567-9', 'Sofia', 'Munoz Ortiz', 'sofia.munoz@monkeycoffee.cl', '+56912345679', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '1999-04-12', 'Av. Tarapaca 2345, Iquique', 'empleado', 'Barista Junior', 'Operaciones', '2024-01-10', 420000, 'indefinido', 'activo', 1),
+('16.789.012-1', 'Roberto', 'Paz Salazar', 'roberto.paz@monkeycoffee.cl', '+56923456780', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '1989-11-28', 'Calle Vivar 678, Iquique', 'empleado', 'Encargado de Mantencion', 'Mantencion', '2023-03-01', 480000, 'indefinido', 'activo', 1);
 
 -- ============================================================
 -- DATOS INICIALES - TURNOS
 -- ============================================================
 
 INSERT INTO `turnos` (`empleados_rut`, `nombre_turno`, `hora_entrada`, `hora_salida`, `tolerancia_minutos`, `horas_trabajo`, `descripcion`, `dias_semana`, `activo`) VALUES
-('18.234.567-8', 'Turno Administrativo', '08:00:00', '17:00:00', 15, 9.00, 'Turno administrativo de lunes a viernes', '[1, 2, 3, 4, 5]', 1),
-('19.345.678-9', 'Turno Manana Barista', '07:00:00', '16:00:00', 15, 9.00, 'Turno manana para barista senior', '[1, 2, 3, 4, 5, 6]', 1),
-('20.456.789-0', 'Turno Tarde', '13:00:00', '22:00:00', 15, 9.00, 'Turno tarde de lunes a domingo', '[1, 2, 3, 4, 5, 6, 7]', 1),
-('17.567.890-1', 'Turno Manana Cajero', '08:00:00', '17:00:00', 15, 9.00, 'Turno manana para cajero', '[1, 2, 3, 4, 5, 6]', 1),
-('18.678.901-2', 'Turno Tarde Barista', '14:00:00', '23:00:00', 15, 9.00, 'Turno tarde para barista', '[1, 2, 3, 4, 5, 6, 7]', 1),
-('19.789.012-3', 'Turno Supervisor Manana', '06:00:00', '15:00:00', 15, 9.00, 'Turno supervisor manana', '[1, 2, 3, 4, 5, 6]', 1),
-('20.890.123-4', 'Turno Manana Cajera', '08:00:00', '17:00:00', 15, 9.00, 'Turno manana para cajera', '[1, 2, 3, 4, 5, 6]', 1),
-('17.901.234-5', 'Turno Noche', '18:00:00', '02:00:00', 15, 8.00, 'Turno noche de jueves a domingo', '[4, 5, 6, 7]', 1),
-('18.012.345-6', 'Turno Auxiliar', '10:00:00', '19:00:00', 15, 9.00, 'Turno auxiliar de cocina', '[1, 2, 3, 4, 5, 6]', 1),
-('19.123.456-7', 'Turno Logistica', '09:00:00', '18:00:00', 15, 9.00, 'Turno logistica e inventario', '[1, 2, 3, 4, 5]', 1),
-('21.234.567-8', 'Turno Barista Junior', '08:00:00', '17:00:00', 15, 9.00, 'Turno manana barista junior', '[1, 2, 3, 4, 5, 6]', 1),
-('16.789.012-3', 'Turno Mantencion', '09:00:00', '18:00:00', 15, 9.00, 'Turno mantencion y limpieza', '[1, 2, 3, 4, 5]', 1);
+('18.234.567-9', 'Turno Administrativo', '08:00:00', '17:00:00', 15, 9.00, 'Turno administrativo de lunes a viernes', '[1, 2, 3, 4, 5]', 1),
+('19.345.678-2', 'Turno Manana Barista', '07:00:00', '16:00:00', 15, 9.00, 'Turno manana para barista senior', '[1, 2, 3, 4, 5, 6]', 1),
+('20.456.789-1', 'Turno Tarde', '13:00:00', '22:00:00', 15, 9.00, 'Turno tarde de lunes a domingo', '[1, 2, 3, 4, 5, 6, 7]', 1),
+('17.567.890-5', 'Turno Manana Cajero', '08:00:00', '17:00:00', 15, 9.00, 'Turno manana para cajero', '[1, 2, 3, 4, 5, 6]', 1),
+('18.678.901-6', 'Turno Tarde Barista', '14:00:00', '23:00:00', 15, 9.00, 'Turno tarde para barista', '[1, 2, 3, 4, 5, 6, 7]', 1),
+('19.789.012-6', 'Turno Supervisor Manana', '06:00:00', '15:00:00', 15, 9.00, 'Turno supervisor manana', '[1, 2, 3, 4, 5, 6]', 1),
+('20.890.123-0', 'Turno Manana Cajera', '08:00:00', '17:00:00', 15, 9.00, 'Turno manana para cajera', '[1, 2, 3, 4, 5, 6]', 1),
+('17.901.234-0', 'Turno Noche', '18:00:00', '02:00:00', 15, 8.00, 'Turno noche de jueves a domingo', '[4, 5, 6, 7]', 1),
+('18.012.345-8', 'Turno Auxiliar', '10:00:00', '19:00:00', 15, 9.00, 'Turno auxiliar de cocina', '[1, 2, 3, 4, 5, 6]', 1),
+('19.123.456-1', 'Turno Logistica', '09:00:00', '18:00:00', 15, 9.00, 'Turno logistica e inventario', '[1, 2, 3, 4, 5]', 1),
+('21.234.567-9', 'Turno Barista Junior', '08:00:00', '17:00:00', 15, 9.00, 'Turno manana barista junior', '[1, 2, 3, 4, 5, 6]', 1),
+('16.789.012-1', 'Turno Mantencion', '09:00:00', '18:00:00', 15, 9.00, 'Turno mantencion y limpieza', '[1, 2, 3, 4, 5]', 1);
 
 -- ============================================================
 -- DATOS INICIALES - TIPOS DE SOLICITUDES
@@ -770,36 +772,36 @@ INSERT INTO `inventario` (`codigo_producto`, `nombre_producto`, `descripcion`, `
 -- ============================================================
 
 INSERT INTO `empleados_turnos` (`empleados_rut`, `turno_id`, `fecha_inicio`, `fecha_fin`, `activo`) VALUES
-('18.234.567-8', 1, '2023-01-15', NULL, 1),
-('19.345.678-9', 2, '2023-02-01', NULL, 1),
-('20.456.789-0', 3, '2023-03-10', NULL, 1),
-('17.567.890-1', 4, '2023-04-05', NULL, 1),
-('18.678.901-2', 5, '2023-05-20', NULL, 1),
-('19.789.012-3', 6, '2023-01-20', NULL, 1),
-('20.890.123-4', 7, '2023-06-01', NULL, 1),
-('17.901.234-5', 8, '2023-07-15', NULL, 1),
-('18.012.345-6', 9, '2023-08-10', NULL, 1),
-('19.123.456-7', 10, '2023-02-15', NULL, 1),
-('21.234.567-8', 11, '2024-01-10', NULL, 1),
-('16.789.012-3', 12, '2023-03-01', NULL, 1);
+('18.234.567-9', 1, '2023-01-15', NULL, 1),
+('19.345.678-2', 2, '2023-02-01', NULL, 1),
+('20.456.789-1', 3, '2023-03-10', NULL, 1),
+('17.567.890-5', 4, '2023-04-05', NULL, 1),
+('18.678.901-6', 5, '2023-05-20', NULL, 1),
+('19.789.012-6', 6, '2023-01-20', NULL, 1),
+('20.890.123-0', 7, '2023-06-01', NULL, 1),
+('17.901.234-0', 8, '2023-07-15', NULL, 1),
+('18.012.345-8', 9, '2023-08-10', NULL, 1),
+('19.123.456-1', 10, '2023-02-15', NULL, 1),
+('21.234.567-9', 11, '2024-01-10', NULL, 1),
+('16.789.012-1', 12, '2023-03-01', NULL, 1);
 
 -- ============================================================
 -- DATOS INICIALES - HORARIOS
 -- ============================================================
 
 INSERT INTO `horarios` (`empleado_rut`, `turno_id`, `fecha_inicio`, `fecha_fin`, `dias_semana`, `observaciones`, `activo`) VALUES
-('18.234.567-8', 1, '2023-01-15', NULL, '[1, 2, 3, 4, 5]', 'Horario administrativo', 1),
-('19.345.678-9', 2, '2023-02-01', NULL, '[1, 2, 3, 4, 5, 6]', 'Horario barista senior', 1),
-('20.456.789-0', 3, '2023-03-10', NULL, '[1, 2, 3, 4, 5, 6, 7]', 'Horario turno tarde', 1),
-('17.567.890-1', 4, '2023-04-05', NULL, '[1, 2, 3, 4, 5, 6]', 'Horario cajero manana', 1),
-('18.678.901-2', 5, '2023-05-20', NULL, '[1, 2, 3, 4, 5, 6, 7]', 'Horario barista tarde', 1),
-('19.789.012-3', 6, '2023-01-20', NULL, '[1, 2, 3, 4, 5, 6]', 'Horario supervisor', 1),
-('20.890.123-4', 7, '2023-06-01', NULL, '[1, 2, 3, 4, 5, 6]', 'Horario cajera manana', 1),
-('17.901.234-5', 8, '2023-07-15', NULL, '[4, 5, 6, 7]', 'Horario noche fin de semana', 1),
-('18.012.345-6', 9, '2023-08-10', NULL, '[1, 2, 3, 4, 5, 6]', 'Horario auxiliar cocina', 1),
-('19.123.456-7', 10, '2023-02-15', NULL, '[1, 2, 3, 4, 5]', 'Horario logistica', 1),
-('21.234.567-8', 11, '2024-01-10', NULL, '[1, 2, 3, 4, 5, 6]', 'Horario barista junior', 1),
-('16.789.012-3', 12, '2023-03-01', NULL, '[1, 2, 3, 4, 5]', 'Horario mantencion', 1);
+('18.234.567-9', 1, '2023-01-15', NULL, '[1, 2, 3, 4, 5]', 'Horario administrativo', 1),
+('19.345.678-2', 2, '2023-02-01', NULL, '[1, 2, 3, 4, 5, 6]', 'Horario barista senior', 1),
+('20.456.789-1', 3, '2023-03-10', NULL, '[1, 2, 3, 4, 5, 6, 7]', 'Horario turno tarde', 1),
+('17.567.890-5', 4, '2023-04-05', NULL, '[1, 2, 3, 4, 5, 6]', 'Horario cajero manana', 1),
+('18.678.901-6', 5, '2023-05-20', NULL, '[1, 2, 3, 4, 5, 6, 7]', 'Horario barista tarde', 1),
+('19.789.012-6', 6, '2023-01-20', NULL, '[1, 2, 3, 4, 5, 6]', 'Horario supervisor', 1),
+('20.890.123-0', 7, '2023-06-01', NULL, '[1, 2, 3, 4, 5, 6]', 'Horario cajera manana', 1),
+('17.901.234-0', 8, '2023-07-15', NULL, '[4, 5, 6, 7]', 'Horario noche fin de semana', 1),
+('18.012.345-8', 9, '2023-08-10', NULL, '[1, 2, 3, 4, 5, 6]', 'Horario auxiliar cocina', 1),
+('19.123.456-1', 10, '2023-02-15', NULL, '[1, 2, 3, 4, 5]', 'Horario logistica', 1),
+('21.234.567-9', 11, '2024-01-10', NULL, '[1, 2, 3, 4, 5, 6]', 'Horario barista junior', 1),
+('16.789.012-1', 12, '2023-03-01', NULL, '[1, 2, 3, 4, 5]', 'Horario mantencion', 1);
 
 -- ============================================================
 -- DATOS INICIALES - VENTAS DE EJEMPLO
@@ -841,43 +843,43 @@ INSERT INTO `detalle_ventas` (`venta_id`, `inventario_id`, `cantidad`, `precio_u
 
 -- Asistencias con estado 'presente' (mínimo 5)
 INSERT INTO `asistencias` (`empleado_rut`, `fecha`, `hora_entrada`, `hora_salida`, `tipo_entrada`, `tipo_salida`, `minutos_tarde`, `minutos_extras`, `horas_trabajadas`, `estado`, `observaciones`, `ubicacion_entrada`, `ip_entrada`) VALUES
-('19.345.678-9', DATE_SUB(CURDATE(), INTERVAL 10 DAY), CONCAT(DATE_SUB(CURDATE(), INTERVAL 10 DAY), ' 07:05:00'), CONCAT(DATE_SUB(CURDATE(), INTERVAL 10 DAY), ' 16:00:00'), 'biometrico', 'biometrico', 0, 0, 8.92, 'presente', 'Asistencia normal', 'Local Principal', '192.168.1.10'),
-('20.456.789-0', DATE_SUB(CURDATE(), INTERVAL 9 DAY), CONCAT(DATE_SUB(CURDATE(), INTERVAL 9 DAY), ' 13:02:00'), CONCAT(DATE_SUB(CURDATE(), INTERVAL 9 DAY), ' 22:00:00'), 'biometrico', 'biometrico', 0, 0, 8.97, 'presente', 'Turno completo', 'Local Principal', '192.168.1.10'),
-('17.567.890-1', DATE_SUB(CURDATE(), INTERVAL 8 DAY), CONCAT(DATE_SUB(CURDATE(), INTERVAL 8 DAY), ' 08:00:00'), CONCAT(DATE_SUB(CURDATE(), INTERVAL 8 DAY), ' 17:00:00'), 'biometrico', 'biometrico', 0, 0, 9.00, 'presente', 'Asistencia puntual', 'Local Principal', '192.168.1.10'),
-('18.678.901-2', DATE_SUB(CURDATE(), INTERVAL 7 DAY), CONCAT(DATE_SUB(CURDATE(), INTERVAL 7 DAY), ' 14:01:00'), CONCAT(DATE_SUB(CURDATE(), INTERVAL 7 DAY), ' 23:00:00'), 'app_movil', 'app_movil', 0, 0, 8.98, 'presente', 'Registro desde app móvil', 'Local Principal', '192.168.1.15'),
-('19.789.012-3', DATE_SUB(CURDATE(), INTERVAL 6 DAY), CONCAT(DATE_SUB(CURDATE(), INTERVAL 6 DAY), ' 06:00:00'), CONCAT(DATE_SUB(CURDATE(), INTERVAL 6 DAY), ' 15:00:00'), 'biometrico', 'biometrico', 0, 0, 9.00, 'presente', 'Supervisor turno mañana', 'Local Principal', '192.168.1.10');
+('19.345.678-2', DATE_SUB(CURDATE(), INTERVAL 10 DAY), CONCAT(DATE_SUB(CURDATE(), INTERVAL 10 DAY), ' 07:05:00'), CONCAT(DATE_SUB(CURDATE(), INTERVAL 10 DAY), ' 16:00:00'), 'biometrico', 'biometrico', 0, 0, 8.92, 'presente', 'Asistencia normal', 'Local Principal', '192.168.1.10'),
+('20.456.789-1', DATE_SUB(CURDATE(), INTERVAL 9 DAY), CONCAT(DATE_SUB(CURDATE(), INTERVAL 9 DAY), ' 13:02:00'), CONCAT(DATE_SUB(CURDATE(), INTERVAL 9 DAY), ' 22:00:00'), 'biometrico', 'biometrico', 0, 0, 8.97, 'presente', 'Turno completo', 'Local Principal', '192.168.1.10'),
+('17.567.890-5', DATE_SUB(CURDATE(), INTERVAL 8 DAY), CONCAT(DATE_SUB(CURDATE(), INTERVAL 8 DAY), ' 08:00:00'), CONCAT(DATE_SUB(CURDATE(), INTERVAL 8 DAY), ' 17:00:00'), 'biometrico', 'biometrico', 0, 0, 9.00, 'presente', 'Asistencia puntual', 'Local Principal', '192.168.1.10'),
+('18.678.901-6', DATE_SUB(CURDATE(), INTERVAL 7 DAY), CONCAT(DATE_SUB(CURDATE(), INTERVAL 7 DAY), ' 14:01:00'), CONCAT(DATE_SUB(CURDATE(), INTERVAL 7 DAY), ' 23:00:00'), 'app_movil', 'app_movil', 0, 0, 8.98, 'presente', 'Registro desde app móvil', 'Local Principal', '192.168.1.15'),
+('19.789.012-6', DATE_SUB(CURDATE(), INTERVAL 6 DAY), CONCAT(DATE_SUB(CURDATE(), INTERVAL 6 DAY), ' 06:00:00'), CONCAT(DATE_SUB(CURDATE(), INTERVAL 6 DAY), ' 15:00:00'), 'biometrico', 'biometrico', 0, 0, 9.00, 'presente', 'Supervisor turno mañana', 'Local Principal', '192.168.1.10');
 
 -- Asistencias con estado 'tarde' (mínimo 5)
 INSERT INTO `asistencias` (`empleado_rut`, `fecha`, `hora_entrada`, `hora_salida`, `tipo_entrada`, `tipo_salida`, `minutos_tarde`, `minutos_extras`, `horas_trabajadas`, `estado`, `observaciones`, `ubicacion_entrada`, `ip_entrada`) VALUES
-('20.890.123-4', DATE_SUB(CURDATE(), INTERVAL 12 DAY), CONCAT(DATE_SUB(CURDATE(), INTERVAL 12 DAY), ' 08:25:00'), CONCAT(DATE_SUB(CURDATE(), INTERVAL 12 DAY), ' 17:00:00'), 'biometrico', 'biometrico', 25, 0, 8.58, 'tarde', 'Llegó 25 minutos tarde', 'Local Principal', '192.168.1.10'),
-('17.901.234-5', DATE_SUB(CURDATE(), INTERVAL 11 DAY), CONCAT(DATE_SUB(CURDATE(), INTERVAL 11 DAY), ' 18:20:00'), CONCAT(DATE_SUB(CURDATE(), INTERVAL 11 DAY), ' 02:00:00'), 'biometrico', 'biometrico', 20, 0, 7.67, 'tarde', 'Retraso por tráfico', 'Local Principal', '192.168.1.10'),
-('21.234.567-8', DATE_SUB(CURDATE(), INTERVAL 13 DAY), CONCAT(DATE_SUB(CURDATE(), INTERVAL 13 DAY), ' 08:18:00'), CONCAT(DATE_SUB(CURDATE(), INTERVAL 13 DAY), ' 17:00:00'), 'biometrico', 'biometrico', 18, 0, 8.70, 'tarde', 'Llegó tarde al turno', 'Local Principal', '192.168.1.10'),
-('18.012.345-6', DATE_SUB(CURDATE(), INTERVAL 14 DAY), CONCAT(DATE_SUB(CURDATE(), INTERVAL 14 DAY), ' 10:22:00'), CONCAT(DATE_SUB(CURDATE(), INTERVAL 14 DAY), ' 19:00:00'), 'manual', 'biometrico', 22, 0, 8.63, 'tarde', 'Registro manual por retraso', 'Local Principal', '192.168.1.10'),
-('19.123.456-7', DATE_SUB(CURDATE(), INTERVAL 15 DAY), CONCAT(DATE_SUB(CURDATE(), INTERVAL 15 DAY), ' 09:30:00'), CONCAT(DATE_SUB(CURDATE(), INTERVAL 15 DAY), ' 18:00:00'), 'biometrico', 'biometrico', 30, 0, 8.50, 'tarde', 'Retraso significativo', 'Local Principal', '192.168.1.10');
+('20.890.123-0', DATE_SUB(CURDATE(), INTERVAL 12 DAY), CONCAT(DATE_SUB(CURDATE(), INTERVAL 12 DAY), ' 08:25:00'), CONCAT(DATE_SUB(CURDATE(), INTERVAL 12 DAY), ' 17:00:00'), 'biometrico', 'biometrico', 25, 0, 8.58, 'tarde', 'Llegó 25 minutos tarde', 'Local Principal', '192.168.1.10'),
+('17.901.234-0', DATE_SUB(CURDATE(), INTERVAL 11 DAY), CONCAT(DATE_SUB(CURDATE(), INTERVAL 11 DAY), ' 18:20:00'), CONCAT(DATE_SUB(CURDATE(), INTERVAL 11 DAY), ' 02:00:00'), 'biometrico', 'biometrico', 20, 0, 7.67, 'tarde', 'Retraso por tráfico', 'Local Principal', '192.168.1.10'),
+('21.234.567-9', DATE_SUB(CURDATE(), INTERVAL 13 DAY), CONCAT(DATE_SUB(CURDATE(), INTERVAL 13 DAY), ' 08:18:00'), CONCAT(DATE_SUB(CURDATE(), INTERVAL 13 DAY), ' 17:00:00'), 'biometrico', 'biometrico', 18, 0, 8.70, 'tarde', 'Llegó tarde al turno', 'Local Principal', '192.168.1.10'),
+('18.012.345-8', DATE_SUB(CURDATE(), INTERVAL 14 DAY), CONCAT(DATE_SUB(CURDATE(), INTERVAL 14 DAY), ' 10:22:00'), CONCAT(DATE_SUB(CURDATE(), INTERVAL 14 DAY), ' 19:00:00'), 'manual', 'biometrico', 22, 0, 8.63, 'tarde', 'Registro manual por retraso', 'Local Principal', '192.168.1.10'),
+('19.123.456-1', DATE_SUB(CURDATE(), INTERVAL 15 DAY), CONCAT(DATE_SUB(CURDATE(), INTERVAL 15 DAY), ' 09:30:00'), CONCAT(DATE_SUB(CURDATE(), INTERVAL 15 DAY), ' 18:00:00'), 'biometrico', 'biometrico', 30, 0, 8.50, 'tarde', 'Retraso significativo', 'Local Principal', '192.168.1.10');
 
 -- Asistencias con estado 'ausente' (mínimo 5)
 INSERT INTO `asistencias` (`empleado_rut`, `fecha`, `hora_entrada`, `hora_salida`, `tipo_entrada`, `tipo_salida`, `minutos_tarde`, `minutos_extras`, `horas_trabajadas`, `estado`, `observaciones`) VALUES
-('19.345.678-9', DATE_SUB(CURDATE(), INTERVAL 20 DAY), NULL, NULL, NULL, NULL, 0, 0, 0.00, 'ausente', 'No se presentó al trabajo'),
-('20.456.789-0', DATE_SUB(CURDATE(), INTERVAL 19 DAY), NULL, NULL, NULL, NULL, 0, 0, 0.00, 'ausente', 'Ausencia sin justificación'),
-('17.567.890-1', DATE_SUB(CURDATE(), INTERVAL 18 DAY), NULL, NULL, NULL, NULL, 0, 0, 0.00, 'ausente', 'No asistió al turno'),
-('18.678.901-2', DATE_SUB(CURDATE(), INTERVAL 17 DAY), NULL, NULL, NULL, NULL, 0, 0, 0.00, 'ausente', 'Ausente sin aviso previo'),
-('19.789.012-3', DATE_SUB(CURDATE(), INTERVAL 16 DAY), NULL, NULL, NULL, NULL, 0, 0, 0.00, 'ausente', 'Falta injustificada');
+('19.345.678-2', DATE_SUB(CURDATE(), INTERVAL 20 DAY), NULL, NULL, NULL, NULL, 0, 0, 0.00, 'ausente', 'No se presentó al trabajo'),
+('20.456.789-1', DATE_SUB(CURDATE(), INTERVAL 19 DAY), NULL, NULL, NULL, NULL, 0, 0, 0.00, 'ausente', 'Ausencia sin justificación'),
+('17.567.890-5', DATE_SUB(CURDATE(), INTERVAL 18 DAY), NULL, NULL, NULL, NULL, 0, 0, 0.00, 'ausente', 'No asistió al turno'),
+('18.678.901-6', DATE_SUB(CURDATE(), INTERVAL 17 DAY), NULL, NULL, NULL, NULL, 0, 0, 0.00, 'ausente', 'Ausente sin aviso previo'),
+('19.789.012-6', DATE_SUB(CURDATE(), INTERVAL 16 DAY), NULL, NULL, NULL, NULL, 0, 0, 0.00, 'ausente', 'Falta injustificada');
 
 -- Asistencias con estado 'justificado' (mínimo 5)
 INSERT INTO `asistencias` (`empleado_rut`, `fecha`, `hora_entrada`, `hora_salida`, `tipo_entrada`, `tipo_salida`, `minutos_tarde`, `minutos_extras`, `horas_trabajadas`, `estado`, `observaciones`, `validado_por`, `fecha_validacion`) VALUES
-('20.890.123-4', DATE_SUB(CURDATE(), INTERVAL 25 DAY), NULL, NULL, NULL, NULL, 0, 0, 0.00, 'justificado', 'Licencia médica presentada', 1, NOW()),
-('17.901.234-5', DATE_SUB(CURDATE(), INTERVAL 24 DAY), NULL, NULL, NULL, NULL, 0, 0, 0.00, 'justificado', 'Fallecimiento familiar - justificado', 1, NOW()),
-('21.234.567-8', DATE_SUB(CURDATE(), INTERVAL 23 DAY), NULL, NULL, NULL, NULL, 0, 0, 0.00, 'justificado', 'Accidente de tránsito - justificado', 1, NOW()),
-('18.012.345-6', DATE_SUB(CURDATE(), INTERVAL 22 DAY), NULL, NULL, NULL, NULL, 0, 0, 0.00, 'justificado', 'Emergencia médica familiar', 1, NOW()),
-('19.123.456-7', DATE_SUB(CURDATE(), INTERVAL 21 DAY), NULL, NULL, NULL, NULL, 0, 0, 0.00, 'justificado', 'Licencia médica por enfermedad', 1, NOW());
+('20.890.123-0', DATE_SUB(CURDATE(), INTERVAL 25 DAY), NULL, NULL, NULL, NULL, 0, 0, 0.00, 'justificado', 'Licencia médica presentada', 1, NOW()),
+('17.901.234-0', DATE_SUB(CURDATE(), INTERVAL 24 DAY), NULL, NULL, NULL, NULL, 0, 0, 0.00, 'justificado', 'Fallecimiento familiar - justificado', 1, NOW()),
+('21.234.567-9', DATE_SUB(CURDATE(), INTERVAL 23 DAY), NULL, NULL, NULL, NULL, 0, 0, 0.00, 'justificado', 'Accidente de tránsito - justificado', 1, NOW()),
+('18.012.345-8', DATE_SUB(CURDATE(), INTERVAL 22 DAY), NULL, NULL, NULL, NULL, 0, 0, 0.00, 'justificado', 'Emergencia médica familiar', 1, NOW()),
+('19.123.456-1', DATE_SUB(CURDATE(), INTERVAL 21 DAY), NULL, NULL, NULL, NULL, 0, 0, 0.00, 'justificado', 'Licencia médica por enfermedad', 1, NOW());
 
 -- Asistencias con estado 'permiso' (mínimo 5)
 INSERT INTO `asistencias` (`empleado_rut`, `fecha`, `hora_entrada`, `hora_salida`, `tipo_entrada`, `tipo_salida`, `minutos_tarde`, `minutos_extras`, `horas_trabajadas`, `estado`, `observaciones`, `validado_por`, `fecha_validacion`) VALUES
-('19.345.678-9', DATE_SUB(CURDATE(), INTERVAL 30 DAY), NULL, NULL, NULL, NULL, 0, 0, 0.00, 'permiso', 'Permiso administrativo aprobado', 1, NOW()),
-('20.456.789-0', DATE_SUB(CURDATE(), INTERVAL 29 DAY), NULL, NULL, NULL, NULL, 0, 0, 0.00, 'permiso', 'Permiso personal autorizado', 1, NOW()),
-('17.567.890-1', DATE_SUB(CURDATE(), INTERVAL 28 DAY), NULL, NULL, NULL, NULL, 0, 0, 0.00, 'permiso', 'Día libre compensatorio', 1, NOW()),
-('18.678.901-2', DATE_SUB(CURDATE(), INTERVAL 27 DAY), NULL, NULL, NULL, NULL, 0, 0, 0.00, 'permiso', 'Permiso por trámite personal', 1, NOW()),
-('19.789.012-3', DATE_SUB(CURDATE(), INTERVAL 26 DAY), NULL, NULL, NULL, NULL, 0, 0, 0.00, 'permiso', 'Permiso aprobado por supervisor', 1, NOW());
+('19.345.678-2', DATE_SUB(CURDATE(), INTERVAL 30 DAY), NULL, NULL, NULL, NULL, 0, 0, 0.00, 'permiso', 'Permiso administrativo aprobado', 1, NOW()),
+('20.456.789-1', DATE_SUB(CURDATE(), INTERVAL 29 DAY), NULL, NULL, NULL, NULL, 0, 0, 0.00, 'permiso', 'Permiso personal autorizado', 1, NOW()),
+('17.567.890-5', DATE_SUB(CURDATE(), INTERVAL 28 DAY), NULL, NULL, NULL, NULL, 0, 0, 0.00, 'permiso', 'Día libre compensatorio', 1, NOW()),
+('18.678.901-6', DATE_SUB(CURDATE(), INTERVAL 27 DAY), NULL, NULL, NULL, NULL, 0, 0, 0.00, 'permiso', 'Permiso por trámite personal', 1, NOW()),
+('19.789.012-6', DATE_SUB(CURDATE(), INTERVAL 26 DAY), NULL, NULL, NULL, NULL, 0, 0, 0.00, 'permiso', 'Permiso aprobado por supervisor', 1, NOW());
 
 -- ============================================================
 -- DATOS INICIALES - INVENTARIO ADICIONAL (por estado)
