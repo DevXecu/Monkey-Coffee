@@ -10,6 +10,8 @@ class EmpleadoSerializer(serializers.ModelSerializer):
     fecha_termino = serializers.DateField(required=False, allow_null=True)
     salario = serializers.IntegerField(required=False, allow_null=True)
     rol = serializers.ChoiceField(choices=Empleado.ROL_CHOICES, required=False, allow_blank=True, allow_null=True, default='empleado')
+    # Campo calculado para compatibilidad hacia atrás
+    apellido = serializers.SerializerMethodField()
     
     # Instancia de PasswordHasher para Argon2id
     _ph = PasswordHasher()
@@ -18,8 +20,14 @@ class EmpleadoSerializer(serializers.ModelSerializer):
         model = Empleado
         fields = '__all__'
         extra_kwargs = {
-            'password': {'write_only': True}
+            'password': {'write_only': True},
+            'apellido_paterno': {'required': True},
+            'apellido_materno': {'required': False}
         }
+    
+    def get_apellido(self, obj):
+        """Retorna el apellido completo para compatibilidad"""
+        return obj.apellido_completo
     
     def to_representation(self, instance):
         """Asegurar que el password nunca se incluya en las respuestas"""
@@ -113,7 +121,7 @@ class AsistenciaSerializer(serializers.ModelSerializer):
         # Usar un try-except amplio para capturar cualquier error al acceder al empleado
         try:
             empleado = obj.empleado_rut
-            return empleado.apellido if empleado else None
+            return empleado.apellido_completo if empleado else None
         except (Empleado.DoesNotExist, AttributeError, Exception):
             return None
     
@@ -217,7 +225,7 @@ class TurnoSerializer(serializers.ModelSerializer):
         # Usar un try-except amplio para capturar cualquier error al acceder al empleado
         try:
             empleado = obj.empleados_rut
-            return empleado.apellido if empleado else None
+            return empleado.apellido_completo if empleado else None
         except (Empleado.DoesNotExist, AttributeError, Exception):
             return None
     
@@ -333,7 +341,7 @@ class SolicitudesSerializer(serializers.ModelSerializer):
     
     def get_empleado_apellido(self, obj):
         if obj.empleado_id:
-            return obj.empleado_id.apellido
+            return obj.empleado_id.apellido_completo
         return None
     
     def get_empleado_rut_display(self, obj):
@@ -353,7 +361,7 @@ class SolicitudesSerializer(serializers.ModelSerializer):
     
     def get_aprobado_por_apellido(self, obj):
         if obj.aprobado_por:
-            return obj.aprobado_por.apellido
+            return obj.aprobado_por.apellido_completo
         return None
     
     class Meta:
@@ -423,7 +431,7 @@ class SolicitudesListSerializer(serializers.ModelSerializer):
     
     def get_empleado_apellido(self, obj):
         if obj.empleado_id:
-            return obj.empleado_id.apellido
+            return obj.empleado_id.apellido_completo
         return None
     
     def get_empleado_rut(self, obj):
@@ -469,7 +477,7 @@ class TareasSerializer(serializers.ModelSerializer):
     
     def get_asignada_a_apellido(self, obj):
         if obj.asignada_a_rut:
-            return obj.asignada_a_rut.apellido
+            return obj.asignada_a_rut.apellido_completo
         return None
     
     def get_creada_por_nombre(self, obj):
@@ -479,7 +487,7 @@ class TareasSerializer(serializers.ModelSerializer):
     
     def get_creada_por_apellido(self, obj):
         if obj.creada_por_rut:
-            return obj.creada_por_rut.apellido
+            return obj.creada_por_rut.apellido_completo
         return None
     
     class Meta:
@@ -523,7 +531,7 @@ class TareasListSerializer(serializers.ModelSerializer):
     
     def get_asignada_a_apellido(self, obj):
         if obj.asignada_a_rut:
-            return obj.asignada_a_rut.apellido
+            return obj.asignada_a_rut.apellido_completo
         return None
     
     def get_creada_por_nombre(self, obj):
@@ -533,7 +541,7 @@ class TareasListSerializer(serializers.ModelSerializer):
     
     def get_creada_por_apellido(self, obj):
         if obj.creada_por_rut:
-            return obj.creada_por_rut.apellido
+            return obj.creada_por_rut.apellido_completo
         return None
     
     class Meta:

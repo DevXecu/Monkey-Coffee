@@ -26,7 +26,9 @@ CREATE TABLE IF NOT EXISTS `empleados` (
   `id` INT NOT NULL AUTO_INCREMENT,
   `rut` VARCHAR(12) NOT NULL,
   `nombres` VARCHAR(100) NOT NULL,
-  `apellidos` VARCHAR(100) NOT NULL,
+  `apellido_paterno` VARCHAR(100) NOT NULL,
+  `apellido_materno` VARCHAR(100) DEFAULT NULL,
+  `apellidos` VARCHAR(100) DEFAULT NULL COMMENT 'Campo legacy - mantener para compatibilidad',
   `email` VARCHAR(100) DEFAULT NULL,
   `telefono` VARCHAR(15) DEFAULT NULL,
   `password` VARCHAR(255) DEFAULT NULL,
@@ -53,6 +55,18 @@ CREATE TABLE IF NOT EXISTS `empleados` (
   KEY `idx_cargo` (`cargo`),
   KEY `idx_rol` (`rol`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ============================================================
+-- MIGRACIÓN DE DATOS: Dividir apellidos en paterno y materno
+-- ============================================================
+-- Si la tabla ya tiene datos con el campo 'apellidos', ejecutar:
+-- UPDATE empleados SET 
+--   apellido_paterno = SUBSTRING_INDEX(apellidos, ' ', 1),
+--   apellido_materno = CASE 
+--     WHEN LOCATE(' ', apellidos) > 0 THEN SUBSTRING(apellidos, LOCATE(' ', apellidos) + 1)
+--     ELSE NULL
+--   END
+-- WHERE apellido_paterno IS NULL OR apellido_paterno = '';
 
 -- ============================================================
 -- TABLA: turnos
@@ -642,7 +656,7 @@ SELECT
         ELSE 'STOCK OK'
     END AS alerta_stock,
     e.nombres AS vendedor_nombre,
-    e.apellidos AS vendedor_apellido
+    CONCAT(e.apellido_paterno, IF(e.apellido_materno IS NOT NULL AND e.apellido_materno != '', CONCAT(' ', e.apellido_materno), '')) AS vendedor_apellido
 FROM ventas v
 INNER JOIN detalle_ventas dv ON v.id = dv.venta_id
 INNER JOIN inventario i ON dv.inventario_id = i.id
@@ -691,19 +705,19 @@ WHERE activo = 1;
 -- DATOS INICIALES - EMPLEADOS
 -- ============================================================
 
-INSERT INTO `empleados` (`rut`, `nombres`, `apellidos`, `email`, `telefono`, `password`, `fecha_nacimiento`, `direccion`, `rol`, `cargo`, `departamento`, `fecha_contratacion`, `salario`, `tipo_contrato`, `estado`, `activo`) VALUES
-('18.234.567-9', 'Maria', 'Gonzalez Perez', 'maria.gonzalez@monkeycoffee.cl', '+56912345678', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '1990-05-15', 'Av. Arturo Prat 1234, Iquique', 'gerente', 'Gerente General', 'Administracion', '2023-01-15', 850000, 'indefinido', 'activo', 1),
-('19.345.678-2', 'Carlos', 'Ramirez Silva', 'carlos.ramirez@monkeycoffee.cl', '+56923456789', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '1992-08-22', 'Calle Baquedano 567, Iquique', 'empleado', 'Barista Senior', 'Operaciones', '2023-02-01', 550000, 'indefinido', 'activo', 1),
-('20.456.789-1', 'Fernanda', 'Torres Morales', 'fernanda.torres@monkeycoffee.cl', '+56934567890', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '1995-11-10', 'Av. Heroes de la Concepcion 890, Alto Hospicio', 'empleado', 'Barista', 'Operaciones', '2023-03-10', 450000, 'indefinido', 'activo', 1),
-('17.567.890-5', 'Diego', 'Vargas Castro', 'diego.vargas@monkeycoffee.cl', '+56945678901', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '1993-03-28', 'Pasaje Los Carrera 234, Iquique', 'empleado', 'Cajero', 'Ventas', '2023-04-05', 420000, 'indefinido', 'activo', 1),
-('18.678.901-6', 'Camila', 'Herrera Rojas', 'camila.herrera@monkeycoffee.cl', '+56956789012', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '1996-07-14', 'Av. La Tirana 1456, Alto Hospicio', 'empleado', 'Barista', 'Operaciones', '2023-05-20', 450000, 'indefinido', 'activo', 1),
-('19.789.012-6', 'Sebastian', 'Mendoza Lopez', 'sebastian.mendoza@monkeycoffee.cl', '+56967890123', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '1991-12-05', 'Calle Sargento Aldea 789, Iquique', 'gerente', 'Supervisor de Turno', 'Operaciones', '2023-01-20', 600000, 'indefinido', 'activo', 1),
-('20.890.123-0', 'Valentina', 'Castro Diaz', 'valentina.castro@monkeycoffee.cl', '+56978901234', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '1994-09-18', 'Av. Esmeralda 321, Iquique', 'empleado', 'Cajera', 'Ventas', '2023-06-01', 420000, 'indefinido', 'activo', 1),
-('17.901.234-0', 'Nicolas', 'Jimenez Flores', 'nicolas.jimenez@monkeycoffee.cl', '+56989012345', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '1997-02-25', 'Calle OHiggins 654, Alto Hospicio', 'empleado', 'Barista', 'Operaciones', '2023-07-15', 450000, 'indefinido', 'activo', 1),
-('18.012.345-8', 'Javiera', 'Soto Martinez', 'javiera.soto@monkeycoffee.cl', '+56990123456', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '1998-06-30', 'Av. Los Rieles 987, Alto Hospicio', 'empleado', 'Auxiliar de Cocina', 'Operaciones', '2023-08-10', 380000, 'indefinido', 'activo', 1),
-('19.123.456-1', 'Andres', 'Contreras Vega', 'andres.contreras@monkeycoffee.cl', '+56901234567', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '1992-10-12', 'Calle Thompson 456, Iquique', 'empleado', 'Encargado de Inventario', 'Logistica', '2023-02-15', 520000, 'indefinido', 'activo', 1),
-('21.234.567-9', 'Sofia', 'Munoz Ortiz', 'sofia.munoz@monkeycoffee.cl', '+56912345679', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '1999-04-12', 'Av. Tarapaca 2345, Iquique', 'empleado', 'Barista Junior', 'Operaciones', '2024-01-10', 420000, 'indefinido', 'activo', 1),
-('16.789.012-1', 'Roberto', 'Paz Salazar', 'roberto.paz@monkeycoffee.cl', '+56923456780', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '1989-11-28', 'Calle Vivar 678, Iquique', 'empleado', 'Encargado de Mantencion', 'Mantencion', '2023-03-01', 480000, 'indefinido', 'activo', 1);
+INSERT INTO `empleados` (`rut`, `nombres`, `apellido_paterno`, `apellido_materno`, `apellidos`, `email`, `telefono`, `password`, `fecha_nacimiento`, `direccion`, `rol`, `cargo`, `departamento`, `fecha_contratacion`, `salario`, `tipo_contrato`, `estado`, `activo`) VALUES
+('18.234.567-9', 'Maria', 'Gonzalez', 'Perez', 'Gonzalez Perez', 'maria.gonzalez@monkeycoffee.cl', '+56912345678', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '1990-05-15', 'Av. Arturo Prat 1234, Iquique', 'gerente', 'Gerente General', 'Administracion', '2023-01-15', 850000, 'indefinido', 'activo', 1),
+('19.345.678-2', 'Carlos', 'Ramirez', 'Silva', 'Ramirez Silva', 'carlos.ramirez@monkeycoffee.cl', '+56923456789', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '1992-08-22', 'Calle Baquedano 567, Iquique', 'empleado', 'Barista Senior', 'Operaciones', '2023-02-01', 550000, 'indefinido', 'activo', 1),
+('20.456.789-1', 'Fernanda', 'Torres', 'Morales', 'Torres Morales', 'fernanda.torres@monkeycoffee.cl', '+56934567890', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '1995-11-10', 'Av. Heroes de la Concepcion 890, Alto Hospicio', 'empleado', 'Barista', 'Operaciones', '2023-03-10', 450000, 'indefinido', 'activo', 1),
+('17.567.890-5', 'Diego', 'Vargas', 'Castro', 'Vargas Castro', 'diego.vargas@monkeycoffee.cl', '+56945678901', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '1993-03-28', 'Pasaje Los Carrera 234, Iquique', 'empleado', 'Cajero', 'Ventas', '2023-04-05', 420000, 'indefinido', 'activo', 1),
+('18.678.901-6', 'Camila', 'Herrera', 'Rojas', 'Herrera Rojas', 'camila.herrera@monkeycoffee.cl', '+56956789012', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '1996-07-14', 'Av. La Tirana 1456, Alto Hospicio', 'empleado', 'Barista', 'Operaciones', '2023-05-20', 450000, 'indefinido', 'activo', 1),
+('19.789.012-6', 'Sebastian', 'Mendoza', 'Lopez', 'Mendoza Lopez', 'sebastian.mendoza@monkeycoffee.cl', '+56967890123', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '1991-12-05', 'Calle Sargento Aldea 789, Iquique', 'gerente', 'Supervisor de Turno', 'Operaciones', '2023-01-20', 600000, 'indefinido', 'activo', 1),
+('20.890.123-0', 'Valentina', 'Castro', 'Diaz', 'Castro Diaz', 'valentina.castro@monkeycoffee.cl', '+56978901234', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '1994-09-18', 'Av. Esmeralda 321, Iquique', 'empleado', 'Cajera', 'Ventas', '2023-06-01', 420000, 'indefinido', 'activo', 1),
+('17.901.234-0', 'Nicolas', 'Jimenez', 'Flores', 'Jimenez Flores', 'nicolas.jimenez@monkeycoffee.cl', '+56989012345', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '1997-02-25', 'Calle OHiggins 654, Alto Hospicio', 'empleado', 'Barista', 'Operaciones', '2023-07-15', 450000, 'indefinido', 'activo', 1),
+('18.012.345-8', 'Javiera', 'Soto', 'Martinez', 'Soto Martinez', 'javiera.soto@monkeycoffee.cl', '+56990123456', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '1998-06-30', 'Av. Los Rieles 987, Alto Hospicio', 'empleado', 'Auxiliar de Cocina', 'Operaciones', '2023-08-10', 380000, 'indefinido', 'activo', 1),
+('19.123.456-1', 'Andres', 'Contreras', 'Vega', 'Contreras Vega', 'andres.contreras@monkeycoffee.cl', '+56901234567', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '1992-10-12', 'Calle Thompson 456, Iquique', 'empleado', 'Encargado de Inventario', 'Logistica', '2023-02-15', 520000, 'indefinido', 'activo', 1),
+('21.234.567-9', 'Sofia', 'Munoz', 'Ortiz', 'Munoz Ortiz', 'sofia.munoz@monkeycoffee.cl', '+56912345679', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '1999-04-12', 'Av. Tarapaca 2345, Iquique', 'empleado', 'Barista Junior', 'Operaciones', '2024-01-10', 420000, 'indefinido', 'activo', 1),
+('16.789.012-1', 'Roberto', 'Paz', 'Salazar', 'Paz Salazar', 'roberto.paz@monkeycoffee.cl', '+56923456780', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '1989-11-28', 'Calle Vivar 678, Iquique', 'empleado', 'Encargado de Mantencion', 'Mantencion', '2023-03-01', 480000, 'indefinido', 'activo', 1);
 
 -- ============================================================
 -- DATOS INICIALES - TURNOS
@@ -946,13 +960,7 @@ COMMIT;
 -- Después de importar este archivo SQL, necesitas sincronizar
 -- las migraciones de Django para que el proyecto funcione correctamente.
 --
--- OPCIÓN 1 (Recomendada): Ejecuta el script SQL:
---   mysql -u root -p monkeycoffee_app < sync_migrations.sql
---
--- OPCIÓN 2: Ejecuta el script Python:
---   python sync_migrations.py
---
--- OPCIÓN 3: Manualmente con Django:
+-- Manualmente con Django:
 --   python manage.py migrate --fake
 --
 -- Para más detalles, consulta: INSTRUCCIONES_MIGRACIONES.md

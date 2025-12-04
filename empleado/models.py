@@ -73,7 +73,8 @@ class Empleado(models.Model):
     # Campos básicos
     rut = models.CharField(max_length=12, unique=True, db_column='rut')
     nombre = models.CharField(max_length=100, db_column='nombres')
-    apellido = models.CharField(max_length=100, db_column='apellidos')
+    apellido_paterno = models.CharField(max_length=100, db_column='apellido_paterno')
+    apellido_materno = models.CharField(max_length=100, blank=True, null=True, db_column='apellido_materno')
     correo = models.EmailField(max_length=100, blank=True, null=True, db_column='email')
     celular = models.CharField(max_length=15, blank=True, null=True, db_column='telefono')
     fecha_nacimiento = models.DateField(blank=True, null=True, db_column='fecha_nacimiento')
@@ -107,8 +108,16 @@ class Empleado(models.Model):
     class Meta:
         db_table = 'empleados'
 
+    @property
+    def apellido_completo(self):
+        """Retorna el apellido completo combinando paterno y materno"""
+        apellidos = [self.apellido_paterno]
+        if self.apellido_materno:
+            apellidos.append(self.apellido_materno)
+        return ' '.join(apellidos)
+    
     def __str__(self):
-        return f"{self.nombre} {self.apellido} - {self.cargo}"
+        return f"{self.nombre} {self.apellido_completo} - {self.cargo}"
 
 
 class Turno(models.Model):

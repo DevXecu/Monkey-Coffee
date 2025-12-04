@@ -21,7 +21,8 @@ export function EmpleadoFormPage() {
   const [empleadoActual, setEmpleadoActual] = useState(null);
   const [rutValue, setRutValue] = useState("");
   const [nombreValue, setNombreValue] = useState("");
-  const [apellidoValue, setApellidoValue] = useState("");
+  const [apellidoPaternoValue, setApellidoPaternoValue] = useState("");
+  const [apellidoMaternoValue, setApellidoMaternoValue] = useState("");
   const [passwordValue, setPasswordValue] = useState("");
   const [showPasswordValidation, setShowPasswordValidation] = useState(false);
   const [celularValue, setCelularValue] = useState("");
@@ -30,7 +31,8 @@ export function EmpleadoFormPage() {
   // Referencias para los campos
   const rutRef = useRef(null);
   const nombreRef = useRef(null);
-  const apellidoRef = useRef(null);
+  const apellidoPaternoRef = useRef(null);
+  const apellidoMaternoRef = useRef(null);
   const fechaNacimientoRef = useRef(null);
   const direccionRef = useRef(null);
   const rolRef = useRef(null);
@@ -80,10 +82,16 @@ export function EmpleadoFormPage() {
     setValue("nombre", capitalizado);
   };
 
-  const handleApellidoChange = (e) => {
+  const handleApellidoPaternoChange = (e) => {
     const capitalizado = capitalizarTexto(e.target.value);
-    setApellidoValue(capitalizado);
-    setValue("apellido", capitalizado);
+    setApellidoPaternoValue(capitalizado);
+    setValue("apellido_paterno", capitalizado);
+  };
+
+  const handleApellidoMaternoChange = (e) => {
+    const capitalizado = capitalizarTexto(e.target.value);
+    setApellidoMaternoValue(capitalizado);
+    setValue("apellido_materno", capitalizado);
   };
 
   const handlePasswordChange = (e) => {
@@ -265,10 +273,10 @@ export function EmpleadoFormPage() {
       hasErrors = true;
     }
     
-    if (!apellidoValue || apellidoValue.trim() === "") {
-      setError("apellido", { 
+    if (!apellidoPaternoValue || apellidoPaternoValue.trim() === "") {
+      setError("apellido_paterno", { 
         type: "manual", 
-        message: "Los apellidos son requeridos" 
+        message: "El apellido paterno es requerido" 
       });
       hasErrors = true;
     }
@@ -324,16 +332,21 @@ export function EmpleadoFormPage() {
     }
 
     try {
-      // Usar los valores del estado para nombre y apellido
-      const nombreCompleto = `${nombreValue} ${apellidoValue}`;
+      // Usar los valores del estado para nombre y apellidos
+      const apellidosCompletos = [apellidoPaternoValue.trim()];
+      if (apellidoMaternoValue && apellidoMaternoValue.trim()) {
+        apellidosCompletos.push(apellidoMaternoValue.trim());
+      }
+      const nombreCompleto = `${nombreValue} ${apellidosCompletos.join(' ')}`;
       
       // Preparar datos para enviar al backend
-      // El modelo Django espera: nombre, apellido, correo, celular
-      // La BD MySQL tiene: nombres, apellidos, email, telefono
+      // El modelo Django espera: nombre, apellido_paterno, apellido_materno, correo, celular
+      // La BD MySQL tiene: nombres, apellido_paterno, apellido_materno, email, telefono
       // Django hace el mapeo automáticamente con db_column
       const cleanData = {
         nombre: nombreValue.trim(),
-        apellido: apellidoValue.trim(),
+        apellido_paterno: apellidoPaternoValue.trim(),
+        apellido_materno: apellidoMaternoValue?.trim() || null,
         rol: data.rol || 'empleado',
         cargo: data.cargo?.trim() || '',
         fecha_contratacion: data.fecha_contratacion || null,
@@ -543,11 +556,13 @@ export function EmpleadoFormPage() {
           setRutValue(rutFormateado);
           setValue("rut", rutFormateado);
           
-          // Usar nombre y apellido del backend (Django los mapea desde nombres/apellidos)
+          // Usar nombre y apellidos del backend
           setNombreValue(data.nombre || "");
           setValue("nombre", data.nombre || "");
-          setApellidoValue(data.apellido || "");
-          setValue("apellido", data.apellido || "");
+          setApellidoPaternoValue(data.apellido_paterno || "");
+          setValue("apellido_paterno", data.apellido_paterno || "");
+          setApellidoMaternoValue(data.apellido_materno || "");
+          setValue("apellido_materno", data.apellido_materno || "");
           
           setValue("fecha_nacimiento", data.fecha_nacimiento || "");
           setValue("direccion", data.direccion || "");
@@ -650,7 +665,7 @@ export function EmpleadoFormPage() {
               placeholder="Miguel Carlos"
               value={nombreValue}
               onChange={handleNombreChange}
-              onKeyDown={(e) => handleFieldKeyDown(e, apellidoRef)}
+              onKeyDown={(e) => handleFieldKeyDown(e, apellidoPaternoRef)}
               className={`block w-full px-3 py-2 border rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500 ${
                 errors.nombre ? 'border-red-300' : 'border-gray-300'
               }`}
@@ -660,25 +675,41 @@ export function EmpleadoFormPage() {
             )}
           </div>
 
-          {/* Apellidos */}
+          {/* Apellido Paterno */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Apellidos *
+              Apellido Paterno *
             </label>
             <input
-              ref={apellidoRef}
+              ref={apellidoPaternoRef}
               type="text"
-              placeholder="Valdivia González"
-              value={apellidoValue}
-              onChange={handleApellidoChange}
-              onKeyDown={(e) => handleFieldKeyDown(e, fechaNacimientoRef)}
+              placeholder="Valdivia"
+              value={apellidoPaternoValue}
+              onChange={handleApellidoPaternoChange}
+              onKeyDown={(e) => handleFieldKeyDown(e, apellidoMaternoRef)}
               className={`block w-full px-3 py-2 border rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500 ${
-                errors.apellido ? 'border-red-300' : 'border-gray-300'
+                errors.apellido_paterno ? 'border-red-300' : 'border-gray-300'
               }`}
             />
-            {errors.apellido && (
-              <p className="mt-1 text-sm text-red-600">{errors.apellido.message}</p>
+            {errors.apellido_paterno && (
+              <p className="mt-1 text-sm text-red-600">{errors.apellido_paterno.message}</p>
             )}
+          </div>
+
+          {/* Apellido Materno */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Apellido Materno
+            </label>
+            <input
+              ref={apellidoMaternoRef}
+              type="text"
+              placeholder="González"
+              value={apellidoMaternoValue}
+              onChange={handleApellidoMaternoChange}
+              onKeyDown={(e) => handleFieldKeyDown(e, fechaNacimientoRef)}
+              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+            />
           </div>
 
           {/* Fecha de Nacimiento */}
@@ -997,7 +1028,11 @@ export function EmpleadoFormPage() {
                     try {
                       await deleteEmpleado(params.id);
                       if (empleadoActual) {
-                        ActivityLogger.empleadoDeleted(`${empleadoActual.nombre} ${empleadoActual.apellido}`);
+                        const apellidosCompletos = [empleadoActual.apellido_paterno || ''];
+                        if (empleadoActual.apellido_materno) {
+                          apellidosCompletos.push(empleadoActual.apellido_materno);
+                        }
+                        ActivityLogger.empleadoDeleted(`${empleadoActual.nombre} ${apellidosCompletos.join(' ')}`);
                       }
                       toast.success("Empleado eliminado correctamente", {
                         position: "bottom-right",

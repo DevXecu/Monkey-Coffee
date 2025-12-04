@@ -556,7 +556,7 @@ export function ReportesPage() {
                         {key.replace(/([A-Z])/g, " $1").trim()}
                       </p>
                       <p className="text-3xl font-bold">
-                        {typeof value === "number" && (key.includes("valor") || key.includes("stock"))
+                        {typeof value === "number" && key.includes("valor") && !key.includes("stock")
                           ? formatearMoneda(value)
                           : value.toLocaleString()}
                       </p>

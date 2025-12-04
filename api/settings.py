@@ -29,8 +29,7 @@ SECRET_KEY = 'django-insecure-v0j$i@5zxt60sr0yxf@_o6xognpsz7w7z75p7sa3!0@ktz)1wt
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0']
-
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0', 'ec2-44-223-44-55.compute-1.amazonaws.com', '44.223.44.55']
 
 # Application definition
 
@@ -88,16 +87,16 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'monkeycoffee_app',
-        'USER': 'root',
-        'PASSWORD': 'Inacap2025',
-        'HOST': 'localhost',
+        'USER': 'admin',
+        'PASSWORD': 'monkeycoffeedb',
+        'HOST': 'monkeycoffeedb.crc6wgwc078o.us-east-1.rds.amazonaws.com',
         'PORT': '3306',
         'OPTIONS': {
             'charset': 'utf8mb4',
             'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
-            'connect_timeout': 10,
-            'read_timeout': 10,
-            'write_timeout': 10,
+            'connect_timeout': 30,
+            'read_timeout': 30,
+            'write_timeout': 30,
         },
         'CONN_MAX_AGE': 0,  # Desactivar conexiones persistentes para evitar problemas
         'AUTOCOMMIT': True,
@@ -148,8 +147,8 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 
 CORS_ALLOWED_ORIGINS = [
-    'http://localhost:5173',
-    'http://127.0.0.1:5173',
+    'http://ec2-44-223-44-55.compute-1.amazonaws.com',
+    'http://44.223.44.55',
 ]
 
 # Permitir todas las cabeceras y métodos para desarrollo
