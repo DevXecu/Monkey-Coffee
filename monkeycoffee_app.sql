@@ -28,7 +28,7 @@ CREATE TABLE IF NOT EXISTS `empleados` (
   `nombres` VARCHAR(100) NOT NULL,
   `apellido_paterno` VARCHAR(100) NOT NULL,
   `apellido_materno` VARCHAR(100) DEFAULT NULL,
-  `apellidos` VARCHAR(100) DEFAULT NULL COMMENT 'Campo legacy - mantener para compatibilidad',
+  `apellidos` VARCHAR(100) DEFAULT NULL COMMENT,
   `email` VARCHAR(100) DEFAULT NULL,
   `telefono` VARCHAR(15) DEFAULT NULL,
   `password` VARCHAR(255) DEFAULT NULL,

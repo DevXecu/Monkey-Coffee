@@ -16,6 +16,7 @@ from django.utils import timezone
 from datetime import date, datetime, timedelta
 from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError
+import bcrypt
 import traceback
 
 # Create your views here.
@@ -264,32 +265,55 @@ def login(request):
                 status=status.HTTP_401_UNAUTHORIZED
             )
         
-        # Verificar contraseña con Argon2id
-        ph = PasswordHasher()
-        try:
-            # Intentar verificar la contraseña con Argon2id
-            ph.verify(empleado.password, password)
-        except VerifyMismatchError:
-            # Si falla la verificación, la contraseña es incorrecta
+        # Verificar contraseña con Argon2 o bcrypt
+        password_valid = False
+        stored_password = empleado.password
+        
+        # Detectar el tipo de hash y verificar apropiadamente
+        if stored_password.startswith('$argon2'):
+            # Hash de Argon2 (argon2id, argon2i, etc.)
+            try:
+                ph = PasswordHasher()
+                ph.verify(stored_password, password)
+                password_valid = True
+            except VerifyMismatchError:
+                password_valid = False
+            except Exception:
+                # Si hay error de formato, intentar con bcrypt
+                password_valid = False
+        elif stored_password.startswith('$2a$') or stored_password.startswith('$2b$') or stored_password.startswith('$2y$'):
+            # Hash de bcrypt
+            try:
+                # bcrypt.checkpw espera bytes
+                password_bytes = password.encode('utf-8')
+                stored_password_bytes = stored_password.encode('utf-8')
+                password_valid = bcrypt.checkpw(password_bytes, stored_password_bytes)
+            except Exception:
+                password_valid = False
+        else:
+            # Intentar primero con Argon2 (por si acaso)
+            try:
+                ph = PasswordHasher()
+                ph.verify(stored_password, password)
+                password_valid = True
+            except (VerifyMismatchError, Exception):
+                # Si falla Argon2, intentar con bcrypt
+                try:
+                    password_bytes = password.encode('utf-8')
+                    stored_password_bytes = stored_password.encode('utf-8')
+                    password_valid = bcrypt.checkpw(password_bytes, stored_password_bytes)
+                except Exception:
+                    # Si ambos fallan, intentar comparación directa (para migración gradual)
+                    try:
+                        password_valid = (stored_password.strip() == password)
+                    except:
+                        password_valid = False
+        
+        if not password_valid:
             return Response(
                 {"error": "RUT o contraseña incorrectos"},
                 status=status.HTTP_401_UNAUTHORIZED
             )
-        except Exception as e:
-            # Si hay otro error (por ejemplo, formato de hash inválido), 
-            # podría ser una contraseña antigua en texto plano
-            # Intentar comparación directa como fallback (para migración gradual)
-            try:
-                if empleado.password.strip() != password:
-                    return Response(
-                        {"error": "RUT o contraseña incorrectos"},
-                        status=status.HTTP_401_UNAUTHORIZED
-                    )
-            except:
-                return Response(
-                    {"error": "RUT o contraseña incorrectos"},
-                    status=status.HTTP_401_UNAUTHORIZED
-                )
         
         # Serializar datos del empleado (el serializer ya excluye el password por write_only=True)
         serializer = EmpleadoSerializer(empleado)

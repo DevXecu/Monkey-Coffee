@@ -354,7 +354,19 @@ export function EmpleadoFormPage() {
       
       // Solo incluir RUT y fecha_nacimiento si es creación (no edición)
       if (!params.id) {
-        cleanData.rut = limpiarRUT(rutValue);
+        // Guardar el RUT con formato (21.435.254-0)
+        // Asegurarse de que el RUT esté formateado correctamente
+        const rutLimpio = limpiarRUT(rutValue);
+        if (rutLimpio.length >= 2) {
+          // Separar números del dígito verificador
+          const rutNumeros = rutLimpio.slice(0, -1);
+          const dv = rutLimpio.slice(-1).toUpperCase();
+          // Formatear con puntos y guión
+          cleanData.rut = formatearRUT(rutNumeros) + '-' + dv;
+        } else {
+          // Si el RUT es muy corto, usar formatearRUTCompleto para calcular el DV
+          cleanData.rut = formatearRUTCompleto(rutLimpio);
+        }
       }
       
       // Limpiar campos de fecha

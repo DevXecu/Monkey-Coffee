@@ -51,6 +51,14 @@ class EmpleadoSerializer(serializers.ModelSerializer):
         password_hashed = self._ph.hash(password_plain)
         validated_data['password'] = password_hashed
         
+        # Unir apellido_paterno y apellido_materno en el campo apellido
+        apellido_paterno = validated_data.get('apellido_paterno', '').strip()
+        apellido_materno = validated_data.get('apellido_materno', '').strip() if validated_data.get('apellido_materno') else ''
+        apellidos_completos = [apellido_paterno]
+        if apellido_materno:
+            apellidos_completos.append(apellido_materno)
+        validated_data['apellido'] = ' '.join(apellidos_completos) if apellidos_completos[0] else None
+        
         # Si no se proporciona fecha_contratacion, usar la fecha actual
         if 'fecha_contratacion' not in validated_data or not validated_data.get('fecha_contratacion'):
             validated_data['fecha_contratacion'] = date.today()
@@ -83,6 +91,17 @@ class EmpleadoSerializer(serializers.ModelSerializer):
         else:
             # Si no se proporciona password o está vacío, no actualizarlo
             validated_data.pop('password', None)
+        
+        # Unir apellido_paterno y apellido_materno en el campo apellido si se actualizan
+        if 'apellido_paterno' in validated_data or 'apellido_materno' in validated_data:
+            # Usar el valor nuevo si está en validated_data, sino usar el valor actual de la instancia
+            apellido_paterno = validated_data.get('apellido_paterno', instance.apellido_paterno).strip()
+            apellido_materno = validated_data.get('apellido_materno', instance.apellido_materno)
+            apellido_materno = apellido_materno.strip() if apellido_materno else ''
+            apellidos_completos = [apellido_paterno]
+            if apellido_materno:
+                apellidos_completos.append(apellido_materno)
+            validated_data['apellido'] = ' '.join(apellidos_completos) if apellidos_completos[0] else None
         
         # Actualizar los campos
         for attr, value in validated_data.items():

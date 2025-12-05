@@ -73,6 +73,7 @@ class Empleado(models.Model):
     # Campos básicos
     rut = models.CharField(max_length=12, unique=True, db_column='rut')
     nombre = models.CharField(max_length=100, db_column='nombres')
+    apellido = models.CharField(max_length=100, blank=True, null=True, db_column='apellidos')
     apellido_paterno = models.CharField(max_length=100, db_column='apellido_paterno')
     apellido_materno = models.CharField(max_length=100, blank=True, null=True, db_column='apellido_materno')
     correo = models.EmailField(max_length=100, blank=True, null=True, db_column='email')
