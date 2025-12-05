@@ -684,7 +684,6 @@ export function DashboardPage() {
               Dashboard
             </h1>
           </div>
-          <p className="text-gray-600 mt-2">Análisis avanzado y métricas en tiempo real de Monkey Coffee</p>
         </div>
         <div className="flex items-center space-x-3">
           <select

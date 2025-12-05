@@ -64,7 +64,6 @@ export function SolicitudesList() {
               </div>
               <h1 className="text-2xl font-bold text-gray-900">Solicitudes</h1>
             </div>
-            <p className="text-gray-600">Gestiona las solicitudes de empleados</p>
           </div>
         </div>
         

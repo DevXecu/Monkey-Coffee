@@ -145,7 +145,6 @@ export function EmpleadoList() {
               </div>
               <div>
                 <h1 className="text-3xl font-bold text-gray-900">Empleados</h1>
-                <p className="text-gray-600 mt-1">Gestiona el personal de Monkey Coffee</p>
               </div>
             </div>
           </div>

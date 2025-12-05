@@ -129,7 +129,6 @@ export function TurnosList() {
               </div>
               <div>
                 <h1 className="text-3xl font-bold text-gray-900">Turnos</h1>
-                <p className="text-gray-600 mt-1">Gestiona los turnos de trabajo</p>
               </div>
             </div>
           </div>

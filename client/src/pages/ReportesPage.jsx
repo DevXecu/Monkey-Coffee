@@ -333,7 +333,6 @@ export function ReportesPage() {
               Reportes
             </h1>
           </div>
-          <p className="text-gray-600 mt-1">Visualiza y analiza tus datos de manera eficiente</p>
         </div>
       </div>
 
