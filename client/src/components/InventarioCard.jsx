@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { inventarioAPI } from "../api/inventario.api";
+import { proveedoresAPI } from "../api/proveedores.api";
 import { formatCurrency, formatInteger } from "../utils/currencyUtils";
+import { toast } from "react-hot-toast";
 
 export function InventarioCard({ inventario, onUpdate }) {
   const navigate = useNavigate();
@@ -88,6 +90,68 @@ export function InventarioCard({ inventario, onUpdate }) {
     }
   };
 
+  const handleCrearOrdenCompra = async () => {
+    try {
+      setLoading(true);
+      
+      // Buscar el proveedor por nombre
+      let proveedorId = null;
+      let proveedorEncontrado = null;
+      
+      if (inventario.proveedor) {
+        try {
+          // Buscar proveedores activos
+          const proveedores = await proveedoresAPI.getActivos();
+          if (proveedores && proveedores.length > 0) {
+            // Buscar coincidencia exacta primero, luego parcial
+            proveedorEncontrado = proveedores.find(
+              p => p.nombre.toLowerCase() === inventario.proveedor.toLowerCase()
+            ) || proveedores.find(
+              p => p.nombre.toLowerCase().includes(inventario.proveedor.toLowerCase()) ||
+                   inventario.proveedor.toLowerCase().includes(p.nombre.toLowerCase())
+            );
+            
+            if (proveedorEncontrado) {
+              proveedorId = proveedorEncontrado.id;
+            }
+          }
+        } catch (error) {
+          console.error("Error buscando proveedor:", error);
+        }
+      }
+
+      // Calcular cantidad sugerida (diferencia entre mínimo y actual, o mínimo si está bajo)
+      const cantidadSugerida = Math.max(
+        inventario.cantidad_minima - inventario.cantidad_actual,
+        inventario.cantidad_minima
+      );
+
+      // Crear objeto con los datos para la orden de compra
+      const ordenData = {
+        productoId: inventario.id,
+        proveedorId: proveedorId,
+        codigoProducto: inventario.codigo_producto,
+        nombreProducto: inventario.nombre_producto,
+        cantidad: cantidadSugerida,
+        precioUnitario: inventario.precio_unitario || 0,
+        unidadMedida: inventario.unidad_medida,
+        proveedorNombre: inventario.proveedor,
+        cantidadMinima: inventario.cantidad_minima,
+        cantidadActual: inventario.cantidad_actual
+      };
+
+      // Navegar a la página de creación de orden con los datos
+      navigate(`/ordenes-compra-create?${new URLSearchParams({
+        producto: JSON.stringify(ordenData)
+      }).toString()}`);
+    } catch (error) {
+      console.error("Error creando orden de compra:", error);
+      toast.error("Error al crear la orden de compra");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const isLowStock = inventario.cantidad_actual <= inventario.cantidad_minima;
   const isExpired = inventario.estado === "vencido";
   const isExpiringSoon = inventario.estado === "por_vencer";
@@ -106,6 +170,18 @@ export function InventarioCard({ inventario, onUpdate }) {
             </p>
           </div>
           <div className="flex gap-1 ml-2">
+            {(isLowStock || inventario.estado === "agotado") && inventario.proveedor && (
+              <button
+                onClick={handleCrearOrdenCompra}
+                disabled={loading}
+                className="p-1.5 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded transition-colors disabled:opacity-50"
+                title="Crear Orden de Compra"
+              >
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+              </button>
+            )}
             <button
               onClick={() => navigate(`/inventario/${inventario.id}`)}
               className="p-1.5 text-gray-400 hover:text-primary-600 hover:bg-primary-50 rounded transition-colors"
@@ -217,17 +293,35 @@ export function InventarioCard({ inventario, onUpdate }) {
         )}
 
         {/* Información adicional */}
-        <div className="pt-4 border-t border-gray-100 space-y-2 text-xs text-gray-600">
+        <div className="pt-4 border-t border-gray-100 space-y-2">
           {inventario.proveedor && (
-            <div className="flex items-center gap-2">
-              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-              </svg>
-              <span className="truncate">{inventario.proveedor}</span>
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 flex-1 min-w-0">
+                <svg className="h-4 w-4 flex-shrink-0 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                </svg>
+                <div className="flex-1 min-w-0">
+                  <div className="text-xs text-gray-500">Proveedor</div>
+                  <div className="text-sm font-semibold text-gray-900 truncate">{inventario.proveedor}</div>
+                </div>
+              </div>
+              {(isLowStock || inventario.estado === "agotado") && (
+                <button
+                  onClick={handleCrearOrdenCompra}
+                  disabled={loading}
+                  className="px-3 py-1.5 text-xs font-medium bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 flex items-center gap-1.5 shadow-sm"
+                  title="Crear Orden de Compra"
+                >
+                  <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                  Orden
+                </button>
+              )}
             </div>
           )}
           {inventario.fecha_vencimiento && (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 text-xs text-gray-600">
               <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>

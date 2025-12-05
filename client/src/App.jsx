@@ -17,6 +17,10 @@ import { SolicitudesFormPage } from "./pages/SolicitudesFormPage";
 import { ReportesPage } from "./pages/ReportesPage";
 import { ConfiguracionPage } from "./pages/ConfiguracionPage";
 import { ProfilePage } from "./pages/ProfilePage";
+import { ProveedorPage } from "./pages/ProveedorPage";
+import { ProveedorFormPage } from "./pages/ProveedorFormPage";
+import { OrdenCompraPage } from "./pages/OrdenCompraPage";
+import { OrdenCompraFormPage } from "./pages/OrdenCompraFormPage";
 import { Toaster } from "react-hot-toast";
 
 function App() {
@@ -56,6 +60,12 @@ function App() {
             <Route path="solicitudes" element={<SolicitudesPage />} />
             <Route path="solicitudes/:id" element={<SolicitudesFormPage />} />
             <Route path="solicitudes-create" element={<SolicitudesFormPage />} />
+            <Route path="proveedores" element={<ProveedorPage />} />
+            <Route path="proveedores/:id" element={<ProveedorFormPage />} />
+            <Route path="proveedores-create" element={<ProveedorFormPage />} />
+            <Route path="ordenes-compra" element={<OrdenCompraPage />} />
+            <Route path="ordenes-compra/:id" element={<OrdenCompraFormPage />} />
+            <Route path="ordenes-compra-create" element={<OrdenCompraFormPage />} />
             <Route path="reportes" element={<ReportesPage />} />
             <Route path="configuracion" element={<ConfiguracionPage />} />
             <Route path="profile" element={<ProfilePage />} />

@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     'empleado',
     'inventario',
     'sistema',
+    'proveedores',
 ]
 
 MIDDLEWARE = [
