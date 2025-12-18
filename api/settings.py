@@ -29,11 +29,7 @@ SECRET_KEY = 'django-insecure-v0j$i@5zxt60sr0yxf@_o6xognpsz7w7z75p7sa3!0@ktz)1wt
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-<<<<<<< Updated upstream
-ALLOWED_HOSTS = ['*', 'ec2-44-220-54-209.compute-1.amazonaws.com', '44.220.54.209']
-=======
 ALLOWED_HOSTS = ['*', 'ec2-44-220-54-209.compute-1.amazonaws.com', '44.220.54.209', '98.82.110.59', 'ec2-98-82-110-59.compute-1.amazonaws.com']
->>>>>>> Stashed changes
 
 # Application definition
 
