@@ -45,18 +45,51 @@ export function AsistenciaList() {
 
   const formatearFecha = (fecha) => {
     if (!fecha) return 'N/A';
-    return new Date(fecha).toLocaleDateString('es-CL', {
+    // Si es solo fecha (sin hora), usar directamente
+    if (typeof fecha === 'string' && fecha.match(/^\d{4}-\d{2}-\d{2}$/)) {
+      const [year, month, day] = fecha.split('-');
+      return new Date(year, month - 1, day).toLocaleDateString('es-CL', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      });
+    }
+    // Si es datetime, parsear correctamente considerando que viene en UTC
+    const fechaObj = new Date(fecha);
+    // Si la fecha viene en UTC (termina en Z o tiene offset), JavaScript ya la convierte correctamente
+    // Solo necesitamos formatearla en la zona horaria de Chile
+    return fechaObj.toLocaleDateString('es-CL', {
       year: 'numeric',
       month: '2-digit',
-      day: '2-digit'
+      day: '2-digit',
+      timeZone: 'America/Santiago'
     });
   };
 
   const formatearHora = (datetime) => {
     if (!datetime) return 'N/A';
-    return new Date(datetime).toLocaleTimeString('es-CL', {
+    // El backend envía fechas en formato ISO sin timezone (ej: 2024-01-01T15:00:00)
+    // Estas fechas están guardadas tal como aparecen en la BD, así que extraemos
+    // la hora directamente del string para mostrar exactamente lo que hay en BD
+    if (typeof datetime === 'string' && datetime.includes('T')) {
+      // Extraer hora y minutos del formato ISO (HH:MM:SS o HH:MM)
+      // Esto extrae la hora tal como está guardada en la base de datos
+      const match = datetime.match(/T(\d{2}):(\d{2})(?::\d{2})?(?:\.\d+)?(?:[+-]\d{2}:\d{2}|Z)?/);
+      if (match) {
+        return `${match[1]}:${match[2]}`;
+      }
+    }
+    
+    // Si no es string o no tiene el formato esperado, usar Date pero
+    // especificar explícitamente la zona horaria de Chile para evitar conversiones
+    const fechaObj = new Date(datetime);
+    // Usar toLocaleTimeString con timeZone explícito para asegurar que se muestre
+    // la hora correcta en la zona horaria de Chile
+    return fechaObj.toLocaleTimeString('es-CL', {
       hour: '2-digit',
-      minute: '2-digit'
+      minute: '2-digit',
+      hour12: false,
+      timeZone: 'America/Santiago'
     });
   };
 

@@ -1,6 +1,8 @@
 from rest_framework import serializers
 from .models import Empleado, Asistencia, Turno, Solicitudes, TiposSolicitudes, Tareas
 from datetime import date, datetime, time
+from django.utils import timezone
+from zoneinfo import ZoneInfo
 from argon2 import PasswordHasher
 
 class EmpleadoSerializer(serializers.ModelSerializer):
@@ -167,9 +169,47 @@ class AsistenciaSerializer(serializers.ModelSerializer):
         if 'fecha' not in validated_data or not validated_data.get('fecha'):
             validated_data['fecha'] = date.today()
         
+        # Asegurar que las fechas hora_entrada y hora_salida se interpreten como hora local de Chile
+        chile_tz = ZoneInfo('America/Santiago')
+        
+        if 'hora_entrada' in validated_data and validated_data['hora_entrada']:
+            hora_entrada = validated_data['hora_entrada']
+            # Si viene como string, parsearlo
+            if isinstance(hora_entrada, str):
+                try:
+                    hora_entrada = datetime.fromisoformat(hora_entrada.replace('Z', ''))
+                except:
+                    hora_entrada = datetime.strptime(hora_entrada, '%Y-%m-%dT%H:%M:%S')
+            # Si es naive datetime (sin timezone), interpretarlo como hora local de Chile
+            if isinstance(hora_entrada, datetime) and timezone.is_naive(hora_entrada):
+                hora_entrada = hora_entrada.replace(tzinfo=chile_tz)
+            # Guardar como naive datetime en hora local (la BD guarda naive)
+            validated_data['hora_entrada'] = hora_entrada.replace(tzinfo=None) if hasattr(hora_entrada, 'replace') else hora_entrada
+        
+        if 'hora_salida' in validated_data and validated_data.get('hora_salida'):
+            hora_salida = validated_data['hora_salida']
+            # Si viene como string, parsearlo
+            if isinstance(hora_salida, str):
+                try:
+                    hora_salida = datetime.fromisoformat(hora_salida.replace('Z', ''))
+                except:
+                    hora_salida = datetime.strptime(hora_salida, '%Y-%m-%dT%H:%M:%S')
+            # Si es naive datetime (sin timezone), interpretarlo como hora local de Chile
+            if isinstance(hora_salida, datetime) and timezone.is_naive(hora_salida):
+                hora_salida = hora_salida.replace(tzinfo=chile_tz)
+            # Guardar como naive datetime en hora local (la BD guarda naive)
+            validated_data['hora_salida'] = hora_salida.replace(tzinfo=None) if hasattr(hora_salida, 'replace') else hora_salida
+        
         # Calcular horas trabajadas si hay entrada y salida
         if validated_data.get('hora_entrada') and validated_data.get('hora_salida'):
-            diferencia = validated_data['hora_salida'] - validated_data['hora_entrada']
+            entrada = validated_data['hora_entrada']
+            salida = validated_data['hora_salida']
+            # Asegurar que sean datetime objects
+            if isinstance(entrada, str):
+                entrada = datetime.fromisoformat(entrada.replace('Z', ''))
+            if isinstance(salida, str):
+                salida = datetime.fromisoformat(salida.replace('Z', ''))
+            diferencia = salida - entrada
             horas = diferencia.total_seconds() / 3600
             validated_data['horas_trabajadas'] = round(horas, 2)
         
@@ -185,12 +225,48 @@ class AsistenciaSerializer(serializers.ModelSerializer):
             except Empleado.DoesNotExist:
                 raise serializers.ValidationError({'empleado_rut': 'No existe un empleado con este RUT'})
         
+        # Asegurar que las fechas hora_entrada y hora_salida se interpreten como hora local de Chile
+        chile_tz = ZoneInfo('America/Santiago')
+        
+        if 'hora_entrada' in validated_data and validated_data['hora_entrada']:
+            hora_entrada = validated_data['hora_entrada']
+            # Si viene como string, parsearlo
+            if isinstance(hora_entrada, str):
+                try:
+                    hora_entrada = datetime.fromisoformat(hora_entrada.replace('Z', ''))
+                except:
+                    hora_entrada = datetime.strptime(hora_entrada, '%Y-%m-%dT%H:%M:%S')
+            # Si es naive datetime (sin timezone), interpretarlo como hora local de Chile
+            if isinstance(hora_entrada, datetime) and timezone.is_naive(hora_entrada):
+                hora_entrada = hora_entrada.replace(tzinfo=chile_tz)
+            # Guardar como naive datetime en hora local (la BD guarda naive)
+            validated_data['hora_entrada'] = hora_entrada.replace(tzinfo=None) if hasattr(hora_entrada, 'replace') else hora_entrada
+        
+        if 'hora_salida' in validated_data and validated_data.get('hora_salida'):
+            hora_salida = validated_data['hora_salida']
+            # Si viene como string, parsearlo
+            if isinstance(hora_salida, str):
+                try:
+                    hora_salida = datetime.fromisoformat(hora_salida.replace('Z', ''))
+                except:
+                    hora_salida = datetime.strptime(hora_salida, '%Y-%m-%dT%H:%M:%S')
+            # Si es naive datetime (sin timezone), interpretarlo como hora local de Chile
+            if isinstance(hora_salida, datetime) and timezone.is_naive(hora_salida):
+                hora_salida = hora_salida.replace(tzinfo=chile_tz)
+            # Guardar como naive datetime en hora local (la BD guarda naive)
+            validated_data['hora_salida'] = hora_salida.replace(tzinfo=None) if hasattr(hora_salida, 'replace') else hora_salida
+        
         # Recalcular horas trabajadas si se actualizan las horas
         if 'hora_entrada' in validated_data or 'hora_salida' in validated_data:
             hora_entrada = validated_data.get('hora_entrada', instance.hora_entrada)
             hora_salida = validated_data.get('hora_salida', instance.hora_salida)
             
             if hora_entrada and hora_salida:
+                # Asegurar que sean datetime objects
+                if isinstance(hora_entrada, str):
+                    hora_entrada = datetime.fromisoformat(hora_entrada.replace('Z', ''))
+                if isinstance(hora_salida, str):
+                    hora_salida = datetime.fromisoformat(hora_salida.replace('Z', ''))
                 diferencia = hora_salida - hora_entrada
                 horas = diferencia.total_seconds() / 3600
                 validated_data['horas_trabajadas'] = round(horas, 2)
@@ -198,13 +274,27 @@ class AsistenciaSerializer(serializers.ModelSerializer):
         return super().update(instance, validated_data)
     
     def to_representation(self, instance):
-        """Personalizar la representación para mostrar el RUT como string"""
+        """Personalizar la representación para mostrar el RUT como string y fechas tal como están en BD"""
         representation = super().to_representation(instance)
         # Reemplazar el objeto empleado_rut con el RUT como string
         # Como to_field='rut', empleado_rut_id contiene el RUT directamente
         # Usar el valor del campo directamente para evitar consultas que pueden fallar
         empleado_rut = getattr(instance, 'empleado_rut_id', None)
         representation['empleado_rut'] = empleado_rut
+        
+        # Las fechas en BD están guardadas como DATETIME naive (sin timezone)
+        # y ya contienen la hora correcta (ej: 15:00:00)
+        # Simplemente las serializamos tal como están, sin agregar timezone ni hacer conversiones
+        if instance.hora_entrada:
+            # Serializar directamente el datetime tal como está en BD
+            # Formato: '2024-01-01T15:00:00' (sin timezone)
+            representation['hora_entrada'] = instance.hora_entrada.strftime('%Y-%m-%dT%H:%M:%S')
+        
+        if instance.hora_salida:
+            # Serializar directamente el datetime tal como está en BD
+            # Formato: '2024-01-01T15:00:00' (sin timezone)
+            representation['hora_salida'] = instance.hora_salida.strftime('%Y-%m-%dT%H:%M:%S')
+        
         return representation
     
     def validate(self, data):

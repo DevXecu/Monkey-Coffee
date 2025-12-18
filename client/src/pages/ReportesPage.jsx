@@ -2,6 +2,8 @@ import { useState, useMemo } from "react";
 import { generarReporte } from "../api/reportes.api";
 import { toast } from "react-hot-toast";
 import { formatearRUTParaMostrar } from "../utils/rutUtils";
+import { jsPDF } from "jspdf";
+import autoTable from "jspdf-autotable";
 
 export function ReportesPage() {
   const [tipoReporte, setTipoReporte] = useState("Empleados");
@@ -75,25 +77,32 @@ export function ReportesPage() {
     }
   };
 
-  const handleExportarCSV = () => {
+  const handleExportarPDF = () => {
     if (!reporte || !reporte.datos || reporte.datos.length === 0) {
       toast.error("No hay datos para exportar");
       return;
     }
 
     try {
-      let csvContent = "";
+      const doc = new jsPDF();
       let headers = [];
       let rows = [];
+      let tituloReporte = "";
 
+      // Función auxiliar para limpiar valores y evitar errores
+      const limpiarValor = (valor) => {
+        if (valor === null || valor === undefined) return "";
+        return String(valor);
+      };
+
+      // Configurar datos según el tipo de reporte
       switch (reporte.tipo) {
         case "empleados":
+          tituloReporte = "Reporte de Empleados";
           headers = [
             "RUT",
             "Nombre",
             "Apellido",
-            "Correo",
-            "Celular",
             "Cargo",
             "Departamento",
             "Estado",
@@ -103,49 +112,43 @@ export function ReportesPage() {
             "Activo",
           ];
           rows = reporte.datos.map((emp) => [
-            formatearRUTParaMostrar(emp.rut) || "",
-            emp.nombre || "",
-            emp.apellido || "",
-            emp.correo || "",
-            emp.celular || "",
-            emp.cargo || "",
-            emp.departamento || "",
-            emp.estado || "",
-            emp.tipo_contrato || "",
-            emp.fecha_contratacion || "",
+            limpiarValor(formatearRUTParaMostrar(emp.rut)),
+            limpiarValor(emp.nombre),
+            limpiarValor(emp.apellido),
+            limpiarValor(emp.cargo),
+            limpiarValor(emp.departamento),
+            limpiarValor(emp.estado),
+            limpiarValor(emp.tipo_contrato),
+            emp.fecha_contratacion ? formatearFecha(emp.fecha_contratacion) : "",
             emp.salario ? formatearMoneda(emp.salario) : "",
             emp.activo ? "Sí" : "No",
           ]);
           break;
         case "inventario":
+          tituloReporte = "Reporte de Inventario";
           headers = [
             "Código",
             "Nombre",
-            "Descripción",
             "Categoría",
             "Cantidad Actual",
             "Cantidad Mínima",
             "Precio Unitario",
             "Estado",
             "Proveedor",
-            "Fecha Creación",
-            "Activo",
           ];
           rows = reporte.datos.map((prod) => [
-            prod.codigo_producto || "",
-            prod.nombre_producto || "",
-            prod.descripcion || "",
-            prod.categoria || "",
-            prod.cantidad_actual || "",
-            prod.cantidad_minima || "",
-            prod.precio_unitario || "",
-            prod.estado || "",
-            prod.proveedor || "",
-            prod.fecha_creacion || "",
-            prod.activo ? "Sí" : "No",
+            limpiarValor(prod.codigo_producto),
+            limpiarValor(prod.nombre_producto),
+            limpiarValor(prod.categoria),
+            limpiarValor(prod.cantidad_actual),
+            limpiarValor(prod.cantidad_minima),
+            prod.precio_unitario ? formatearMoneda(prod.precio_unitario) : "",
+            limpiarValor(prod.estado),
+            limpiarValor(prod.proveedor),
           ]);
           break;
         case "asistencias":
+          tituloReporte = "Reporte de Asistencias";
           headers = [
             "RUT",
             "Nombre Empleado",
@@ -156,23 +159,17 @@ export function ReportesPage() {
             "Horas Trabajadas",
             "Minutos Tarde",
             "Minutos Extras",
-            "Tipo Entrada",
-            "Tipo Salida",
-            "Observaciones",
           ];
           rows = reporte.datos.map((asist) => [
-            formatearRUTParaMostrar(asist.empleado_rut || asist.empleado_rut_display) || "",
-            `${asist.empleado_nombre || ""} ${asist.empleado_apellido || ""}`.trim() || "",
-            asist.fecha || "",
-            asist.hora_entrada ? new Date(asist.hora_entrada).toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit" }) : "",
-            asist.hora_salida ? new Date(asist.hora_salida).toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit" }) : "",
-            asist.estado || "",
-            asist.horas_trabajadas || "0",
-            asist.minutos_tarde || "0",
-            asist.minutos_extras || "0",
-            asist.tipo_entrada || "",
-            asist.tipo_salida || "",
-            asist.observaciones || "",
+            limpiarValor(formatearRUTParaMostrar(asist.empleado_rut || asist.empleado_rut_display)),
+            limpiarValor(`${asist.empleado_nombre || ""} ${asist.empleado_apellido || ""}`.trim()),
+            asist.fecha ? formatearFecha(asist.fecha) : "",
+            formatearHora(asist.hora_entrada),
+            formatearHora(asist.hora_salida),
+            limpiarValor(asist.estado),
+            limpiarValor(asist.horas_trabajadas || "0"),
+            limpiarValor(asist.minutos_tarde || "0"),
+            limpiarValor(asist.minutos_extras || "0"),
           ]);
           break;
         default:
@@ -180,32 +177,121 @@ export function ReportesPage() {
           return;
       }
 
-      // Crear contenido CSV
-      csvContent = headers.join(",") + "\n";
-      rows.forEach((row) => {
-        csvContent +=
-          row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(",") +
-          "\n";
+      // Agregar encabezado
+      doc.setFontSize(18);
+      doc.setFont("helvetica", "bold");
+      doc.text(tituloReporte, 14, 20);
+
+      // Agregar información del reporte
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "normal");
+      doc.text(`Generado el: ${formatearFecha(reporte.fechaGeneracion)}`, 14, 30);
+      
+      if (reporte.fechaInicio || reporte.fechaFin) {
+        const periodo = `Período: ${formatearFecha(reporte.fechaInicio)} - ${formatearFecha(reporte.fechaFin)}`;
+        doc.text(periodo, 14, 35);
+      }
+
+      // Agregar estadísticas si existen
+      let yPos = 45;
+      if (reporte.estadisticas) {
+        doc.setFontSize(12);
+        doc.setFont("helvetica", "bold");
+        doc.text("Estadísticas", 14, yPos);
+        yPos += 8;
+        
+        doc.setFontSize(10);
+        doc.setFont("helvetica", "normal");
+        
+        // Primero mostrar estadísticas simples (números)
+        Object.entries(reporte.estadisticas).forEach(([key, value]) => {
+          if (typeof value === "object" && value !== null) return;
+          
+          const label = key.replace(/([A-Z])/g, " $1").trim();
+          let displayValue = value;
+          
+          if (typeof value === "number" && key.includes("valor") && !key.includes("stock")) {
+            displayValue = formatearMoneda(value);
+          } else if (typeof value === "number") {
+            displayValue = value.toLocaleString();
+          }
+          
+          doc.text(`${label}: ${displayValue}`, 14, yPos);
+          yPos += 6;
+          
+          // Nueva página si se acerca al final
+          if (yPos > 250) {
+            doc.addPage();
+            yPos = 20;
+          }
+        });
+        
+        // Luego mostrar estadísticas desglosadas (objetos)
+        Object.entries(reporte.estadisticas).forEach(([key, value]) => {
+          if (typeof value !== "object" || value === null) return;
+          
+          // Obtener el nombre de la categoría
+          let categoriaNombre = "";
+          if (key === "porCargo") categoriaNombre = "Por Cargo";
+          else if (key === "porEstado") categoriaNombre = "Por Estado";
+          else if (key === "porTipoContrato") categoriaNombre = "Por Tipo de Contrato";
+          else if (key === "porCategoria") categoriaNombre = "Por Categoría";
+          else categoriaNombre = key.replace(/([A-Z])/g, " $1").trim();
+          
+          // Mostrar título de la categoría
+          doc.setFontSize(11);
+          doc.setFont("helvetica", "bold");
+          doc.text(categoriaNombre + ":", 14, yPos);
+          yPos += 6;
+          
+          // Mostrar cada item de la categoría
+          doc.setFontSize(9);
+          doc.setFont("helvetica", "normal");
+          Object.entries(value).forEach(([subKey, subValue]) => {
+            const itemLabel = subKey.charAt(0).toUpperCase() + subKey.slice(1);
+            doc.text(`  • ${itemLabel}: ${subValue}`, 20, yPos);
+            yPos += 5;
+            
+            // Nueva página si se acerca al final
+            if (yPos > 250) {
+              doc.addPage();
+              yPos = 20;
+            }
+          });
+          
+          yPos += 3; // Espacio entre categorías
+        });
+        
+        yPos += 5;
+      }
+
+      // Agregar tabla
+      autoTable(doc, {
+        startY: yPos,
+        head: [headers],
+        body: rows,
+        theme: "striped",
+        headStyles: {
+          fillColor: [79, 70, 229], // Color primario
+          textColor: 255,
+          fontStyle: "bold",
+        },
+        styles: {
+          fontSize: 8,
+          cellPadding: 2,
+        },
+        margin: { left: 14, right: 14 },
       });
 
-      // Crear y descargar archivo
-      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-      const link = document.createElement("a");
-      const url = URL.createObjectURL(blob);
-      link.setAttribute("href", url);
-      link.setAttribute(
-        "download",
-        `reporte_${reporte.tipo}_${new Date().toISOString().split("T")[0]}.csv`
-      );
-      link.style.visibility = "hidden";
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      // Guardar PDF
+      const nombreArchivo = `reporte_${reporte.tipo}_${new Date().toISOString().split("T")[0]}.pdf`;
+      doc.save(nombreArchivo);
 
-      toast.success("Reporte exportado exitosamente");
+      toast.success("Reporte PDF exportado exitosamente");
     } catch (error) {
       console.error("Error exportando reporte:", error);
-      toast.error("Error al exportar el reporte");
+      console.error("Detalles del error:", error.message, error.stack);
+      toast.error(`Error al exportar el reporte: ${error.message || "Error desconocido"}`);
     }
   };
 
@@ -233,9 +319,28 @@ export function ReportesPage() {
   const formatearHora = (datetime) => {
     if (!datetime) return "N/A";
     try {
-      return new Date(datetime).toLocaleTimeString("es-CL", {
+      // El backend envía fechas en formato ISO sin timezone (ej: 2024-01-01T15:00:00)
+      // Estas fechas están guardadas tal como aparecen en la BD, así que extraemos
+      // la hora directamente del string para mostrar exactamente lo que hay en BD
+      if (typeof datetime === 'string' && datetime.includes('T')) {
+        // Extraer hora y minutos del formato ISO (HH:MM:SS o HH:MM)
+        // Esto extrae la hora tal como está guardada en la base de datos
+        const match = datetime.match(/T(\d{2}):(\d{2})(?::\d{2})?(?:\.\d+)?(?:[+-]\d{2}:\d{2}|Z)?/);
+        if (match) {
+          return `${match[1]}:${match[2]}`;
+        }
+      }
+      
+      // Si no es string o no tiene el formato esperado, usar Date pero
+      // especificar explícitamente la zona horaria de Chile para evitar conversiones
+      const fechaObj = new Date(datetime);
+      // Usar toLocaleTimeString con timeZone explícito para asegurar que se muestre
+      // la hora correcta en la zona horaria de Chile
+      return fechaObj.toLocaleTimeString("es-CL", {
         hour: "2-digit",
         minute: "2-digit",
+        hour12: false,
+        timeZone: "America/Santiago"
       });
     } catch {
       return datetime;
@@ -481,8 +586,8 @@ export function ReportesPage() {
                 </p>
               </div>
               <button
-                onClick={handleExportarCSV}
-                className="inline-flex items-center px-4 py-2.5 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200"
+                onClick={handleExportarPDF}
+                className="inline-flex items-center px-4 py-2.5 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all duration-200"
               >
                 <svg
                   className="h-5 w-5 mr-2"
@@ -494,10 +599,10 @@ export function ReportesPage() {
                     strokeLinecap="round"
                     strokeLinejoin="round"
                     strokeWidth={2}
-                    d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                    d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
                   />
                 </svg>
-                Exportar CSV
+                Exportar PDF
               </button>
             </div>
 

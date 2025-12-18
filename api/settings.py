@@ -89,8 +89,8 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'monkeycoffee_app',
         'USER': 'admin',
-        'PASSWORD': 'monkeycoffeeapp',
-        'HOST': 'monkeycoffeeapp.crc6wgwc078o.us-east-1.rds.amazonaws.com',
+        'PASSWORD': 'monkeycoffeedb',
+        'HOST': 'monkeycoffeedb.c74euucg2tgd.us-east-1.rds.amazonaws.com',
         'PORT': '3306',
         'OPTIONS': {
             'charset': 'utf8mb4',

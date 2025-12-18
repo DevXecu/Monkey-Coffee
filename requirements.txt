@@ -7,3 +7,6 @@ PyMySQL==1.1.1
 cryptography
 argon2-cffi==23.1.0
 bcrypt==4.2.0
+
+ npm install jspdf jspdf-autotable
+npm audit fix

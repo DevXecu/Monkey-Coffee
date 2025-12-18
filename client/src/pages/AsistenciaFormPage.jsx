@@ -290,17 +290,98 @@ export function AsistenciaFormPage() {
           }
           
           // Formatear hora de entrada (DateTimeField -> datetime-local)
+          // El backend envía fechas en formato ISO sin timezone (ej: 2024-01-01T15:00:00)
+          // Estas fechas están guardadas tal como aparecen en la BD, así que extraemos
+          // la fecha y hora directamente del string tal como está
           if (data.hora_entrada) {
-            const fechaEntrada = new Date(data.hora_entrada);
-            const fechaLocal = fechaEntrada.toISOString().slice(0, 16);
-            setValue("hora_entrada", fechaLocal);
+            // Si viene como string ISO, extraer fecha y hora directamente
+            if (typeof data.hora_entrada === 'string' && data.hora_entrada.includes('T')) {
+              // Formato: 2024-01-01T15:00:00 (sin timezone)
+              // Extraer fecha y hora directamente del string tal como está en BD
+              const match = data.hora_entrada.match(/(\d{4}-\d{2}-\d{2})T(\d{2}):(\d{2})(?::\d{2})?(?:\.\d+)?(?:[+-]\d{2}:\d{2}|Z)?/);
+              if (match) {
+                const fechaLocal = `${match[1]}T${match[2]}:${match[3]}`;
+                setValue("hora_entrada", fechaLocal);
+              } else {
+                // Si no coincide, usar Date pero con timeZone explícito de Chile
+                const fechaEntrada = new Date(data.hora_entrada);
+                const fechaLocalStr = fechaEntrada.toLocaleString('es-CL', {
+                  year: 'numeric',
+                  month: '2-digit',
+                  day: '2-digit',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                  hour12: false,
+                  timeZone: 'America/Santiago'
+                });
+                const [fechaPart, horaPart] = fechaLocalStr.split(', ');
+                const [day, month, year] = fechaPart.split('/');
+                const fechaLocal = `${year}-${month}-${day}T${horaPart}`;
+                setValue("hora_entrada", fechaLocal);
+              }
+            } else {
+              // Si no es string, usar Date con timeZone explícito de Chile
+              const fechaEntrada = new Date(data.hora_entrada);
+              const fechaLocalStr = fechaEntrada.toLocaleString('es-CL', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false,
+                timeZone: 'America/Santiago'
+              });
+              const [fechaPart, horaPart] = fechaLocalStr.split(', ');
+              const [day, month, year] = fechaPart.split('/');
+              const fechaLocal = `${year}-${month}-${day}T${horaPart}`;
+              setValue("hora_entrada", fechaLocal);
+            }
           }
           
           // Formatear hora de salida (DateTimeField -> datetime-local)
           if (data.hora_salida) {
-            const fechaSalida = new Date(data.hora_salida);
-            const fechaLocal = fechaSalida.toISOString().slice(0, 16);
-            setValue("hora_salida", fechaLocal);
+            // Si viene como string ISO, extraer fecha y hora directamente
+            if (typeof data.hora_salida === 'string' && data.hora_salida.includes('T')) {
+              // Formato: 2024-01-01T15:00:00 (sin timezone)
+              // Extraer fecha y hora directamente del string tal como está en BD
+              const match = data.hora_salida.match(/(\d{4}-\d{2}-\d{2})T(\d{2}):(\d{2})(?::\d{2})?(?:\.\d+)?(?:[+-]\d{2}:\d{2}|Z)?/);
+              if (match) {
+                const fechaLocal = `${match[1]}T${match[2]}:${match[3]}`;
+                setValue("hora_salida", fechaLocal);
+              } else {
+                // Si no coincide, usar Date pero con timeZone explícito de Chile
+                const fechaSalida = new Date(data.hora_salida);
+                const fechaLocalStr = fechaSalida.toLocaleString('es-CL', {
+                  year: 'numeric',
+                  month: '2-digit',
+                  day: '2-digit',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                  hour12: false,
+                  timeZone: 'America/Santiago'
+                });
+                const [fechaPart, horaPart] = fechaLocalStr.split(', ');
+                const [day, month, year] = fechaPart.split('/');
+                const fechaLocal = `${year}-${month}-${day}T${horaPart}`;
+                setValue("hora_salida", fechaLocal);
+              }
+            } else {
+              // Si no es string, usar Date con timeZone explícito de Chile
+              const fechaSalida = new Date(data.hora_salida);
+              const fechaLocalStr = fechaSalida.toLocaleString('es-CL', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false,
+                timeZone: 'America/Santiago'
+              });
+              const [fechaPart, horaPart] = fechaLocalStr.split(', ');
+              const [day, month, year] = fechaPart.split('/');
+              const fechaLocal = `${year}-${month}-${day}T${horaPart}`;
+              setValue("hora_salida", fechaLocal);
+            }
           }
           
           setValue("tipo_entrada", data.tipo_entrada || "manual");
