@@ -1,6 +1,7 @@
 from rest_framework import viewsets, status, filters
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework.permissions import AllowAny
 from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import Q, Sum, Count, Max
 from django.utils import timezone
@@ -21,18 +22,47 @@ class ProveedorViewSet(viewsets.ModelViewSet):
     """
     ViewSet para gestionar proveedores
     """
-    queryset = Proveedor.objects.filter(activo=True)
+    permission_classes = [AllowAny]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['estado', 'categoria', 'tipo_proveedor', 'activo']
     search_fields = ['nombre', 'razon_social', 'rut', 'email', 'telefono', 'contacto_principal']
     ordering_fields = ['nombre', 'fecha_creacion', 'fecha_actualizacion']
     ordering = ['-fecha_creacion']
 
+    def get_queryset(self):
+        """Obtener queryset de proveedores activos"""
+        try:
+            return Proveedor.objects.filter(activo=True).select_related('creado_por', 'actualizado_por')
+        except Exception as e:
+            # Si hay error al acceder a la tabla, retornar queryset vacío
+            print(f"Error al obtener proveedores: {e}")
+            traceback.print_exc()
+            return Proveedor.objects.none()
+
     def get_serializer_class(self):
         """Retornar el serializer apropiado según la acción"""
         if self.action == 'list':
             return ProveedorListSerializer
         return ProveedorSerializer
+
+    def list(self, request, *args, **kwargs):
+        """Sobrescribir list para manejar errores"""
+        try:
+            queryset = self.filter_queryset(self.get_queryset())
+            page = self.paginate_queryset(queryset)
+            if page is not None:
+                serializer = self.get_serializer(page, many=True)
+                return self.get_paginated_response(serializer.data)
+            
+            serializer = self.get_serializer(queryset, many=True)
+            return Response(serializer.data)
+        except Exception as e:
+            print(f"Error en list de proveedores: {e}")
+            traceback.print_exc()
+            return Response(
+                {"error": "Error al cargar los proveedores", "detail": str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
     def perform_create(self, serializer):
         """Establecer el usuario que crea el proveedor"""
@@ -102,7 +132,7 @@ class OrdenCompraViewSet(viewsets.ModelViewSet):
     """
     ViewSet para gestionar órdenes de compra
     """
-    queryset = OrdenCompra.objects.all()
+    permission_classes = [AllowAny]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['proveedor', 'estado', 'moneda']
     search_fields = ['numero_orden', 'proveedor__nombre', 'numero_factura']
@@ -119,7 +149,13 @@ class OrdenCompraViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         """Filtrar queryset según parámetros adicionales"""
-        queryset = super().get_queryset()
+        try:
+            queryset = OrdenCompra.objects.all().select_related('proveedor', 'creado_por', 'aprobado_por').prefetch_related('items')
+        except Exception as e:
+            # Si hay error al acceder a la tabla, retornar queryset vacío
+            print(f"Error al obtener órdenes de compra: {e}")
+            traceback.print_exc()
+            queryset = OrdenCompra.objects.none()
         
         # Filtro por proveedor
         proveedor_id = self.request.query_params.get('proveedor_id')
@@ -135,6 +171,25 @@ class OrdenCompraViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(fecha_orden__lte=fecha_hasta)
         
         return queryset
+
+    def list(self, request, *args, **kwargs):
+        """Sobrescribir list para manejar errores"""
+        try:
+            queryset = self.filter_queryset(self.get_queryset())
+            page = self.paginate_queryset(queryset)
+            if page is not None:
+                serializer = self.get_serializer(page, many=True)
+                return self.get_paginated_response(serializer.data)
+            
+            serializer = self.get_serializer(queryset, many=True)
+            return Response(serializer.data)
+        except Exception as e:
+            print(f"Error en list de órdenes de compra: {e}")
+            traceback.print_exc()
+            return Response(
+                {"error": "Error al cargar las órdenes de compra", "detail": str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
     def perform_create(self, serializer):
         """Establecer el usuario que crea la orden"""

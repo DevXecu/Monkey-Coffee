@@ -11,6 +11,10 @@ class InventarioSerializer(serializers.ModelSerializer):
     actualizado_por_nombre = serializers.SerializerMethodField()
     precio_con_iva = serializers.SerializerMethodField()
     ganancia = serializers.SerializerMethodField()
+    proveedor = serializers.SerializerMethodField()  # Cambiar a SerializerMethodField para evitar activar la relación
+    proveedor_nombre = serializers.SerializerMethodField()
+    proveedor_telefono = serializers.SerializerMethodField()
+    proveedor_email = serializers.SerializerMethodField()
     
     def get_creado_por_nombre(self, obj):
         if obj.creado_por:
@@ -35,6 +39,140 @@ class InventarioSerializer(serializers.ModelSerializer):
             return int(obj.precio_venta - obj.precio_unitario)
         return None
     
+    def get_proveedor(self, obj):
+        """Obtener ID del proveedor sin activar la relación ForeignKey"""
+        try:
+            # Obtener el valor crudo del campo sin activar la relación
+            proveedor_value = obj.__dict__.get('proveedor_id', None)
+            if proveedor_value is None:
+                proveedor_value = obj.__dict__.get('proveedor', None)
+            
+            # Si es un número válido, devolverlo
+            if proveedor_value is not None:
+                if isinstance(proveedor_value, int):
+                    return proveedor_value
+                elif isinstance(proveedor_value, str) and proveedor_value.isdigit():
+                    return int(proveedor_value)
+        except (AttributeError, KeyError, ValueError, TypeError):
+            pass
+        return None
+    
+    def get_proveedor_nombre(self, obj):
+        """Obtener nombre del proveedor"""
+        try:
+            # Intentar obtener el valor crudo del campo sin activar la relación ForeignKey
+            # Esto previene errores si el campo todavía contiene texto en lugar de IDs
+            proveedor_value = None
+            
+            # Primero intentar obtener proveedor_id (si la migración se ejecutó)
+            try:
+                proveedor_value = obj.__dict__.get('proveedor_id', None)
+            except (AttributeError, KeyError):
+                pass
+            
+            # Si no hay proveedor_id, puede que todavía esté como 'proveedor' (texto)
+            if proveedor_value is None:
+                try:
+                    # Intentar obtener el valor directamente del dict sin activar la relación
+                    proveedor_value = obj.__dict__.get('proveedor', None)
+                except (AttributeError, KeyError):
+                    pass
+            
+            # Si tenemos un valor, intentar usarlo
+            if proveedor_value is not None:
+                try:
+                    # Si es un número válido (int o string que representa un número)
+                    if isinstance(proveedor_value, int):
+                        proveedor_id_int = proveedor_value
+                    elif isinstance(proveedor_value, str) and proveedor_value.isdigit():
+                        proveedor_id_int = int(proveedor_value)
+                    else:
+                        # Es texto (nombre del proveedor), no podemos hacer la relación
+                        return proveedor_value  # Devolver el nombre directamente
+                    
+                    # Si llegamos aquí, tenemos un ID válido
+                    from proveedores.models import Proveedor
+                    proveedor = Proveedor.objects.get(id=proveedor_id_int)
+                    return proveedor.nombre
+                except (ValueError, TypeError, Proveedor.DoesNotExist, AttributeError):
+                    # Si falla, puede que sea texto, devolverlo como está
+                    if isinstance(proveedor_value, str):
+                        return proveedor_value
+                    pass
+        except Exception:
+            pass
+        
+        # Fallback: devolver contacto_proveedor si existe
+        return obj.contacto_proveedor if hasattr(obj, 'contacto_proveedor') else None
+    
+    def get_proveedor_telefono(self, obj):
+        """Obtener teléfono del proveedor"""
+        try:
+            proveedor_value = None
+            try:
+                proveedor_value = obj.__dict__.get('proveedor_id', None)
+            except (AttributeError, KeyError):
+                pass
+            
+            if proveedor_value is None:
+                try:
+                    proveedor_value = obj.__dict__.get('proveedor', None)
+                except (AttributeError, KeyError):
+                    pass
+            
+            if proveedor_value is not None:
+                try:
+                    if isinstance(proveedor_value, int):
+                        proveedor_id_int = proveedor_value
+                    elif isinstance(proveedor_value, str) and proveedor_value.isdigit():
+                        proveedor_id_int = int(proveedor_value)
+                    else:
+                        # Es texto, no podemos obtener el teléfono
+                        return None
+                    
+                    from proveedores.models import Proveedor
+                    proveedor = Proveedor.objects.get(id=proveedor_id_int)
+                    return proveedor.telefono or proveedor.celular
+                except (ValueError, TypeError, Proveedor.DoesNotExist, AttributeError):
+                    pass
+        except Exception:
+            pass
+        return None
+    
+    def get_proveedor_email(self, obj):
+        """Obtener email del proveedor"""
+        try:
+            proveedor_value = None
+            try:
+                proveedor_value = obj.__dict__.get('proveedor_id', None)
+            except (AttributeError, KeyError):
+                pass
+            
+            if proveedor_value is None:
+                try:
+                    proveedor_value = obj.__dict__.get('proveedor', None)
+                except (AttributeError, KeyError):
+                    pass
+            
+            if proveedor_value is not None:
+                try:
+                    if isinstance(proveedor_value, int):
+                        proveedor_id_int = proveedor_value
+                    elif isinstance(proveedor_value, str) and proveedor_value.isdigit():
+                        proveedor_id_int = int(proveedor_value)
+                    else:
+                        # Es texto, no podemos obtener el email
+                        return None
+                    
+                    from proveedores.models import Proveedor
+                    proveedor = Proveedor.objects.get(id=proveedor_id_int)
+                    return proveedor.email or proveedor.email_contacto
+                except (ValueError, TypeError, Proveedor.DoesNotExist, AttributeError):
+                    pass
+        except Exception:
+            pass
+        return None
+    
     class Meta:
         model = Inventario
         fields = [
@@ -57,6 +195,9 @@ class InventarioSerializer(serializers.ModelSerializer):
             'codigo_barra',
             'ubicacion',
             'proveedor',
+            'proveedor_nombre',
+            'proveedor_telefono',
+            'proveedor_email',
             'contacto_proveedor',
             'fecha_ultimo_ingreso',
             'fecha_vencimiento',
@@ -74,7 +215,7 @@ class InventarioSerializer(serializers.ModelSerializer):
             'actualizado_por_nombre',
             'activo'
         ]
-        read_only_fields = ['id', 'fecha_creacion', 'fecha_actualizacion']
+        read_only_fields = ['id', 'fecha_creacion', 'fecha_actualizacion', 'precio_venta']
 
     def validate_codigo_producto(self, value):
         """Validar que el código del producto sea único"""
@@ -118,6 +259,19 @@ class InventarioSerializer(serializers.ModelSerializer):
         if value is not None and value < 0:
             raise serializers.ValidationError("El precio de venta no puede ser negativo.")
         return value
+
+    def validate(self, data):
+        """Calcular automáticamente el precio de venta si se proporciona precio_unitario"""
+        # Solo calcular precio_venta si precio_unitario está en los datos (crear o actualizar)
+        precio_unitario = data.get('precio_unitario')
+        
+        # Si hay precio_unitario en los datos, calcular precio_venta automáticamente
+        # Fórmula: Precio Unitario + 19% IVA + 10% ganancia = Precio Unitario * 1.29
+        if precio_unitario is not None and precio_unitario >= 0:
+            precio_venta_calculado = int(precio_unitario * 1.29)
+            data['precio_venta'] = precio_venta_calculado
+        
+        return data
 
     def validate_fecha_vencimiento(self, value):
         """Validar que la fecha de vencimiento no sea en el pasado (solo para nuevos productos)"""

@@ -4,10 +4,14 @@ class ProveedoresAPI {
   async getAll() {
     try {
       const response = await fetch(`${API_BASE_URL}/proveedores/`);
+      const data = await response.json();
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorMessage = data.error || data.detail || `HTTP error! status: ${response.status}`;
+        throw new Error(errorMessage);
       }
-      return await response.json();
+      // Si la respuesta es un array, devolverlo directamente
+      // Si es un objeto con 'results', devolver el array de results
+      return Array.isArray(data) ? data : (data.results || data);
     } catch (error) {
       console.error('Error fetching proveedores:', error);
       throw error;
@@ -164,10 +168,14 @@ class OrdenesCompraAPI {
   async getAll() {
     try {
       const response = await fetch(`${API_BASE_URL}/ordenes-compra/`);
+      const data = await response.json();
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorMessage = data.error || data.detail || `HTTP error! status: ${response.status}`;
+        throw new Error(errorMessage);
       }
-      return await response.json();
+      // Si la respuesta es un array, devolverlo directamente
+      // Si es un objeto con 'results', devolver el array de results
+      return Array.isArray(data) ? data : (data.results || data);
     } catch (error) {
       console.error('Error fetching ordenes compra:', error);
       throw error;

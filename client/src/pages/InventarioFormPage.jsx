@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { useNavigate, useParams } from "react-router-dom";
 import { inventarioAPI } from "../api/inventario.api";
+import { proveedoresAPI } from "../api/proveedores.api";
 import { toast } from "react-hot-toast";
 import { ActivityLogger } from "../utils/activityLogger";
 
@@ -17,6 +18,8 @@ export function InventarioFormPage() {
   const navigate = useNavigate();
   const params = useParams();
   const [productoActual, setProductoActual] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [proveedores, setProveedores] = useState([]);
 
   const categorias = [
     { value: "cafe", label: "Café" },
@@ -87,12 +90,24 @@ export function InventarioFormPage() {
         cantidad_minima: Math.round(parseFloat(data.cantidad_minima) || 0),
         cantidad_maxima: (data.cantidad_maxima && data.cantidad_maxima !== "") ? Math.round(parseFloat(data.cantidad_maxima)) : null,
         precio_unitario: (data.precio_unitario && data.precio_unitario !== "") ? Math.round(parseFloat(data.precio_unitario)) : null,
-        precio_venta: (data.precio_venta && data.precio_venta !== "") ? Math.round(parseFloat(data.precio_venta)) : null,
         requiere_alerta: data.requiere_alerta || false,
         activo: data.activo !== undefined ? data.activo : true,
         fecha_vencimiento: fecha_vencimiento || null,
         fecha_ultimo_ingreso: fecha_ultimo_ingreso || null,
       };
+      
+      // En modo edición, el precio_venta se calcula automáticamente en el backend
+      // No enviarlo explícitamente
+      if (!params.id && data.precio_venta && data.precio_venta !== "") {
+        formData.precio_venta = Math.round(parseFloat(data.precio_venta));
+      }
+      
+      // Convertir proveedor a número o null
+      if (data.proveedor && data.proveedor !== "") {
+        formData.proveedor = parseInt(data.proveedor);
+      } else {
+        formData.proveedor = null;
+      }
 
       if (params.id) {
         await inventarioAPI.update(params.id, formData);
@@ -142,9 +157,33 @@ export function InventarioFormPage() {
     }
   });
 
+  // Calcular automáticamente precio_venta cuando cambia precio_unitario (solo si no está cargando)
+  const precioUnitario = watch("precio_unitario");
+  useEffect(() => {
+    if (!isLoading && precioUnitario !== null && precioUnitario !== undefined && precioUnitario !== "") {
+      // Fórmula: Precio Unitario + 19% IVA + 10% ganancia = Precio Unitario * 1.29
+      const precioVentaCalculado = Math.round(parseFloat(precioUnitario) * 1.29);
+      setValue("precio_venta", precioVentaCalculado);
+    }
+  }, [precioUnitario, setValue, isLoading]);
+
+  // Cargar proveedores
+  useEffect(() => {
+    async function loadProveedores() {
+      try {
+        const data = await proveedoresAPI.getActivos();
+        setProveedores(data);
+      } catch (error) {
+        console.error("Error loading proveedores:", error);
+      }
+    }
+    loadProveedores();
+  }, []);
+
   useEffect(() => {
     async function loadInventario() {
       if (params.id) {
+        setIsLoading(true);
         try {
           const data = await inventarioAPI.getById(params.id);
           setProductoActual(data);
@@ -161,7 +200,8 @@ export function InventarioFormPage() {
           setValue("codigo_qr", data.codigo_qr || "");
           setValue("codigo_barra", data.codigo_barra || "");
           setValue("ubicacion", data.ubicacion || "");
-          setValue("proveedor", data.proveedor || "");
+          // Proveedor ahora es un ID (número)
+          setValue("proveedor", data.proveedor || null);
           setValue("contacto_proveedor", data.contacto_proveedor || "");
           
           // Formatear fecha_ultimo_ingreso para datetime-local
@@ -195,6 +235,8 @@ export function InventarioFormPage() {
           toast.error("Error al cargar producto", {
             position: "bottom-right",
           });
+        } finally {
+          setIsLoading(false);
         }
       } else {
         // Inicializar valores por defecto para nuevo producto
@@ -202,6 +244,7 @@ export function InventarioFormPage() {
         setValue("requiere_alerta", false);
         setValue("activo", true);
         setValue("estado", "disponible");
+        setIsLoading(false);
       }
     }
     loadInventario();
@@ -470,7 +513,7 @@ export function InventarioFormPage() {
           {/* Precio Venta */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Precio Venta
+              Precio Venta {params.id && <span className="text-xs text-gray-500">(Calculado automáticamente)</span>}
             </label>
             <Controller
               name="precio_venta"
@@ -482,31 +525,45 @@ export function InventarioFormPage() {
                 <input
                   type="text"
                   placeholder="$0"
+                  disabled={!!params.id}
                   value={field.value !== null && field.value !== undefined && field.value !== "" ? formatPriceInput(field.value.toString()) : ""}
                   onChange={(e) => {
-                    const unformatted = unformatPriceInput(e.target.value);
-                    field.onChange(unformatted === "" ? "" : parseInt(unformatted) || "");
+                    if (!params.id) {
+                      const unformatted = unformatPriceInput(e.target.value);
+                      field.onChange(unformatted === "" ? "" : parseInt(unformatted) || "");
+                    }
                   }}
                   onBlur={(e) => {
-                    const unformatted = unformatPriceInput(e.target.value);
-                    if (unformatted === "") {
-                      field.onChange("");
-                    } else {
-                      const numValue = parseInt(unformatted);
-                      if (numValue >= 0) {
-                        field.onChange(numValue);
+                    if (!params.id) {
+                      const unformatted = unformatPriceInput(e.target.value);
+                      if (unformatted === "") {
+                        field.onChange("");
+                      } else {
+                        const numValue = parseInt(unformatted);
+                        if (numValue >= 0) {
+                          field.onChange(numValue);
+                        }
                       }
+                      field.onBlur();
                     }
-                    field.onBlur();
                   }}
-                  className={`block w-full px-3 py-2 border rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
-                    errors.precio_venta ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                  className={`block w-full px-3 py-2 border rounded-lg placeholder-gray-400 ${
+                    params.id 
+                      ? 'bg-gray-100 cursor-not-allowed border-gray-300 text-gray-600' 
+                      : 'focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300'
+                  } ${
+                    errors.precio_venta ? 'border-red-300 bg-red-50' : ''
                   }`}
                 />
               )}
             />
             {errors.precio_venta && (
               <p className="mt-1 text-sm text-red-600">{errors.precio_venta.message}</p>
+            )}
+            {params.id && (
+              <p className="mt-1 text-xs text-gray-500">
+                Este campo se calcula automáticamente: Precio Unitario + 19% IVA + 10% ganancia
+              </p>
             )}
           </div>
 
@@ -577,11 +634,24 @@ export function InventarioFormPage() {
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Proveedor
             </label>
-            <input
-              type="text"
-              placeholder="Café del Sur S.A."
-              {...register("proveedor")}
-              className="block w-full px-3 py-2 border border-gray-300 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+            <Controller
+              name="proveedor"
+              control={control}
+              render={({ field }) => (
+                <select
+                  {...field}
+                  value={field.value || ""}
+                  onChange={(e) => field.onChange(e.target.value === "" ? null : parseInt(e.target.value))}
+                  className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                >
+                  <option value="">Seleccione un proveedor</option>
+                  {proveedores.map((proveedor) => (
+                    <option key={proveedor.id} value={proveedor.id}>
+                      {proveedor.nombre}
+                    </option>
+                  ))}
+                </select>
+              )}
             />
           </div>
 

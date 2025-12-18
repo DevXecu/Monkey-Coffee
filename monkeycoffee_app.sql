@@ -8,9 +8,7 @@ SET time_zone = "+00:00";
 SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS = 0;
 
--- ============================================================
 -- CREAR BASE DE DATOS
--- ============================================================
 CREATE DATABASE IF NOT EXISTS `monkeycoffee_app` 
 DEFAULT CHARACTER SET utf8mb4 
 COLLATE utf8mb4_unicode_ci;
@@ -19,16 +17,14 @@ USE `monkeycoffee_app`;
 
 START TRANSACTION;
 
--- ============================================================
 -- TABLA: empleados
--- ============================================================
 CREATE TABLE IF NOT EXISTS `empleados` (
   `id` INT NOT NULL AUTO_INCREMENT,
   `rut` VARCHAR(12) NOT NULL,
   `nombres` VARCHAR(100) NOT NULL,
   `apellido_paterno` VARCHAR(100) NOT NULL,
   `apellido_materno` VARCHAR(100) DEFAULT NULL,
-  `apellidos` VARCHAR(100) DEFAULT NULL COMMENT,
+  `apellidos` VARCHAR(100) DEFAULT NULL,
   `email` VARCHAR(100) DEFAULT NULL,
   `telefono` VARCHAR(15) DEFAULT NULL,
   `password` VARCHAR(255) DEFAULT NULL,
@@ -56,9 +52,7 @@ CREATE TABLE IF NOT EXISTS `empleados` (
   KEY `idx_rol` (`rol`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- ============================================================
 -- MIGRACIÓN DE DATOS: Dividir apellidos en paterno y materno
--- ============================================================
 -- Si la tabla ya tiene datos con el campo 'apellidos', ejecutar:
 -- UPDATE empleados SET 
 --   apellido_paterno = SUBSTRING_INDEX(apellidos, ' ', 1),
@@ -68,9 +62,7 @@ CREATE TABLE IF NOT EXISTS `empleados` (
 --   END
 -- WHERE apellido_paterno IS NULL OR apellido_paterno = '';
 
--- ============================================================
 -- TABLA: turnos
--- ============================================================
 CREATE TABLE IF NOT EXISTS `turnos` (
   `id` INT NOT NULL AUTO_INCREMENT,
   `empleados_rut` VARCHAR(12) NOT NULL,
@@ -93,9 +85,7 @@ CREATE TABLE IF NOT EXISTS `turnos` (
     ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- ============================================================
 -- TABLA: configuracion_app
--- ============================================================
 CREATE TABLE IF NOT EXISTS `configuracion_app` (
   `id` INT NOT NULL AUTO_INCREMENT,
   `clave` VARCHAR(100) NOT NULL,
@@ -109,9 +99,7 @@ CREATE TABLE IF NOT EXISTS `configuracion_app` (
   KEY `idx_categoria` (`categoria`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- ============================================================
 -- TABLA: inventario
--- ============================================================
 CREATE TABLE IF NOT EXISTS `inventario` (
   `id` INT NOT NULL AUTO_INCREMENT,
   `codigo_producto` VARCHAR(50) NOT NULL,
@@ -161,9 +149,7 @@ CREATE TABLE IF NOT EXISTS `inventario` (
     ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- ============================================================
 -- TABLA: tipos_solicitudes
--- ============================================================
 CREATE TABLE IF NOT EXISTS `tipos_solicitudes` (
   `id` INT NOT NULL AUTO_INCREMENT,
   `nombre` VARCHAR(100) NOT NULL,
@@ -177,9 +163,7 @@ CREATE TABLE IF NOT EXISTS `tipos_solicitudes` (
   KEY `idx_nombre` (`nombre`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- ============================================================
 -- TABLA: asistencias
--- ============================================================
 CREATE TABLE IF NOT EXISTS `asistencias` (
   `id` INT NOT NULL AUTO_INCREMENT,
   `empleado_rut` VARCHAR(12) NOT NULL,
@@ -216,9 +200,7 @@ CREATE TABLE IF NOT EXISTS `asistencias` (
     ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- ============================================================
 -- TABLA: empleados_turnos
--- ============================================================
 CREATE TABLE IF NOT EXISTS `empleados_turnos` (
   `id` INT NOT NULL AUTO_INCREMENT,
   `empleados_rut` VARCHAR(12) NOT NULL,
@@ -243,9 +225,7 @@ CREATE TABLE IF NOT EXISTS `empleados_turnos` (
     ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- ============================================================
 -- TABLA: horarios
--- ============================================================
 CREATE TABLE IF NOT EXISTS `horarios` (
   `id` INT NOT NULL AUTO_INCREMENT,
   `empleado_rut` VARCHAR(12) NOT NULL,
@@ -270,9 +250,7 @@ CREATE TABLE IF NOT EXISTS `horarios` (
     ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- ============================================================
 -- TABLA: ventas
--- ============================================================
 CREATE TABLE IF NOT EXISTS `ventas` (
   `id` INT NOT NULL AUTO_INCREMENT,
   `numero_venta` VARCHAR(50) NOT NULL,
@@ -310,9 +288,7 @@ CREATE TABLE IF NOT EXISTS `ventas` (
     ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- ============================================================
 -- TABLA: detalle_ventas
--- ============================================================
 CREATE TABLE IF NOT EXISTS `detalle_ventas` (
   `id` INT NOT NULL AUTO_INCREMENT,
   `venta_id` INT NOT NULL,
@@ -337,9 +313,7 @@ CREATE TABLE IF NOT EXISTS `detalle_ventas` (
     ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- ============================================================
 -- TABLA: alertas_inventario
--- ============================================================
 CREATE TABLE IF NOT EXISTS `alertas_inventario` (
   `id` INT NOT NULL AUTO_INCREMENT,
   `inventario_id` INT NOT NULL,
@@ -368,9 +342,7 @@ CREATE TABLE IF NOT EXISTS `alertas_inventario` (
     ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- ============================================================
 -- TABLA: movimientos_inventario
--- ============================================================
 CREATE TABLE IF NOT EXISTS `movimientos_inventario` (
   `id` INT NOT NULL AUTO_INCREMENT,
   `inventario_id` INT NOT NULL,
@@ -404,9 +376,7 @@ CREATE TABLE IF NOT EXISTS `movimientos_inventario` (
     ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- ============================================================
 -- TABLA: notificaciones
--- ============================================================
 CREATE TABLE IF NOT EXISTS `notificaciones` (
   `id` INT NOT NULL AUTO_INCREMENT,
   `empleado_id` INT NOT NULL,
@@ -432,9 +402,7 @@ CREATE TABLE IF NOT EXISTS `notificaciones` (
     ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- ============================================================
 -- TABLA: solicitudes
--- ============================================================
 CREATE TABLE IF NOT EXISTS `solicitudes` (
   `id` INT NOT NULL AUTO_INCREMENT,
   `empleado_rut` VARCHAR(12) DEFAULT NULL,
@@ -470,9 +438,7 @@ CREATE TABLE IF NOT EXISTS `solicitudes` (
     ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- ============================================================
 -- TABLA: tareas
--- ============================================================
 CREATE TABLE IF NOT EXISTS `tareas` (
   `id` INT NOT NULL AUTO_INCREMENT,
   `titulo` VARCHAR(200) NOT NULL,
@@ -523,9 +489,7 @@ CREATE TABLE IF NOT EXISTS `tareas` (
     ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- ============================================================
 -- TABLA: tareas_comentarios
--- ============================================================
 CREATE TABLE IF NOT EXISTS `tareas_comentarios` (
   `id` INT NOT NULL AUTO_INCREMENT,
   `tarea_id` INT NOT NULL,
@@ -548,9 +512,7 @@ CREATE TABLE IF NOT EXISTS `tareas_comentarios` (
     ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- ============================================================
 -- TABLA: tareas_historial
--- ============================================================
 CREATE TABLE IF NOT EXISTS `tareas_historial` (
   `id` INT NOT NULL AUTO_INCREMENT,
   `tarea_id` INT NOT NULL,
@@ -576,9 +538,7 @@ CREATE TABLE IF NOT EXISTS `tareas_historial` (
     ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- ============================================================
 -- TABLA: reportes
--- ============================================================
 CREATE TABLE IF NOT EXISTS `reportes` (
   `id` INT NOT NULL AUTO_INCREMENT,
   `nombre_reporte` VARCHAR(200) NOT NULL,
@@ -601,9 +561,7 @@ CREATE TABLE IF NOT EXISTS `reportes` (
     ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- ============================================================
 -- TABLA: logs_actividad
--- ============================================================
 CREATE TABLE IF NOT EXISTS `logs_actividad` (
   `id` INT NOT NULL AUTO_INCREMENT,
   `empleado_id` INT DEFAULT NULL,
@@ -628,11 +586,129 @@ CREATE TABLE IF NOT EXISTS `logs_actividad` (
     ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- ============================================================
--- VISTAS
--- ============================================================
+-- TABLA: proveedores
+CREATE TABLE `proveedores` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `nombre` VARCHAR(200) NOT NULL,
+  `razon_social` VARCHAR(200) DEFAULT NULL,
+  `rut` VARCHAR(20) DEFAULT NULL,
+  `email` VARCHAR(100) DEFAULT NULL,
+  `telefono` VARCHAR(20) DEFAULT NULL,
+  `celular` VARCHAR(20) DEFAULT NULL,
+  `sitio_web` VARCHAR(255) DEFAULT NULL,
+  `direccion` TEXT,
+  `ciudad` VARCHAR(100) DEFAULT NULL,
+  `region` VARCHAR(100) DEFAULT NULL,
+  `codigo_postal` VARCHAR(20) DEFAULT NULL,
+  `pais` VARCHAR(100) DEFAULT 'Chile',
+  `contacto_principal` VARCHAR(200) DEFAULT NULL,
+  `cargo_contacto` VARCHAR(100) DEFAULT NULL,
+  `email_contacto` VARCHAR(100) DEFAULT NULL,
+  `telefono_contacto` VARCHAR(20) DEFAULT NULL,
+  `estado` ENUM('activo','inactivo','suspendido') DEFAULT 'activo',
+  `categoria` VARCHAR(100) DEFAULT NULL,
+  `tipo_proveedor` VARCHAR(100) DEFAULT NULL,
+  `condiciones_pago` VARCHAR(100) DEFAULT NULL,
+  `plazo_entrega` VARCHAR(100) DEFAULT NULL,
+  `descuento` DECIMAL(5,2) DEFAULT 0,
+  `notas` TEXT,
+  `activo` TINYINT(1) DEFAULT 1,
+  `fecha_creacion` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  `fecha_actualizacion` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `creado_por` INT DEFAULT NULL,
+  `actualizado_por` INT DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `nombre` (`nombre`),
+  UNIQUE KEY `rut` (`rut`),
+  KEY `idx_estado` (`estado`),
+  KEY `idx_activo` (`activo`),
+  KEY `idx_creado_por` (`creado_por`),
+  KEY `idx_actualizado_por` (`actualizado_por`),
+  CONSTRAINT `proveedores_ibfk_1` 
+    FOREIGN KEY (`creado_por`) 
+    REFERENCES `empleados` (`id`) 
+    ON DELETE SET NULL,
+  CONSTRAINT `proveedores_ibfk_2` 
+    FOREIGN KEY (`actualizado_por`) 
+    REFERENCES `empleados` (`id`) 
+    ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-DROP VIEW IF EXISTS `vista_ventas_inventario`;
+-- TABLA: ordenes_compra
+CREATE TABLE `ordenes_compra` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `numero_orden` VARCHAR(50) NOT NULL,
+  `proveedor_id` INT NOT NULL,
+  `fecha_orden` DATE NOT NULL,
+  `fecha_entrega_esperada` DATE DEFAULT NULL,
+  `fecha_entrega_real` DATE DEFAULT NULL,
+  `estado` ENUM('borrador','pendiente','enviada','confirmada','en_transito','recibida','parcialmente_recibida','cancelada','facturada') DEFAULT 'borrador',
+  `subtotal` INT DEFAULT 0,
+  `descuento` INT DEFAULT 0,
+  `impuestos` INT DEFAULT 0,
+  `total` INT DEFAULT 0,
+  `moneda` VARCHAR(10) DEFAULT 'CLP',
+  `condiciones_pago` VARCHAR(200) DEFAULT NULL,
+  `metodo_envio` VARCHAR(100) DEFAULT NULL,
+  `direccion_entrega` TEXT,
+  `notas` TEXT,
+  `numero_factura` VARCHAR(50) DEFAULT NULL,
+  `fecha_creacion` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  `fecha_actualizacion` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `fecha_aprobacion` DATETIME DEFAULT NULL,
+  `creado_por` INT DEFAULT NULL,
+  `aprobado_por` INT DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `numero_orden` (`numero_orden`),
+  KEY `idx_proveedor_id` (`proveedor_id`),
+  KEY `idx_estado` (`estado`),
+  KEY `idx_fecha_orden` (`fecha_orden`),
+  KEY `idx_creado_por` (`creado_por`),
+  KEY `idx_aprobado_por` (`aprobado_por`),
+  CONSTRAINT `ordenes_compra_ibfk_1` 
+    FOREIGN KEY (`proveedor_id`) 
+    REFERENCES `proveedores` (`id`) 
+    ON DELETE CASCADE,
+  CONSTRAINT `ordenes_compra_ibfk_2` 
+    FOREIGN KEY (`creado_por`) 
+    REFERENCES `empleados` (`id`) 
+    ON DELETE SET NULL,
+  CONSTRAINT `ordenes_compra_ibfk_3` 
+    FOREIGN KEY (`aprobado_por`) 
+    REFERENCES `empleados` (`id`) 
+    ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- TABLA: items_orden_compra
+CREATE TABLE `items_orden_compra` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `orden_compra_id` INT NOT NULL,
+  `producto_id` INT DEFAULT NULL,
+  `codigo_producto` VARCHAR(50) DEFAULT NULL,
+  `nombre_producto` VARCHAR(200) NOT NULL,
+  `descripcion` TEXT,
+  `cantidad` INT NOT NULL,
+  `cantidad_recibida` INT DEFAULT 0,
+  `unidad_medida` VARCHAR(20) DEFAULT 'unidad',
+  `precio_unitario` INT NOT NULL,
+  `descuento` INT DEFAULT 0,
+  `precio_total` INT NOT NULL,
+  `notas` TEXT,
+  PRIMARY KEY (`id`),
+  KEY `idx_orden_compra_id` (`orden_compra_id`),
+  KEY `idx_producto_id` (`producto_id`),
+  CONSTRAINT `items_orden_compra_ibfk_1` 
+    FOREIGN KEY (`orden_compra_id`) 
+    REFERENCES `ordenes_compra` (`id`) 
+    ON DELETE CASCADE,
+  CONSTRAINT `items_orden_compra_ibfk_2` 
+    FOREIGN KEY (`producto_id`) 
+    REFERENCES `inventario` (`id`) 
+    ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- VISTAS
+
 CREATE VIEW `vista_ventas_inventario` AS
 SELECT 
     v.id AS venta_id,
@@ -664,7 +740,6 @@ INNER JOIN empleados e ON v.empleado_id = e.id
 WHERE v.estado = 'completada'
 ORDER BY v.fecha_venta DESC;
 
-DROP VIEW IF EXISTS `vista_inventario_precios`;
 CREATE VIEW `vista_inventario_precios` AS
 SELECT 
     id,
@@ -701,9 +776,7 @@ SELECT
 FROM inventario
 WHERE activo = 1;
 
--- ============================================================
 -- DATOS INICIALES - EMPLEADOS
--- ============================================================
 
 INSERT INTO `empleados` (`rut`, `nombres`, `apellido_paterno`, `apellido_materno`, `apellidos`, `email`, `telefono`, `password`, `fecha_nacimiento`, `direccion`, `rol`, `cargo`, `departamento`, `fecha_contratacion`, `salario`, `tipo_contrato`, `estado`, `activo`) VALUES
 ('18.234.567-9', 'Maria', 'Gonzalez', 'Perez', 'Gonzalez Perez', 'maria.gonzalez@monkeycoffee.cl', '+56912345678', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '1990-05-15', 'Av. Arturo Prat 1234, Iquique', 'gerente', 'Gerente General', 'Administracion', '2023-01-15', 850000, 'indefinido', 'activo', 1),
@@ -719,9 +792,7 @@ INSERT INTO `empleados` (`rut`, `nombres`, `apellido_paterno`, `apellido_materno
 ('21.234.567-9', 'Sofia', 'Munoz', 'Ortiz', 'Munoz Ortiz', 'sofia.munoz@monkeycoffee.cl', '+56912345679', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '1999-04-12', 'Av. Tarapaca 2345, Iquique', 'empleado', 'Barista Junior', 'Operaciones', '2024-01-10', 420000, 'indefinido', 'activo', 1),
 ('16.789.012-1', 'Roberto', 'Paz', 'Salazar', 'Paz Salazar', 'roberto.paz@monkeycoffee.cl', '+56923456780', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '1989-11-28', 'Calle Vivar 678, Iquique', 'empleado', 'Encargado de Mantencion', 'Mantencion', '2023-03-01', 480000, 'indefinido', 'activo', 1);
 
--- ============================================================
 -- DATOS INICIALES - TURNOS
--- ============================================================
 
 INSERT INTO `turnos` (`empleados_rut`, `nombre_turno`, `hora_entrada`, `hora_salida`, `tolerancia_minutos`, `horas_trabajo`, `descripcion`, `dias_semana`, `activo`) VALUES
 ('18.234.567-9', 'Turno Administrativo', '08:00:00', '17:00:00', 15, 9.00, 'Turno administrativo de lunes a viernes', '[1, 2, 3, 4, 5]', 1),
@@ -737,9 +808,7 @@ INSERT INTO `turnos` (`empleados_rut`, `nombre_turno`, `hora_entrada`, `hora_sal
 ('21.234.567-9', 'Turno Barista Junior', '08:00:00', '17:00:00', 15, 9.00, 'Turno manana barista junior', '[1, 2, 3, 4, 5, 6]', 1),
 ('16.789.012-1', 'Turno Mantencion', '09:00:00', '18:00:00', 15, 9.00, 'Turno mantencion y limpieza', '[1, 2, 3, 4, 5]', 1);
 
--- ============================================================
 -- DATOS INICIALES - TIPOS DE SOLICITUDES
--- ============================================================
 
 INSERT INTO `tipos_solicitudes` (`nombre`, `descripcion`, `requiere_aprobacion`, `dias_anticipacion`, `color_hex`, `activo`) VALUES
 ('Vacaciones', 'Solicitud de vacaciones anuales', 1, 15, '#4CAF50', 1),
@@ -749,9 +818,7 @@ INSERT INTO `tipos_solicitudes` (`nombre`, `descripcion`, `requiere_aprobacion`,
 ('Cambio de Turno', 'Solicitud de cambio de turno', 1, 3, '#9C27B0', 1),
 ('Dia Libre', 'Solicitud de dia libre compensatorio', 1, 7, '#00BCD4', 1);
 
--- ============================================================
 -- DATOS INICIALES - CONFIGURACION
--- ============================================================
 
 INSERT INTO `configuracion_app` (`clave`, `valor`, `tipo`, `descripcion`, `categoria`) VALUES
 ('nombre_empresa', 'Monkey Coffee Iquique', 'string', 'Nombre de la empresa', 'General'),
@@ -767,9 +834,22 @@ INSERT INTO `configuracion_app` (`clave`, `valor`, `tipo`, `descripcion`, `categ
 ('modulo_inventario_activo', 'true', 'boolean', 'Modulo de inventario activado', 'Modulos'),
 ('modulo_asistencias_activo', 'true', 'boolean', 'Modulo de asistencias activado', 'Modulos');
 
--- ============================================================
+-- DATOS INICIALES - PROVEEDORES
+
+INSERT INTO `proveedores` (`nombre`, `razon_social`, `rut`, `email`, `telefono`, `celular`, `sitio_web`, `direccion`, `ciudad`, `region`, `codigo_postal`, `pais`, `contacto_principal`, `cargo_contacto`, `email_contacto`, `telefono_contacto`, `estado`, `categoria`, `tipo_proveedor`, `condiciones_pago`, `plazo_entrega`, `descuento`, `notas`, `activo`, `creado_por`) VALUES
+('Distribuidora Marley Chile', 'Distribuidora Marley Coffee Chile S.A.', '76.123.456-7', 'ventas@marleychile.cl', '+5657250000', '+56912345678', 'https://www.marleychile.cl', 'Av. Providencia 1234, Oficina 501', 'Santiago', 'Región Metropolitana', '7500000', 'Chile', 'Roberto Marley', 'Gerente de Ventas', 'r.marley@marleychile.cl', '+56912345678', 'activo', 'Café', 'Distribuidor Mayorista', '30 días', '5-7 días hábiles', 5.00, 'Proveedor principal de café Marley Coffee. Descuento por volumen aplicable.', 1, 1),
+('Colun Chile', 'Cooperativa Agrícola y Lechera de La Unión Ltda.', '70.234.567-8', 'ventas@colun.cl', '+5663230000', '+56923456789', 'https://www.colun.cl', 'Ruta 5 Sur Km 855', 'La Unión', 'Región de Los Ríos', '5090000', 'Chile', 'María González', 'Ejecutiva de Ventas', 'm.gonzalez@colun.cl', '+56923456789', 'activo', 'Lácteos', 'Fabricante', '15 días', '3-5 días hábiles', 3.00, 'Proveedor de productos lácteos. Entrega directa desde planta.', 1, 1),
+('Iansa', 'Industria Azucarera Nacional S.A.', '96.345.678-9', 'ventas@iansa.cl', '+56223450000', NULL, 'https://www.iansa.cl', 'Av. El Bosque Norte 0177, Piso 10', 'Las Condes', 'Región Metropolitana', '7550000', 'Chile', 'Carlos Ramírez', 'Jefe de Ventas', 'c.ramirez@iansa.cl', '+56223450001', 'activo', 'Endulzantes', 'Fabricante', '30 días', '7-10 días hábiles', 2.50, 'Proveedor de azúcar y productos endulzantes.', 1, 1),
+('Papeleria del Norte', 'Papelería y Desechables del Norte Ltda.', '76.456.789-0', 'ventas@papeleriadelnorte.cl', '+5657251234', '+56956789012', NULL, 'Av. Arturo Prat 2345, Local 12', 'Iquique', 'Región de Tarapacá', '1100000', 'Chile', 'Fernanda Torres', 'Gerente Comercial', 'f.torres@papeleriadelnorte.cl', '+56956789012', 'activo', 'Desechables', 'Distribuidor Local', 'Contado', '1-2 días hábiles', 0.00, 'Proveedor local de desechables y papelería. Entrega rápida en Iquique.', 1, 1),
+('Importadora Nacional', 'Importadora Nacional de Equipos y Accesorios S.A.', '76.567.890-1', 'ventas@importadoranacional.cl', '+56223456789', '+56989012345', 'https://www.importadoranacional.cl', 'Av. Vitacura 2909, Piso 3', 'Las Condes', 'Región Metropolitana', '7550000', 'Chile', 'Diego Vargas', 'Gerente de Productos Premium', 'd.vargas@importadoranacional.cl', '+56989012345', 'activo', 'Equipamiento', 'Importador', '30 días', '10-15 días hábiles', 7.50, 'Proveedor de equipamiento para cafeterías y merchandising. Productos importados.', 1, 1),
+('Distribuidora Vegana', 'Distribuidora de Productos Veganos del Norte SpA', '76.678.901-2', 'ventas@distribuidoravegana.cl', '+5657252345', '+56934567890', NULL, 'Calle Baquedano 567, Local 8', 'Iquique', 'Región de Tarapacá', '1100000', 'Chile', 'Camila Herrera', 'Directora Comercial', 'c.herrera@distribuidoravegana.cl', '+56934567890', 'activo', 'Productos Veganos', 'Distribuidor Local', '15 días', '3-5 días hábiles', 4.00, 'Especialistas en productos veganos y alternativas lácteas. Entrega local en Iquique.', 1, 1),
+('Nestle Chile', 'Nestlé Chile S.A.', '96.789.012-3', 'ventas@nestle.cl', '+56223400000', '+56967890123', 'https://www.nestle.cl', 'Av. El Bosque Norte 0177, Piso 15', 'Las Condes', 'Región Metropolitana', '7550000', 'Chile', 'Sebastián Mendoza', 'Ejecutivo de Cuentas', 's.mendoza@nestle.cl', '+56967890123', 'activo', 'Lácteos y Chocolates', 'Fabricante', '30 días', '5-7 días hábiles', 5.00, 'Proveedor de productos lácteos, cremas y chocolates. Descuentos por volumen.', 1, 1),
+('Apicultura del Norte', 'Apicultura del Norte Ltda.', '76.890.123-4', 'ventas@apiculturadelnorte.cl', '+5657253456', '+56945678901', NULL, 'Camino a Alto Hospicio Km 12, Parcela 45', 'Alto Hospicio', 'Región de Tarapacá', '1170000', 'Chile', 'Valentina Castro', 'Productora y Vendedora', 'v.castro@apiculturadelnorte.cl', '+56945678901', 'activo', 'Miel y Derivados', 'Productor Local', 'Contado', '2-3 días hábiles', 0.00, 'Productor local de miel natural. Productos artesanales de alta calidad.', 1, 1),
+('Especias del Norte', 'Especias y Condimentos del Norte SpA', '76.901.234-5', 'ventas@especiasdelnorte.cl', '+5657254567', '+56978901234', NULL, 'Pasaje Los Carrera 890, Local 5', 'Iquique', 'Región de Tarapacá', '1100000', 'Chile', 'Nicolás Jiménez', 'Gerente', 'n.jimenez@especiasdelnorte.cl', '+56978901234', 'activo', 'Especias y Condimentos', 'Distribuidor Local', '15 días', '2-4 días hábiles', 3.00, 'Proveedor local de especias, condimentos y productos gourmet.', 1, 1),
+('Jugos del Norte', 'Jugos Naturales del Norte Ltda.', '76.012.345-6', 'ventas@jugosdelnorte.cl', '+5657255678', '+56967890123', NULL, 'Av. La Tirana 1234, Bodega 3', 'Alto Hospicio', 'Región de Tarapacá', '1170000', 'Chile', 'Javiera Soto', 'Directora de Producción', 'j.soto@jugosdelnorte.cl', '+56967890123', 'activo', 'Bebidas', 'Productor Local', '15 días', '3-5 días hábiles', 2.00, 'Productor local de jugos naturales y bebidas frescas.', 1, 1),
+('Panaderia Artesanal', 'Panadería Artesanal del Norte Ltda.', '76.234.567-8', 'ventas@panaderiaartesanal.cl', '+5657256789', '+56945678901', NULL, 'Calle Thompson 456, Local 2', 'Iquique', 'Región de Tarapacá', '1100000', 'Chile', 'Andrés Contreras', 'Maestro Panadero', 'a.contreras@panaderiaartesanal.cl', '+56945678901', 'activo', 'Pastelería', 'Productor Local', '7 días', '1-2 días hábiles', 0.00, 'Panadería artesanal local. Productos frescos diarios. Pedidos con 24 horas de anticipación.', 1, 1);
+
 -- DATOS INICIALES - INVENTARIO (Productos principales)
--- ============================================================
 
 INSERT INTO `inventario` (`codigo_producto`, `nombre_producto`, `descripcion`, `categoria`, `unidad_medida`, `cantidad_actual`, `cantidad_minima`, `cantidad_maxima`, `precio_unitario`, `precio_venta`, `codigo_qr`, `codigo_barra`, `ubicacion`, `proveedor`, `estado`, `activo`) VALUES
 ('CAFE-001', 'Marley Coffee - One Love Organic', 'Cafe organico en grano 340g, tueste medio', 'cafe', 'paquete', 50, 15, 100, 8500, 12990, 'QR-CAFE-001', '7000000000001', 'Bodega A1', 'Distribuidora Marley Chile', 'disponible', 1),
@@ -781,9 +861,7 @@ INSERT INTO `inventario` (`codigo_producto`, `nombre_producto`, `descripcion`, `
 ('MERCH-101', 'Taza Marley Coffee Logo', 'Taza ceramica 350ml con logo Marley', 'otros', 'unidad', 100, 20, 200, 3500, 7990, 'QR-MERCH-101', '7000000000010', 'Vitrina Principal', 'Importadora Nacional', 'disponible', 1),
 ('EQU-001', 'Prensa Francesa 1L', 'Cafetera prensa francesa vidrio', 'equipamiento', 'unidad', 15, 5, 30, 12000, 24990, 'QR-EQU-001', NULL, 'Vitrina Premium', 'Importadora Nacional', 'disponible', 1);
 
--- ============================================================
 -- DATOS INICIALES - ASIGNACION EMPLEADOS A TURNOS
--- ============================================================
 
 INSERT INTO `empleados_turnos` (`empleados_rut`, `turno_id`, `fecha_inicio`, `fecha_fin`, `activo`) VALUES
 ('18.234.567-9', 1, '2023-01-15', NULL, 1),
@@ -799,9 +877,7 @@ INSERT INTO `empleados_turnos` (`empleados_rut`, `turno_id`, `fecha_inicio`, `fe
 ('21.234.567-9', 11, '2024-01-10', NULL, 1),
 ('16.789.012-1', 12, '2023-03-01', NULL, 1);
 
--- ============================================================
 -- DATOS INICIALES - HORARIOS
--- ============================================================
 
 INSERT INTO `horarios` (`empleado_rut`, `turno_id`, `fecha_inicio`, `fecha_fin`, `dias_semana`, `observaciones`, `activo`) VALUES
 ('18.234.567-9', 1, '2023-01-15', NULL, '[1, 2, 3, 4, 5]', 'Horario administrativo', 1),
@@ -817,9 +893,7 @@ INSERT INTO `horarios` (`empleado_rut`, `turno_id`, `fecha_inicio`, `fecha_fin`,
 ('21.234.567-9', 11, '2024-01-10', NULL, '[1, 2, 3, 4, 5, 6]', 'Horario barista junior', 1),
 ('16.789.012-1', 12, '2023-03-01', NULL, '[1, 2, 3, 4, 5]', 'Horario mantencion', 1);
 
--- ============================================================
 -- DATOS INICIALES - VENTAS DE EJEMPLO
--- ============================================================
 
 INSERT INTO `ventas` (`numero_venta`, `empleado_id`, `fecha_venta`, `subtotal`, `descuento`, `impuesto`, `total`, `metodo_pago`, `estado`, `tipo_venta`) VALUES
 ('VTA-2024-0001', 2, DATE_SUB(NOW(), INTERVAL 7 DAY), 15990, 0, 3038, 19028, 'efectivo', 'completada', 'local'),
@@ -831,9 +905,7 @@ INSERT INTO `ventas` (`numero_venta`, `empleado_id`, `fecha_venta`, `subtotal`, 
 ('VTA-2024-0007', 8, DATE_SUB(NOW(), INTERVAL 1 DAY), 7990, 0, 1518, 9508, 'efectivo', 'completada', 'para_llevar'),
 ('VTA-2024-0008', 2, NOW(), 28960, 1500, 5217, 32677, 'tarjeta_debito', 'completada', 'local');
 
--- ============================================================
 -- DATOS INICIALES - DETALLE VENTAS
--- ============================================================
 
 INSERT INTO `detalle_ventas` (`venta_id`, `inventario_id`, `cantidad`, `precio_unitario`, `subtotal`, `descuento_item`, `total_item`) VALUES
 (1, 1, 1, 12990, 12990, 0, 12990),
@@ -850,10 +922,6 @@ INSERT INTO `detalle_ventas` (`venta_id`, `inventario_id`, `cantidad`, `precio_u
 (7, 3, 1, 7990, 7990, 0, 7990),
 (8, 1, 2, 12990, 25980, 0, 25980),
 (8, 4, 1, 2990, 2990, 0, 2990);
-
--- ============================================================
--- DATOS INICIALES - ASISTENCIAS
--- ============================================================
 
 -- Asistencias con estado 'presente' (mínimo 5)
 INSERT INTO `asistencias` (`empleado_rut`, `fecha`, `hora_entrada`, `hora_salida`, `tipo_entrada`, `tipo_salida`, `minutos_tarde`, `minutos_extras`, `horas_trabajadas`, `estado`, `observaciones`, `ubicacion_entrada`, `ip_entrada`) VALUES
@@ -894,10 +962,6 @@ INSERT INTO `asistencias` (`empleado_rut`, `fecha`, `hora_entrada`, `hora_salida
 ('17.567.890-5', DATE_SUB(CURDATE(), INTERVAL 28 DAY), NULL, NULL, NULL, NULL, 0, 0, 0.00, 'permiso', 'Día libre compensatorio', 1, NOW()),
 ('18.678.901-6', DATE_SUB(CURDATE(), INTERVAL 27 DAY), NULL, NULL, NULL, NULL, 0, 0, 0.00, 'permiso', 'Permiso por trámite personal', 1, NOW()),
 ('19.789.012-6', DATE_SUB(CURDATE(), INTERVAL 26 DAY), NULL, NULL, NULL, NULL, 0, 0, 0.00, 'permiso', 'Permiso aprobado por supervisor', 1, NOW());
-
--- ============================================================
--- DATOS INICIALES - INVENTARIO ADICIONAL (por estado)
--- ============================================================
 
 -- Productos con estado 'disponible' (mínimo 5 adicionales)
 INSERT INTO `inventario` (`codigo_producto`, `nombre_producto`, `descripcion`, `categoria`, `unidad_medida`, `cantidad_actual`, `cantidad_minima`, `cantidad_maxima`, `precio_unitario`, `precio_venta`, `codigo_qr`, `codigo_barra`, `ubicacion`, `proveedor`, `contacto_proveedor`, `fecha_ultimo_ingreso`, `fecha_vencimiento`, `lote`, `estado`, `requiere_alerta`, `activo`) VALUES
@@ -947,21 +1011,61 @@ INSERT INTO `inventario` (`codigo_producto`, `nombre_producto`, `descripcion`, `
 ('EQU-004', 'Cafetera Italiana 6 tazas (Descontinuado)', 'Cafetera moka descontinuada', 'equipamiento', 'unidad', 2, 0, 0, 18000, 0, 'QR-EQU-004', NULL, 'Vitrina Premium', 'Importadora Nacional', '+56989012345', DATE_SUB(NOW(), INTERVAL 120 DAY), NULL, NULL, 'descontinuado', 0, 0),
 ('MERCH-102', 'Taza Vintage Marley (Descontinuado)', 'Taza edición limitada descontinuada', 'otros', 'unidad', 4, 0, 0, 4000, 0, 'QR-MERCH-102', '7000000000011', 'Vitrina Principal', 'Importadora Nacional', '+56989012345', DATE_SUB(NOW(), INTERVAL 100 DAY), NULL, NULL, 'descontinuado', 0, 0);
 
--- ============================================================
--- FINALIZACION
--- ============================================================
+-- DATOS INICIALES - ORDENES DE COMPRA
+
+INSERT INTO `ordenes_compra` (`numero_orden`, `proveedor_id`, `fecha_orden`, `fecha_entrega_esperada`, `fecha_entrega_real`, `estado`, `subtotal`, `descuento`, `impuestos`, `total`, `moneda`, `condiciones_pago`, `metodo_envio`, `direccion_entrega`, `notas`, `numero_factura`, `fecha_aprobacion`, `creado_por`, `aprobado_por`) VALUES
+('OC-2024-0001', 1, DATE_SUB(CURDATE(), INTERVAL 45 DAY), DATE_SUB(CURDATE(), INTERVAL 38 DAY), DATE_SUB(CURDATE(), INTERVAL 38 DAY), 'recibida', 850000, 42500, 153425, 960925, 'CLP', '30 días', 'Transporte terrestre', 'Av. Arturo Prat 1234, Iquique, Región de Tarapacá', 'Orden de reposición de café Marley Coffee. Entrega completa.', 'FAC-2024-001234', DATE_SUB(NOW(), INTERVAL 47 DAY), 11, 1),
+('OC-2024-0002', 2, DATE_SUB(CURDATE(), INTERVAL 30 DAY), DATE_SUB(CURDATE(), INTERVAL 27 DAY), NULL, 'en_transito', 425000, 12750, 78348, 490598, 'CLP', '15 días', 'Transporte refrigerado', 'Av. Arturo Prat 1234, Iquique, Región de Tarapacá', 'Pedido de productos lácteos Colun. En camino desde La Unión.', NULL, DATE_SUB(NOW(), INTERVAL 29 DAY), 11, 1),
+('OC-2024-0003', 4, DATE_SUB(CURDATE(), INTERVAL 15 DAY), DATE_SUB(CURDATE(), INTERVAL 14 DAY), DATE_SUB(CURDATE(), INTERVAL 14 DAY), 'facturada', 280000, 0, 53200, 333200, 'CLP', 'Contado', 'Entrega local', 'Av. Arturo Prat 1234, Iquique, Región de Tarapacá', 'Pedido de desechables local. Pagado al contado.', 'FAC-2024-002345', DATE_SUB(NOW(), INTERVAL 13 DAY), 11, 1),
+('OC-2024-0004', 5, DATE_SUB(CURDATE(), INTERVAL 20 DAY), DATE_SUB(CURDATE(), INTERVAL 5 DAY), NULL, 'enviada', 480000, 36000, 84360, 528360, 'CLP', '30 días', 'Transporte terrestre', 'Av. Arturo Prat 1234, Iquique, Región de Tarapacá', 'Equipamiento para cafetería. Descuento por volumen aplicado.', NULL, DATE_SUB(NOW(), INTERVAL 18 DAY), 11, 1),
+('OC-2024-0005', 7, DATE_SUB(CURDATE(), INTERVAL 10 DAY), DATE_SUB(CURDATE(), INTERVAL 5 DAY), DATE_SUB(CURDATE(), INTERVAL 5 DAY), 'recibida', 360000, 18000, 64980, 406980, 'CLP', '30 días', 'Transporte terrestre', 'Av. Arturo Prat 1234, Iquique, Región de Tarapacá', 'Productos lácteos y chocolates Nestlé. Descuento aplicado.', 'FAC-2024-003456', DATE_SUB(NOW(), INTERVAL 9 DAY), 11, 1),
+('OC-2024-0006', 6, DATE_SUB(CURDATE(), INTERVAL 8 DAY), DATE_SUB(CURDATE(), INTERVAL 5 DAY), DATE_SUB(CURDATE(), INTERVAL 5 DAY), 'parcialmente_recibida', 375000, 15000, 68400, 428400, 'CLP', '15 días', 'Entrega local', 'Av. Arturo Prat 1234, Iquique, Región de Tarapacá', 'Productos veganos. Faltan algunos items por recibir.', NULL, DATE_SUB(NOW(), INTERVAL 7 DAY), 11, 1),
+('OC-2024-0007', 3, DATE_SUB(CURDATE(), INTERVAL 7 DAY), DATE_SUB(CURDATE(), INTERVAL 0 DAY), NULL, 'confirmada', 240000, 6000, 44460, 278460, 'CLP', '30 días', 'Transporte terrestre', 'Av. Arturo Prat 1234, Iquique, Región de Tarapacá', 'Pedido de azúcar Iansa. Confirmado por proveedor.', NULL, DATE_SUB(NOW(), INTERVAL 6 DAY), 11, 1),
+('OC-2024-0008', 8, DATE_SUB(CURDATE(), INTERVAL 5 DAY), DATE_SUB(CURDATE(), INTERVAL 3 DAY), DATE_SUB(CURDATE(), INTERVAL 3 DAY), 'facturada', 70000, 0, 13300, 83300, 'CLP', 'Contado', 'Entrega local', 'Av. Arturo Prat 1234, Iquique, Región de Tarapacá', 'Miel natural local. Producto artesanal de alta calidad.', 'FAC-2024-004567', DATE_SUB(NOW(), INTERVAL 4 DAY), 11, 1),
+('OC-2024-0009', 9, DATE_SUB(CURDATE(), INTERVAL 4 DAY), DATE_SUB(CURDATE(), INTERVAL 2 DAY), NULL, 'pendiente', 45000, 1350, 8297, 51947, 'CLP', '15 días', 'Entrega local', 'Av. Arturo Prat 1234, Iquique, Región de Tarapacá', 'Especias y condimentos. Esperando aprobación final.', NULL, NULL, 11, NULL),
+('OC-2024-0010', 11, DATE_SUB(CURDATE(), INTERVAL 3 DAY), DATE_ADD(CURDATE(), INTERVAL 1 DAY), NULL, 'borrador', 84000, 0, 15960, 99960, 'CLP', '7 días', 'Entrega local', 'Av. Arturo Prat 1234, Iquique, Región de Tarapacá', 'Pedido de panadería artesanal. Orden en borrador.', NULL, NULL, 11, NULL),
+('OC-2024-0011', 1, DATE_SUB(CURDATE(), INTERVAL 12 DAY), DATE_SUB(CURDATE(), INTERVAL 8 DAY), NULL, 'cancelada', 680000, 34000, 122740, 768740, 'CLP', '30 días', 'Transporte terrestre', 'Av. Arturo Prat 1234, Iquique, Región de Tarapacá', 'Orden cancelada por cambio de requerimientos.', NULL, DATE_SUB(NOW(), INTERVAL 10 DAY), 11, 1),
+('OC-2024-0012', 10, DATE_SUB(CURDATE(), INTERVAL 6 DAY), DATE_SUB(CURDATE(), INTERVAL 3 DAY), DATE_SUB(CURDATE(), INTERVAL 3 DAY), 'recibida', 60000, 1200, 11172, 69972, 'CLP', '15 días', 'Entrega local', 'Av. Arturo Prat 1234, Iquique, Región de Tarapacá', 'Jugos naturales del norte. Entrega completa y satisfactoria.', 'FAC-2024-005678', DATE_SUB(NOW(), INTERVAL 5 DAY), 11, 1);
+
+-- DATOS INICIALES - ITEMS ORDEN COMPRA
+
+INSERT INTO `items_orden_compra` (`orden_compra_id`, `producto_id`, `codigo_producto`, `nombre_producto`, `descripcion`, `cantidad`, `cantidad_recibida`, `unidad_medida`, `precio_unitario`, `descuento`, `precio_total`, `notas`) VALUES
+-- Items OC-2024-0001 (recibida)
+(1, 1, 'CAFE-001', 'Marley Coffee - One Love Organic', 'Cafe organico en grano 340g, tueste medio', 50, 50, 'paquete', 8500, 0, 425000, 'Reposición stock principal'),
+(1, 2, 'CAFE-002', 'Marley Coffee - Smile Jamaica', 'Cafe Jamaica Blue Mountain en grano 340g', 30, 30, 'paquete', 9200, 0, 276000, 'Café premium'),
+(1, 3, 'CAFE-003', 'Marley Coffee - Buffalo Soldier', 'Cafe oscuro intenso en grano 340g', 15, 15, 'paquete', 8800, 0, 132000, NULL),
+(1, NULL, 'CAFE-004', 'Marley Coffee - Lively Up', 'Cafe en grano tueste medio 340g', 25, 25, 'paquete', 9000, 0, 225000, 'Nuevo producto'),
+-- Items OC-2024-0002 (en_transito)
+(2, 4, 'INS-001', 'Leche Entera Colun 1L', 'Leche entera pasteurizada', 300, 0, 'litro', 850, 0, 255000, 'Pedido mensual'),
+(2, NULL, 'INS-003', 'Leche Deslactosada Colun 1L', 'Leche deslactosada pasteurizada', 150, 0, 'litro', 950, 0, 142500, 'Producto para clientes especiales'),
+(2, NULL, 'INS-010', 'Yogurt Natural 1L', 'Yogurt natural sin azucar', 50, 0, 'litro', 1800, 0, 90000, NULL),
+-- Items OC-2024-0003 (facturada)
+(3, 6, 'DES-001', 'Vasos Papel 8oz x100', 'Vasos desechables cafe caliente 8oz', 100, 100, 'paquete', 2800, 0, 280000, 'Stock desechables'),
+-- Items OC-2024-0004 (enviada)
+(4, 8, 'EQU-001', 'Prensa Francesa 1L', 'Cafetera prensa francesa vidrio', 20, 0, 'unidad', 12000, 0, 240000, 'Equipamiento vitrina'),
+(4, 7, 'MERCH-101', 'Taza Marley Coffee Logo', 'Taza ceramica 350ml con logo Marley', 50, 0, 'unidad', 3500, 0, 175000, 'Merchandising'),
+(4, NULL, 'EQU-002', 'Molino de Cafe Manual', 'Molino manual para cafe en grano', 10, 0, 'unidad', 25000, 0, 250000, 'Nuevo producto'),
+-- Items OC-2024-0005 (recibida)
+(5, NULL, 'INS-006', 'Leche Condensada Nestle 397g', 'Leche condensada azucarada', 100, 100, 'gramo', 1200, 0, 120000, 'Reposición'),
+(5, NULL, 'INS-009', 'Crema de Leche Nestle 200ml', 'Crema para batir', 200, 200, 'mililitro', 1200, 0, 240000, 'Para preparaciones premium'),
+-- Items OC-2024-0006 (parcialmente_recibida)
+(6, NULL, 'INS-004', 'Leche de Almendras 1L', 'Leche vegetal de almendras', 60, 40, 'litro', 2500, 0, 150000, 'Faltan 20 unidades'),
+(6, NULL, 'INS-013', 'Leche de Coco 400ml', 'Leche vegetal de coco', 100, 50, 'mililitro', 2200, 0, 220000, 'Parcialmente recibido'),
+(6, NULL, NULL, 'Leche de Avena 1L', 'Leche vegetal de avena', 50, 0, 'litro', 2400, 0, 120000, 'Pendiente de entrega'),
+-- Items OC-2024-0007 (confirmada)
+(7, 5, 'INS-002', 'Azucar Blanca Iansa 1kg', 'Azucar blanca refinada', 200, 0, 'kilogramo', 800, 0, 160000, 'Stock mensual'),
+(7, NULL, NULL, 'Azucar Rubia Iansa 1kg', 'Azucar rubia sin refinar', 100, 0, 'kilogramo', 850, 0, 85000, 'Variedad adicional'),
+-- Items OC-2024-0008 (facturada)
+(8, NULL, 'INS-005', 'Miel Natural 500g', 'Miel de abeja natural', 20, 20, 'gramo', 3500, 0, 70000, 'Producto artesanal local'),
+-- Items OC-2024-0009 (pendiente)
+(9, NULL, NULL, 'Canela Molida 100g', 'Canela en polvo para espolvorear', 30, 0, 'gramo', 1500, 0, 45000, 'Esperando aprobación'),
+-- Items OC-2024-0010 (borrador)
+(10, NULL, NULL, 'Croissant Mantequilla x6', 'Croissants de mantequilla', 15, 0, 'paquete', 3500, 0, 52500, 'Pedido semanal'),
+(10, NULL, NULL, 'Muffin Chocolate x4', 'Muffins de chocolate', 10, 0, 'paquete', 2800, 0, 31500, NULL),
+-- Items OC-2024-0011 (cancelada)
+(11, 1, 'CAFE-001', 'Marley Coffee - One Love Organic', 'Cafe organico en grano 340g, tueste medio', 80, 0, 'paquete', 8500, 0, 680000, 'Orden cancelada'),
+-- Items OC-2024-0012 (recibida)
+(12, NULL, 'BEB-001', 'Jugo de Naranja Natural 1L', 'Jugo natural', 40, 40, 'litro', 1500, 0, 60000, 'Producto local fresco');
 
 SET FOREIGN_KEY_CHECKS = 1;
 COMMIT;
-
--- ============================================================
--- IMPORTANTE: SINCRONIZACIÓN DE MIGRACIONES DE DJANGO
--- ============================================================
--- Después de importar este archivo SQL, necesitas sincronizar
--- las migraciones de Django para que el proyecto funcione correctamente.
---
--- Manualmente con Django:
---   python manage.py migrate --fake
---
--- Para más detalles, consulta: INSTRUCCIONES_MIGRACIONES.md
--- ============================================================

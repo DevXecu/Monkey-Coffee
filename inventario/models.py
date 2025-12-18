@@ -1,6 +1,9 @@
 from django.db import models
 from empleado.models import Empleado
 
+# Importación diferida para evitar dependencia circular
+# Proveedor se importará como string en la ForeignKey
+
 class Inventario(models.Model):
     class Categoria(models.TextChoices):
         CAFE = 'cafe', 'Café'
@@ -43,7 +46,7 @@ class Inventario(models.Model):
     codigo_qr = models.CharField(max_length=255, blank=True, null=True, db_column='codigo_qr')
     codigo_barra = models.CharField(max_length=100, blank=True, null=True, db_column='codigo_barra')
     ubicacion = models.CharField(max_length=100, blank=True, null=True, db_column='ubicacion')
-    proveedor = models.CharField(max_length=100, blank=True, null=True, db_column='proveedor')
+    proveedor = models.ForeignKey('proveedores.Proveedor', on_delete=models.SET_NULL, blank=True, null=True, related_name='productos', db_column='proveedor_id')
     contacto_proveedor = models.CharField(max_length=100, blank=True, null=True, db_column='contacto_proveedor')
     fecha_ultimo_ingreso = models.DateTimeField(blank=True, null=True, db_column='fecha_ultimo_ingreso')
     fecha_vencimiento = models.DateField(blank=True, null=True, db_column='fecha_vencimiento')
@@ -62,6 +65,9 @@ class Inventario(models.Model):
         db_table = 'inventario'
         verbose_name = 'Inventario'
         verbose_name_plural = 'Inventarios'
+        indexes = [
+            models.Index(fields=['proveedor']),
+        ]
 
     def __str__(self):
         return f"{self.nombre_producto} ({self.codigo_producto})"

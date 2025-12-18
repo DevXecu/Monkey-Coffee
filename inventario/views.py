@@ -23,7 +23,7 @@ class InventarioViewSet(viewsets.ModelViewSet):
     # permission_classes = [IsAuthenticated]  # Deshabilitado para desarrollo
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['categoria', 'estado', 'proveedor', 'activo']
-    search_fields = ['codigo_producto', 'nombre_producto', 'descripcion', 'proveedor']
+    search_fields = ['codigo_producto', 'nombre_producto', 'descripcion', 'proveedor__nombre']
     ordering_fields = ['nombre_producto', 'cantidad_actual', 'fecha_creacion', 'fecha_vencimiento']
     ordering = ['-fecha_creacion']
 

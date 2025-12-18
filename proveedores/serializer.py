@@ -12,26 +12,42 @@ class ProveedorSerializer(serializers.ModelSerializer):
     total_compras = serializers.SerializerMethodField()
     
     def get_creado_por_nombre(self, obj):
-        if obj.creado_por:
-            return f"{obj.creado_por.nombre} {obj.creado_por.apellido}"
+        try:
+            if obj.creado_por:
+                nombre = getattr(obj.creado_por, 'nombre', '') or ''
+                apellido_completo = getattr(obj.creado_por, 'apellido_completo', '') or ''
+                return f"{nombre} {apellido_completo}".strip() if nombre or apellido_completo else None
+        except Exception as e:
+            print(f"Error al obtener creado_por_nombre: {e}")
         return None
     
     def get_actualizado_por_nombre(self, obj):
-        if obj.actualizado_por:
-            return f"{obj.actualizado_por.nombre} {obj.actualizado_por.apellido}"
+        try:
+            if obj.actualizado_por:
+                nombre = getattr(obj.actualizado_por, 'nombre', '') or ''
+                apellido_completo = getattr(obj.actualizado_por, 'apellido_completo', '') or ''
+                return f"{nombre} {apellido_completo}".strip() if nombre or apellido_completo else None
+        except Exception as e:
+            print(f"Error al obtener actualizado_por_nombre: {e}")
         return None
     
     def get_total_ordenes(self, obj):
         """Obtener el total de órdenes del proveedor"""
-        return obj.ordenes_compra.count()
+        try:
+            return obj.ordenes_compra.count()
+        except Exception:
+            return 0
     
     def get_total_compras(self, obj):
         """Obtener el total de compras realizadas"""
-        from django.db.models import Sum
-        total = obj.ordenes_compra.filter(estado__in=['recibida', 'parcialmente_recibida', 'facturada']).aggregate(
-            total=Sum('total')
-        )['total'] or 0
-        return total
+        try:
+            from django.db.models import Sum
+            total = obj.ordenes_compra.filter(estado__in=['recibida', 'parcialmente_recibida', 'facturada']).aggregate(
+                total=Sum('total')
+            )['total'] or 0
+            return total
+        except Exception:
+            return 0
     
     class Meta:
         model = Proveedor
@@ -80,7 +96,10 @@ class ProveedorListSerializer(serializers.ModelSerializer):
     total_ordenes = serializers.SerializerMethodField()
     
     def get_total_ordenes(self, obj):
-        return obj.ordenes_compra.count()
+        try:
+            return obj.ordenes_compra.count()
+        except Exception:
+            return 0
     
     class Meta:
         model = Proveedor
@@ -146,18 +165,31 @@ class OrdenCompraSerializer(serializers.ModelSerializer):
     total_items = serializers.SerializerMethodField()
     
     def get_creado_por_nombre(self, obj):
-        if obj.creado_por:
-            return f"{obj.creado_por.nombre} {obj.creado_por.apellido}"
+        try:
+            if obj.creado_por:
+                nombre = getattr(obj.creado_por, 'nombre', '') or ''
+                apellido_completo = getattr(obj.creado_por, 'apellido_completo', '') or ''
+                return f"{nombre} {apellido_completo}".strip() if nombre or apellido_completo else None
+        except Exception as e:
+            print(f"Error al obtener creado_por_nombre: {e}")
         return None
     
     def get_aprobado_por_nombre(self, obj):
-        if obj.aprobado_por:
-            return f"{obj.aprobado_por.nombre} {obj.aprobado_por.apellido}"
+        try:
+            if obj.aprobado_por:
+                nombre = getattr(obj.aprobado_por, 'nombre', '') or ''
+                apellido_completo = getattr(obj.aprobado_por, 'apellido_completo', '') or ''
+                return f"{nombre} {apellido_completo}".strip() if nombre or apellido_completo else None
+        except Exception as e:
+            print(f"Error al obtener aprobado_por_nombre: {e}")
         return None
     
     def get_total_items(self, obj):
         """Obtener el total de items en la orden"""
-        return obj.items.count()
+        try:
+            return obj.items.count()
+        except Exception:
+            return 0
     
     class Meta:
         model = OrdenCompra
@@ -202,7 +234,10 @@ class OrdenCompraListSerializer(serializers.ModelSerializer):
     total_items = serializers.SerializerMethodField()
     
     def get_total_items(self, obj):
-        return obj.items.count()
+        try:
+            return obj.items.count()
+        except Exception:
+            return 0
     
     class Meta:
         model = OrdenCompra
