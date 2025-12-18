@@ -1,6 +1,8 @@
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import { ProtectedRoute } from "./components/ProtectedRoute";
+import { RoleProtectedRoute } from "./components/RoleProtectedRoute";
+import { SmartRedirect } from "./components/SmartRedirect";
 import { LoginPage } from "./pages/LoginPage";
 import { Layout } from "./components/Layout";
 import { EmpleadoFormPage } from "./pages/EmpleadoFormPage";
@@ -31,20 +33,27 @@ function App() {
           {/* Ruta pública de login */}
           <Route path="/login" element={<LoginPage />} />
           
-          {/* Rutas protegidas - TEMPORALMENTE DESACTIVADO PARA CREAR USUARIOS */}
+          {/* Rutas protegidas - Requieren autenticación */}
           <Route
             path="/"
             element={
-              // <ProtectedRoute>
+              <ProtectedRoute>
                 <Layout>
                   <Outlet />
                 </Layout>
-              // </ProtectedRoute>
+              </ProtectedRoute>
             }
           >
-            {/* redirect to dashboard */}
-            <Route index element={<Navigate to="/dashboard" />} />
-            <Route path="dashboard" element={<DashboardPage />} />
+            {/* redirect inteligente según permisos */}
+            <Route index element={<SmartRedirect />} />
+            <Route 
+              path="dashboard" 
+              element={
+                <RoleProtectedRoute requiredRoute="/dashboard">
+                  <DashboardPage />
+                </RoleProtectedRoute>
+              } 
+            />
             <Route path="empleado" element={<EmpleadoPage />} />
             <Route path="empleado/:id" element={<EmpleadoFormPage />} />
             <Route path="empleado-create" element={<EmpleadoFormPage />} />
@@ -66,10 +75,20 @@ function App() {
             <Route path="ordenes-compra" element={<OrdenCompraPage />} />
             <Route path="ordenes-compra/:id" element={<OrdenCompraFormPage />} />
             <Route path="ordenes-compra-create" element={<OrdenCompraFormPage />} />
-            <Route path="reportes" element={<ReportesPage />} />
+            <Route 
+              path="reportes" 
+              element={
+                <RoleProtectedRoute requiredRoute="/reportes">
+                  <ReportesPage />
+                </RoleProtectedRoute>
+              } 
+            />
             <Route path="configuracion" element={<ConfiguracionPage />} />
             <Route path="profile" element={<ProfilePage />} />
           </Route>
+          
+          {/* Ruta catch-all: redirige a login si no está autenticado, o a dashboard si está autenticado */}
+          <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
         <Toaster />
       </BrowserRouter>

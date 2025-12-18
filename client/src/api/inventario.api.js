@@ -1,4 +1,11 @@
-const API_BASE_URL = 'http://localhost:8000/api';
+const URL =
+  process.env.NODE_ENV === "production"
+    ? import.meta.env.VITE_BACKEND_URL
+    : "http://localhost:8000";
+
+const API_BASE_URL = `${URL}/api`;
+
+console.log("Backend URL for Inventario:", API_BASE_URL);
 
 class InventarioAPI {
   async getAll() {

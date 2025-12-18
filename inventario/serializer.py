@@ -311,6 +311,8 @@ class InventarioListSerializer(serializers.ModelSerializer):
     por_vencer = serializers.SerializerMethodField()
     precio_con_iva = serializers.SerializerMethodField()
     ganancia = serializers.SerializerMethodField()
+    proveedor = serializers.SerializerMethodField()
+    proveedor_nombre = serializers.SerializerMethodField()
     
     class Meta:
         model = Inventario
@@ -318,10 +320,12 @@ class InventarioListSerializer(serializers.ModelSerializer):
             'id',
             'codigo_producto',
             'nombre_producto',
+            'descripcion',
             'categoria',
             'categoria_display',
             'cantidad_actual',
             'cantidad_minima',
+            'cantidad_maxima',
             'unidad_medida',
             'estado',
             'estado_display',
@@ -332,6 +336,8 @@ class InventarioListSerializer(serializers.ModelSerializer):
             'fecha_vencimiento',
             'stock_bajo',
             'por_vencer',
+            'proveedor',
+            'proveedor_nombre',
             'activo'
         ]
     
@@ -359,6 +365,76 @@ class InventarioListSerializer(serializers.ModelSerializer):
         if obj.precio_venta is not None and obj.precio_unitario is not None:
             return int(obj.precio_venta - obj.precio_unitario)
         return None
+    
+    def get_proveedor(self, obj):
+        """Obtener ID del proveedor sin activar la relación ForeignKey"""
+        try:
+            # Obtener el valor crudo del campo sin activar la relación
+            proveedor_value = obj.__dict__.get('proveedor_id', None)
+            if proveedor_value is None:
+                proveedor_value = obj.__dict__.get('proveedor', None)
+            
+            # Si es un número válido, devolverlo
+            if proveedor_value is not None:
+                if isinstance(proveedor_value, int):
+                    return proveedor_value
+                elif isinstance(proveedor_value, str) and proveedor_value.isdigit():
+                    return int(proveedor_value)
+        except (AttributeError, KeyError, ValueError, TypeError):
+            pass
+        return None
+    
+    def get_proveedor_nombre(self, obj):
+        """Obtener nombre del proveedor"""
+        try:
+            # Intentar obtener el valor crudo del campo sin activar la relación ForeignKey
+            proveedor_value = None
+            
+            # Primero intentar obtener proveedor_id (si la migración se ejecutó)
+            try:
+                proveedor_value = obj.__dict__.get('proveedor_id', None)
+            except (AttributeError, KeyError):
+                pass
+            
+            # Si no hay proveedor_id, puede que todavía esté como 'proveedor' (texto)
+            if proveedor_value is None:
+                try:
+                    # Intentar obtener el valor directamente del dict sin activar la relación
+                    proveedor_value = obj.__dict__.get('proveedor', None)
+                except (AttributeError, KeyError):
+                    pass
+            
+            # Si tenemos un valor, intentar usarlo
+            if proveedor_value is not None:
+                try:
+                    # Si es un número válido (int o string que representa un número)
+                    if isinstance(proveedor_value, int):
+                        proveedor_id_int = proveedor_value
+                    elif isinstance(proveedor_value, str) and proveedor_value.isdigit():
+                        proveedor_id_int = int(proveedor_value)
+                    else:
+                        # Es texto (nombre del proveedor), devolverlo directamente
+                        return proveedor_value
+                    
+                    # Si llegamos aquí, tenemos un ID válido
+                    from proveedores.models import Proveedor
+                    proveedor = Proveedor.objects.get(id=proveedor_id_int)
+                    return proveedor.nombre
+                except (ValueError, TypeError, Proveedor.DoesNotExist, AttributeError):
+                    # Si falla, puede que sea texto, devolverlo como está
+                    if isinstance(proveedor_value, str):
+                        return proveedor_value
+                    pass
+        except Exception:
+            pass
+        
+        # Fallback: devolver contacto_proveedor si existe
+        return obj.contacto_proveedor if hasattr(obj, 'contacto_proveedor') else None
+    
+    def get_proveedor(self, obj):
+        """Obtener nombre del proveedor para compatibilidad con el frontend"""
+        # Devolver el nombre del proveedor en lugar del ID para compatibilidad
+        return self.get_proveedor_nombre(obj)
 
 
 class InventarioStatsSerializer(serializers.Serializer):

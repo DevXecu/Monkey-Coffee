@@ -1,7 +1,9 @@
 import { Link, useLocation } from 'react-router-dom';
+import { usePermissions } from '../hooks/usePermissions';
 
 export function Sidebar({ isOpen, onClose }) {
   const location = useLocation();
+  const { hasPermission } = usePermissions();
 
   const menuItems = [
     {
@@ -134,23 +136,25 @@ export function Sidebar({ isOpen, onClose }) {
 
           {/* Navigation */}
           <nav className="flex-1 px-4 py-4 space-y-2 overflow-y-auto sidebar-scroll">
-            {menuItems.map((item) => (
-              <Link
-                key={item.name}
-                to={item.href}
-                onClick={onClose}
-                className={`flex items-center space-x-3 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 ${
-                  isActive(item.href)
-                    ? 'bg-primary-100 text-primary-700 border-r-2 border-primary-700'
-                    : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
-                }`}
-              >
-                <span className={isActive(item.href) ? 'text-primary-500' : 'text-gray-400'}>
-                  {item.icon}
-                </span>
-                <span>{item.name}</span>
-              </Link>
-            ))}
+            {menuItems
+              .filter((item) => hasPermission(item.href))
+              .map((item) => (
+                <Link
+                  key={item.name}
+                  to={item.href}
+                  onClick={onClose}
+                  className={`flex items-center space-x-3 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 ${
+                    isActive(item.href)
+                      ? 'bg-primary-100 text-primary-700 border-r-2 border-primary-700'
+                      : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
+                  }`}
+                >
+                  <span className={isActive(item.href) ? 'text-primary-500' : 'text-gray-400'}>
+                    {item.icon}
+                  </span>
+                  <span>{item.name}</span>
+                </Link>
+              ))}
           </nav>
         </div>
       </div>

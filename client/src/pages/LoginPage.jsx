@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
+import { usePermissions } from "../hooks/usePermissions";
 import toast from "react-hot-toast";
 import { formatearRUT, formatearRUTCompleto, limpiarRUT } from "../utils/rutUtils";
 
@@ -9,15 +10,28 @@ export const LoginPage = () => {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const { login, isAuthenticated, loading: authLoading } = useAuth();
+  const { hasPermission } = usePermissions();
   const navigate = useNavigate();
   const passwordRef = useRef(null);
 
   // Redirigir si ya está autenticado
   useEffect(() => {
     if (!authLoading && isAuthenticated) {
-      navigate("/dashboard", { replace: true });
+      // Encontrar la primera ruta permitida
+      const routes = [
+        "/dashboard",
+        "/inventario",
+        "/empleado",
+        "/turnos",
+        "/asistencia",
+        "/proveedores",
+        "/ordenes-compra",
+        "/solicitudes",
+      ];
+      const allowedRoute = routes.find((route) => hasPermission(route)) || "/inventario";
+      navigate(allowedRoute, { replace: true });
     }
-  }, [isAuthenticated, authLoading, navigate]);
+  }, [isAuthenticated, authLoading, navigate, hasPermission]);
 
   const handleRutChange = (e) => {
     const inputValue = e.target.value;
@@ -97,7 +111,19 @@ export const LoginPage = () => {
 
     if (result.success) {
       toast.success("¡Bienvenido!");
-      navigate("/dashboard");
+      // Encontrar la primera ruta permitida
+      const routes = [
+        "/dashboard",
+        "/inventario",
+        "/empleado",
+        "/turnos",
+        "/asistencia",
+        "/proveedores",
+        "/ordenes-compra",
+        "/solicitudes",
+      ];
+      const allowedRoute = routes.find((route) => hasPermission(route)) || "/inventario";
+      navigate(allowedRoute);
     } else {
       toast.error(result.error || "Error al iniciar sesión");
     }
