@@ -18,22 +18,56 @@ export const usePermissions = () => {
       return true;
     }
 
-    // Administrador no puede acceder a dashboard y reportes
+    // Administrador puede ver: empleados, turnos, asistencias, inventario, proveedores, ordenes de compra, solicitudes
     if (rol === "administrador") {
-      const restrictedRoutes = ["/dashboard", "/reportes"];
-      return !restrictedRoutes.includes(route);
+      const allowedRoutes = [
+        "/empleado",
+        "/turnos",
+        "/asistencia",
+        "/inventario",
+        "/proveedores",
+        "/ordenes-compra",
+        "/solicitudes",
+        "/profile",
+        "/configuracion",
+      ];
+      // También permitir rutas de creación y edición de estas páginas
+      return (
+        allowedRoutes.includes(route) ||
+        route.startsWith("/empleado") ||
+        route.startsWith("/turnos") ||
+        route.startsWith("/asistencia") ||
+        route.startsWith("/inventario") ||
+        route.startsWith("/proveedores") ||
+        route.startsWith("/ordenes-compra") ||
+        route.startsWith("/solicitudes") ||
+        route.startsWith("/profile") ||
+        route.startsWith("/configuracion")
+      );
     }
 
-    // Empleado por defecto no tiene acceso a rutas administrativas
-    // Puedes agregar más restricciones aquí si es necesario
-    const adminRoutes = [
-      "/dashboard",
-      "/reportes",
-      "/empleado",
-      "/configuracion",
-    ];
-    
-    return !adminRoutes.includes(route);
+    // Empleado solo puede ver: su asistencia, el inventario, sus solicitudes y su turno
+    if (rol === "empleado") {
+      const allowedRoutes = [
+        "/asistencia",
+        "/inventario",
+        "/solicitudes",
+        "/turnos",
+        "/profile",
+      ];
+      // También permitir rutas de creación y edición de estas páginas
+      return (
+        allowedRoutes.includes(route) ||
+        route.startsWith("/asistencia") ||
+        route.startsWith("/inventario") ||
+        route.startsWith("/solicitudes") ||
+        route.startsWith("/turnos") ||
+        route.startsWith("/profile")
+      );
+    }
+
+    // Por defecto, no tiene acceso
+    return false;
   };
 
   /**

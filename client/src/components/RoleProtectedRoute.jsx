@@ -5,7 +5,7 @@ import { usePermissions } from "../hooks/usePermissions";
 
 export const RoleProtectedRoute = ({ children, requiredRoute }) => {
   const { isAuthenticated, loading } = useAuth();
-  const { hasPermission } = usePermissions();
+  const { hasPermission, rol } = usePermissions();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -13,22 +13,44 @@ export const RoleProtectedRoute = ({ children, requiredRoute }) => {
     if (!loading && isAuthenticated) {
       const route = requiredRoute || location.pathname;
       if (!hasPermission(route)) {
-        // Redirigir a la primera página permitida sin mostrar mensaje
-        const routes = [
-          "/dashboard",
-          "/inventario",
-          "/empleado",
-          "/turnos",
-          "/asistencia",
-          "/proveedores",
-          "/ordenes-compra",
-          "/solicitudes",
-        ];
+        // Redirigir a la primera página permitida según el rol
+        let routes = [];
+        
+        if (rol === "gerente") {
+          routes = [
+            "/dashboard",
+            "/inventario",
+            "/empleado",
+            "/turnos",
+            "/asistencia",
+            "/proveedores",
+            "/ordenes-compra",
+            "/solicitudes",
+          ];
+        } else if (rol === "administrador") {
+          routes = [
+            "/inventario",
+            "/empleado",
+            "/turnos",
+            "/asistencia",
+            "/proveedores",
+            "/ordenes-compra",
+            "/solicitudes",
+          ];
+        } else {
+          routes = [
+            "/inventario",
+            "/asistencia",
+            "/solicitudes",
+            "/turnos",
+          ];
+        }
+        
         const allowedRoute = routes.find((route) => hasPermission(route)) || "/inventario";
         navigate(allowedRoute, { replace: true });
       }
     }
-  }, [loading, isAuthenticated, requiredRoute, location.pathname, hasPermission, navigate]);
+  }, [loading, isAuthenticated, requiredRoute, location.pathname, hasPermission, navigate, rol]);
 
   if (loading) {
     return (

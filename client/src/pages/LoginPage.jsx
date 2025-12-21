@@ -10,28 +10,50 @@ export const LoginPage = () => {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const { login, isAuthenticated, loading: authLoading } = useAuth();
-  const { hasPermission } = usePermissions();
+  const { hasPermission, rol } = usePermissions();
   const navigate = useNavigate();
   const passwordRef = useRef(null);
 
   // Redirigir si ya está autenticado
   useEffect(() => {
     if (!authLoading && isAuthenticated) {
-      // Encontrar la primera ruta permitida
-      const routes = [
-        "/dashboard",
-        "/inventario",
-        "/empleado",
-        "/turnos",
-        "/asistencia",
-        "/proveedores",
-        "/ordenes-compra",
-        "/solicitudes",
-      ];
+      // Encontrar la primera ruta permitida según el rol
+      let routes = [];
+      
+      if (rol === "gerente") {
+        routes = [
+          "/dashboard",
+          "/inventario",
+          "/empleado",
+          "/turnos",
+          "/asistencia",
+          "/proveedores",
+          "/ordenes-compra",
+          "/solicitudes",
+        ];
+      } else if (rol === "administrador") {
+        routes = [
+          "/inventario",
+          "/empleado",
+          "/turnos",
+          "/asistencia",
+          "/proveedores",
+          "/ordenes-compra",
+          "/solicitudes",
+        ];
+      } else {
+        routes = [
+          "/inventario",
+          "/asistencia",
+          "/solicitudes",
+          "/turnos",
+        ];
+      }
+      
       const allowedRoute = routes.find((route) => hasPermission(route)) || "/inventario";
       navigate(allowedRoute, { replace: true });
     }
-  }, [isAuthenticated, authLoading, navigate, hasPermission]);
+  }, [isAuthenticated, authLoading, navigate, hasPermission, rol]);
 
   const handleRutChange = (e) => {
     const inputValue = e.target.value;
@@ -111,19 +133,8 @@ export const LoginPage = () => {
 
     if (result.success) {
       toast.success("¡Bienvenido!");
-      // Encontrar la primera ruta permitida
-      const routes = [
-        "/dashboard",
-        "/inventario",
-        "/empleado",
-        "/turnos",
-        "/asistencia",
-        "/proveedores",
-        "/ordenes-compra",
-        "/solicitudes",
-      ];
-      const allowedRoute = routes.find((route) => hasPermission(route)) || "/inventario";
-      navigate(allowedRoute);
+      // La redirección se manejará automáticamente por el useEffect que verifica isAuthenticated
+      // Esperar un momento para que el estado se actualice y el useEffect se ejecute
     } else {
       toast.error(result.error || "Error al iniciar sesión");
     }

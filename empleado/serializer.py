@@ -32,9 +32,12 @@ class EmpleadoSerializer(serializers.ModelSerializer):
         return obj.apellido_completo
     
     def to_representation(self, instance):
-        """Asegurar que el password nunca se incluya en las respuestas"""
+        """Asegurar que el password nunca se incluya en las respuestas y que el rol siempre esté presente"""
         representation = super().to_representation(instance)
         representation.pop('password', None)
+        # Asegurar que el rol siempre esté presente (usar el valor del modelo si no está en la representación)
+        if 'rol' not in representation or not representation.get('rol'):
+            representation['rol'] = getattr(instance, 'rol', 'empleado') or 'empleado'
         return representation
     
     def validate_password(self, value):
