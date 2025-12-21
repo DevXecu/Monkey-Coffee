@@ -5,6 +5,7 @@ import { getAllEmpleado } from "../api/empleado.api";
 import { solicitudesAPI } from "../api/solicitudes.api";
 import { toast } from "react-hot-toast";
 import { useAuth } from "../contexts/AuthContext";
+import { usePermissions } from "../hooks/usePermissions";
 
 // Función auxiliar para formatear fechas para mostrar
 const formatDate = (dateString) => {
@@ -33,6 +34,7 @@ export function SolicitudesFormPage() {
   const navigate = useNavigate();
   const params = useParams();
   const { empleado: empleadoLogueado } = useAuth();
+  const { rol } = usePermissions();
   const [empleados, setEmpleados] = useState([]);
   const [tiposSolicitud, setTiposSolicitud] = useState([]);
   const [tiposSolicitudCompletos, setTiposSolicitudCompletos] = useState([]);
@@ -236,17 +238,30 @@ export function SolicitudesFormPage() {
         motivo: data.motivo || "",
       };
       
-      // Solo incluir estado y comentario_aprobacion si estamos editando
+      // Solo incluir estado y comentario_aprobacion si estamos editando y el usuario es gerente o administrador
       if (params.id) {
-        if (data.estado) {
-          formData.estado = data.estado;
-        }
-        if (data.comentario_aprobacion) {
-          formData.comentario_aprobacion = data.comentario_aprobacion;
+        // Solo gerente y administrador pueden cambiar el estado a aprobada/rechazada
+        if (rol === "gerente" || rol === "administrador") {
+          if (data.estado) {
+            formData.estado = data.estado;
+          }
+          if (data.comentario_aprobacion) {
+            formData.comentario_aprobacion = data.comentario_aprobacion;
+          }
+          // Incluir el ID del empleado que está aprobando/rechazando
+          if (empleadoLogueado && (data.estado === "aprobada" || data.estado === "rechazada")) {
+            formData.aprobado_por = empleadoLogueado.id;
+          }
+        } else {
+          // Los empleados no pueden cambiar el estado a aprobada o rechazada
+          // Si intentan hacerlo, mantener el estado actual o solo permitir cancelar
+          if (data.estado && data.estado !== "aprobada" && data.estado !== "rechazada") {
+            formData.estado = data.estado;
+          }
         }
       } else {
         // Para nuevas solicitudes, establecer estado por defecto
-        formData.estado = data.estado || "pendiente";
+        formData.estado = "pendiente";
       }
       
       // Validar campos requeridos
@@ -681,7 +696,7 @@ export function SolicitudesFormPage() {
             )}
           </div>
 
-          {params.id && (
+          {params.id && (rol === "gerente" || rol === "administrador") && (
             <>
               <div className="md:col-span-2 pt-4 border-t border-gray-200">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">

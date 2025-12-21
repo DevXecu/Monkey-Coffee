@@ -590,6 +590,42 @@ class SolicitudesViewSet(viewsets.ModelViewSet):
             print("Datos recibidos (UPDATE solicitud):", request.data)
             partial = kwargs.pop('partial', False)
             instance = self.get_object()
+            
+            # Verificar si se está intentando cambiar el estado a aprobada o rechazada
+            nuevo_estado = request.data.get('estado')
+            if nuevo_estado in ['aprobada', 'rechazada']:
+                # Obtener el empleado que está actualizando desde el request
+                # El frontend debe enviar el ID del empleado logueado en 'aprobado_por' o 'empleado_actualizador'
+                empleado_actualizador_id = request.data.get('aprobado_por') or request.data.get('empleado_actualizador')
+                
+                if empleado_actualizador_id:
+                    try:
+                        empleado_actualizador = Empleado.objects.get(id=empleado_actualizador_id)
+                        # Verificar que el empleado tenga rol de gerente o administrador
+                        if empleado_actualizador.rol not in ['gerente', 'administrador']:
+                            return Response(
+                                {"error": "Solo gerentes y administradores pueden cambiar el estado de una solicitud a aprobada o rechazada"},
+                                status=status.HTTP_403_FORBIDDEN
+                            )
+                        # Verificar que el empleado no esté aprobando su propia solicitud
+                        if instance.empleado_id and instance.empleado_id.id == empleado_actualizador.id:
+                            return Response(
+                                {"error": "No puedes aprobar o rechazar tu propia solicitud"},
+                                status=status.HTTP_403_FORBIDDEN
+                            )
+                    except Empleado.DoesNotExist:
+                        return Response(
+                            {"error": "Empleado no encontrado"},
+                            status=status.HTTP_404_NOT_FOUND
+                        )
+                else:
+                    # Si no se proporciona el ID del empleado, verificar si el empleado que creó la solicitud es el que está actualizando
+                    # En este caso, no permitir cambiar a aprobada/rechazada
+                    return Response(
+                        {"error": "Solo gerentes y administradores pueden cambiar el estado de una solicitud a aprobada o rechazada. Se requiere el ID del empleado que aprueba/rechaza."},
+                        status=status.HTTP_403_FORBIDDEN
+                    )
+            
             serializer = self.get_serializer(instance, data=request.data, partial=partial)
             serializer.is_valid(raise_exception=True)
             self.perform_update(serializer)
@@ -610,12 +646,36 @@ class SolicitudesViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post'])
     def aprobar(self, request, pk=None):
-        """Aprobar una solicitud"""
+        """Aprobar una solicitud - Solo gerente o administrador"""
         solicitud = self.get_object()
+        
+        # Obtener el empleado que está aprobando desde el request
+        aprobado_por_id = request.data.get('aprobado_por')
+        if not aprobado_por_id:
+            return Response(
+                {"error": "Se requiere el ID del empleado que aprueba"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            empleado_aprobador = Empleado.objects.get(id=aprobado_por_id)
+        except Empleado.DoesNotExist:
+            return Response(
+                {"error": "Empleado no encontrado"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        # Verificar que el empleado tenga rol de gerente o administrador
+        if empleado_aprobador.rol not in ['gerente', 'administrador']:
+            return Response(
+                {"error": "Solo gerentes y administradores pueden aprobar solicitudes"},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
         comentario = request.data.get('comentario_aprobacion', '')
         
         solicitud.estado = 'aprobada'
-        solicitud.aprobado_por_id = request.data.get('aprobado_por')
+        solicitud.aprobado_por_id = aprobado_por_id
         solicitud.fecha_aprobacion = timezone.now()
         solicitud.comentario_aprobacion = comentario
         solicitud.save()
@@ -625,12 +685,36 @@ class SolicitudesViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post'])
     def rechazar(self, request, pk=None):
-        """Rechazar una solicitud"""
+        """Rechazar una solicitud - Solo gerente o administrador"""
         solicitud = self.get_object()
+        
+        # Obtener el empleado que está rechazando desde el request
+        aprobado_por_id = request.data.get('aprobado_por')
+        if not aprobado_por_id:
+            return Response(
+                {"error": "Se requiere el ID del empleado que rechaza"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            empleado_rechazador = Empleado.objects.get(id=aprobado_por_id)
+        except Empleado.DoesNotExist:
+            return Response(
+                {"error": "Empleado no encontrado"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        # Verificar que el empleado tenga rol de gerente o administrador
+        if empleado_rechazador.rol not in ['gerente', 'administrador']:
+            return Response(
+                {"error": "Solo gerentes y administradores pueden rechazar solicitudes"},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
         comentario = request.data.get('comentario_aprobacion', '')
         
         solicitud.estado = 'rechazada'
-        solicitud.aprobado_por_id = request.data.get('aprobado_por')
+        solicitud.aprobado_por_id = aprobado_por_id
         solicitud.fecha_aprobacion = timezone.now()
         solicitud.comentario_aprobacion = comentario
         solicitud.save()
