@@ -18,8 +18,10 @@ turnoApi.interceptors.request.use(
       try {
         const empleadoData = JSON.parse(empleado);
         // Agregar RUT y rol del empleado en los headers
+        // Normalizar el RUT (quitar puntos y guiones) para que coincida con la comparación del backend
         if (empleadoData.rut) {
-          config.headers['X-Empleado-Rut'] = empleadoData.rut;
+          const rutNormalizado = empleadoData.rut.replace(/[^0-9kK]/g, '').toUpperCase();
+          config.headers['X-Empleado-Rut'] = rutNormalizado;
         }
         if (empleadoData.rol) {
           config.headers['X-Empleado-Rol'] = empleadoData.rol;

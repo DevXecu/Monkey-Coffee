@@ -62,13 +62,19 @@ export function SolicitudesFormPage() {
   
   // Prellenar empleado cuando se carguen los empleados y el usuario esté logueado
   useEffect(() => {
-    if (!params.id && empleadoLogueado && empleados.length > 0) {
-      const empleadoEncontrado = empleados.find(emp => emp.id === empleadoLogueado.id);
-      if (empleadoEncontrado) {
+    if (!params.id && empleadoLogueado) {
+      // Si es un empleado normal, establecer directamente su ID
+      if (rol === "empleado") {
         setValue("empleado_id", empleadoLogueado.id);
+      } else if (empleados.length > 0) {
+        // Para gerentes y administradores, verificar que el empleado esté en la lista
+        const empleadoEncontrado = empleados.find(emp => emp.id === empleadoLogueado.id);
+        if (empleadoEncontrado) {
+          setValue("empleado_id", empleadoLogueado.id);
+        }
       }
     }
-  }, [empleados, empleadoLogueado, params.id, setValue]);
+  }, [empleados, empleadoLogueado, params.id, setValue, rol]);
 
   const loadEmpleados = async () => {
     try {
@@ -486,19 +492,39 @@ export function SolicitudesFormPage() {
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Empleado *
             </label>
-            <select
-              {...register("empleado_id", { required: "El empleado es requerido" })}
-              className={`block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 ${
-                errors.empleado_id ? 'border-red-300' : 'border-gray-300'
-              }`}
-            >
-              <option value="">Seleccione un empleado</option>
-              {empleados.map((emp) => (
-                <option key={emp.id} value={emp.id}>
-                  {emp.nombre} {emp.apellido}
-                </option>
-              ))}
-            </select>
+            {/* Si es un empleado normal creando una nueva solicitud, mostrar input bloqueado */}
+            {rol === "empleado" && !params.id ? (
+              <>
+                <input
+                  type="hidden"
+                  {...register("empleado_id", { 
+                    required: "El empleado es requerido",
+                    value: empleadoLogueado?.id 
+                  })}
+                />
+                <input
+                  type="text"
+                  value={empleadoLogueado ? `${empleadoLogueado.nombre} ${empleadoLogueado.apellido}` : ""}
+                  disabled
+                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-100 cursor-not-allowed text-gray-700"
+                  readOnly
+                />
+              </>
+            ) : (
+              <select
+                {...register("empleado_id", { required: "El empleado es requerido" })}
+                className={`block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 ${
+                  errors.empleado_id ? 'border-red-300' : 'border-gray-300'
+                }`}
+              >
+                <option value="">Seleccione un empleado</option>
+                {empleados.map((emp) => (
+                  <option key={emp.id} value={emp.id}>
+                    {emp.nombre} {emp.apellido}
+                  </option>
+                ))}
+              </select>
+            )}
             {errors.empleado_id && (
               <p className="mt-1 text-sm text-red-600">{errors.empleado_id.message}</p>
             )}

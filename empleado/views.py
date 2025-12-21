@@ -341,61 +341,63 @@ class AsistenciaView(viewsets.ModelViewSet):
     serializer_class = AsistenciaSerializer
     queryset = Asistencia.objects.all()
     
+    def _buscar_empleado_por_rut(self, rut_str):
+        """
+        Función auxiliar para buscar un empleado por RUT, normalizando ambos valores.
+        Retorna el objeto Empleado si se encuentra, None en caso contrario.
+        """
+        import re
+        if not rut_str:
+            return None
+        
+        # Normalizar el RUT del request (limpiar puntos, guiones y espacios)
+        rut_normalizado = re.sub(r'[^0-9kK]', '', rut_str).upper()
+        
+        if not rut_normalizado:
+            return None
+        
+        # Buscar el empleado por RUT normalizado
+        # Como los RUTs en la BD pueden tener formato, necesitamos comparar normalizados
+        empleados = Empleado.objects.filter(activo=True)
+        for emp in empleados:
+            rut_empleado_limpio = re.sub(r'[^0-9kK]', '', emp.rut).upper()
+            if rut_empleado_limpio == rut_normalizado:
+                return emp
+        
+        return None
+    
     def get_queryset(self):
         # Obtener todas las asistencias, pero manejar empleados inexistentes en el serializer
         queryset = Asistencia.objects.all().order_by('-fecha', '-hora_entrada')
         
-        # Verificar si el usuario es un empleado (no gerente ni administrador)
-        # Si es empleado, solo puede ver sus propias asistencias
+        # Obtener parámetros de la petición
         empleado_rut_request = self.request.query_params.get('empleado_rut', None)
         empleado_rol = self.request.query_params.get('empleado_rol', None)
         
-        # Si el usuario es empleado, forzar el filtro para que solo vea sus asistencias
-        if empleado_rol == 'empleado' and empleado_rut_request:
-            # Normalizar el RUT del request (ya viene limpio del frontend, pero por si acaso)
-            import re
-            rut_normalizado = re.sub(r'[^0-9kK]', '', empleado_rut_request).upper()
-            
-            # Buscar el empleado por RUT normalizado
-            # Como los RUTs en la BD pueden tener formato, necesitamos comparar normalizados
-            empleados = Empleado.objects.all()
-            empleado_encontrado = None
-            for emp in empleados:
-                rut_empleado_limpio = re.sub(r'[^0-9kK]', '', emp.rut).upper()
-                if rut_empleado_limpio == rut_normalizado:
-                    empleado_encontrado = emp
-                    break
-            
-            if empleado_encontrado:
-                # Filtrar asistencias por el empleado encontrado
-                queryset = queryset.filter(empleado_rut=empleado_encontrado)
+        # Si el usuario es empleado, SIEMPRE debe ver solo sus asistencias
+        if empleado_rol == 'empleado':
+            if empleado_rut_request:
+                empleado_encontrado = self._buscar_empleado_por_rut(empleado_rut_request)
+                if empleado_encontrado:
+                    # Filtrar asistencias por el empleado encontrado
+                    queryset = queryset.filter(empleado_rut=empleado_encontrado)
+                else:
+                    # Si no se encuentra el empleado, no devolver nada (por seguridad)
+                    queryset = queryset.none()
             else:
-                # Si no se encuentra el empleado, no devolver nada
+                # Si es empleado pero no se proporciona el RUT, no devolver nada (por seguridad)
                 queryset = queryset.none()
-        elif empleado_rol == 'empleado' and not empleado_rut_request:
-            # Si es empleado pero no se proporciona el RUT, no devolver nada
-            queryset = queryset.none()
         else:
             # Para gerente y administrador, aplicar filtros opcionales
+            # Si se proporciona empleado_rut, filtrar por ese empleado específico
             if empleado_rut_request:
-                # Normalizar el RUT para la búsqueda
-                import re
-                rut_normalizado = re.sub(r'[^0-9kK]', '', empleado_rut_request).upper()
-                
-                # Buscar empleado por RUT normalizado
-                empleados = Empleado.objects.all()
-                empleado_encontrado = None
-                for emp in empleados:
-                    rut_empleado_limpio = re.sub(r'[^0-9kK]', '', emp.rut).upper()
-                    if rut_empleado_limpio == rut_normalizado:
-                        empleado_encontrado = emp
-                        break
-                
+                empleado_encontrado = self._buscar_empleado_por_rut(empleado_rut_request)
                 if empleado_encontrado:
                     queryset = queryset.filter(empleado_rut=empleado_encontrado)
                 else:
                     # Si no se encuentra el empleado, no devolver nada
                     queryset = queryset.none()
+            # Si no se proporciona empleado_rut, gerente/administrador ve todas las asistencias
         
         # Filtros adicionales (aplican a todos los roles)
         fecha = self.request.query_params.get('fecha', None)
@@ -510,14 +512,29 @@ class TurnoView(viewsets.ModelViewSet):
         queryset = Turno.objects.all().order_by('-fecha_creacion')
         
         # Obtener información del empleado desde headers o query params
-        empleado_rut_header = self.request.headers.get('X-Empleado-Rut', None)
-        empleado_rol_header = self.request.headers.get('X-Empleado-Rol', None)
+        # Django convierte los headers a HTTP_X_EMPLEADO_RUT (mayúsculas, guiones a guiones bajos, prefijo HTTP_)
+        # También intentar con el formato original por si se accede directamente
+        empleado_rut_header = (
+            self.request.META.get('HTTP_X_EMPLEADO_RUT') or 
+            self.request.headers.get('X-Empleado-Rut') or
+            self.request.headers.get('x-empleado-rut')
+        )
+        empleado_rol_header = (
+            self.request.META.get('HTTP_X_EMPLEADO_ROL') or 
+            self.request.headers.get('X-Empleado-Rol') or
+            self.request.headers.get('x-empleado-rol')
+        )
         empleado_rut_param = self.request.query_params.get('empleado_rut', None)
         empleado_rol_param = self.request.query_params.get('empleado_rol', None)
         
         # Priorizar headers sobre query params
         empleado_rut = empleado_rut_header or empleado_rut_param
         empleado_rol = empleado_rol_header or empleado_rol_param
+        
+        # Debug: imprimir información recibida
+        print(f"[TurnoView] RUT recibido: {empleado_rut}, Rol: {empleado_rol}")
+        print(f"[TurnoView] Headers META: {self.request.META.get('HTTP_X_EMPLEADO_RUT')}")
+        print(f"[TurnoView] Headers directos: {self.request.headers.get('X-Empleado-Rut')}")
         
         # Si es empleado, solo mostrar sus propios turnos
         if empleado_rol == 'empleado' and empleado_rut:
@@ -532,9 +549,12 @@ class TurnoView(viewsets.ModelViewSet):
                     empleado_encontrado = emp
                     break
             if empleado_encontrado:
+                print(f"[TurnoView] Empleado encontrado: {empleado_encontrado.rut} (ID: {empleado_encontrado.id})")
                 queryset = queryset.filter(empleados_rut=empleado_encontrado)
+                print(f"[TurnoView] Turnos encontrados: {queryset.count()}")
             else:
                 # Si no se encuentra el empleado, retornar queryset vacío
+                print(f"[TurnoView] Empleado NO encontrado con RUT normalizado: {rut_normalizado}")
                 queryset = queryset.none()
         elif empleado_rol == 'empleado' and not empleado_rut:
             # Si es empleado pero no se proporciona RUT, no mostrar nada

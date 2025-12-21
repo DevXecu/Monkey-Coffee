@@ -211,19 +211,31 @@ export function AsistenciaList() {
 
   useEffect(() => {
     async function loadAsistencias() {
+      // No cargar si el empleado no está disponible todavía
+      if (!empleado) {
+        return;
+      }
+
       try {
         setLoading(true);
-        // Si el usuario es empleado, enviar su RUT y rol para que el backend filtre solo sus asistencias
+        // Construir parámetros para el backend
         const params = {};
-        if (rol === 'empleado' && empleado?.rut) {
-          // Limpiar el RUT de puntos y guiones para enviarlo
-          const rutLimpio = empleado.rut.replace(/[^0-9kK]/g, '').toUpperCase();
-          params.empleado_rut = rutLimpio;
-          params.empleado_rol = rol;
-          console.log('Empleado - RUT original:', empleado.rut);
-          console.log('Empleado - RUT limpio enviado:', rutLimpio);
+        
+        // Si el usuario es empleado, SIEMPRE enviar su RUT para que el backend filtre solo sus asistencias
+        if (rol === 'empleado') {
+          if (empleado?.rut) {
+            // Limpiar el RUT de puntos y guiones para enviarlo
+            const rutLimpio = empleado.rut.replace(/[^0-9kK]/g, '').toUpperCase();
+            params.empleado_rut = rutLimpio;
+            params.empleado_rol = rol;
+            console.log('Empleado - RUT original:', empleado.rut);
+            console.log('Empleado - RUT limpio enviado:', rutLimpio);
+          } else {
+            console.warn('Empleado autenticado pero sin RUT disponible');
+          }
         } else if (rol === 'gerente' || rol === 'administrador') {
-          // Gerente y administrador pueden ver todas las asistencias
+          // Gerente y administrador pueden ver todas las asistencias (sin filtro de RUT)
+          // Pero también pueden filtrar por un empleado específico si se necesita
           params.empleado_rol = rol;
         }
         

@@ -34,10 +34,12 @@ export function Navbar({ onToggleSidebar }) {
     return 'Usuario';
   };
 
-  // Obtener cargo
-  const getCargo = () => {
-    if (empleado) {
-      return empleado.cargo || 'Empleado';
+  // Obtener rol
+  const getRol = () => {
+    if (empleado && empleado.rol) {
+      // Capitalizar la primera letra del rol
+      const rol = empleado.rol.toLowerCase();
+      return rol.charAt(0).toUpperCase() + rol.slice(1);
     }
     return 'Empleado';
   };
@@ -182,7 +184,7 @@ export function Navbar({ onToggleSidebar }) {
             </div>
             <div className="hidden md:block text-left">
               <p className="text-sm font-medium text-gray-900">{getFullName()}</p>
-              <p className="text-xs text-gray-500">{getCargo()}</p>
+              <p className="text-xs text-gray-500">{getRol()}</p>
             </div>
             <svg className="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
