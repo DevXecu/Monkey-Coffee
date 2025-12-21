@@ -345,15 +345,27 @@ class AsistenciaView(viewsets.ModelViewSet):
         # Obtener todas las asistencias, pero manejar empleados inexistentes en el serializer
         queryset = Asistencia.objects.all().order_by('-fecha', '-hora_entrada')
         
-        # Filtros opcionales
-        empleado_rut = self.request.query_params.get('empleado_rut', None)
+        # Verificar si el usuario es un empleado (no gerente ni administrador)
+        # Si es empleado, solo puede ver sus propias asistencias
+        empleado_rut_request = self.request.query_params.get('empleado_rut', None)
+        empleado_rol = self.request.query_params.get('empleado_rol', None)
+        
+        # Si el usuario es empleado, forzar el filtro para que solo vea sus asistencias
+        if empleado_rol == 'empleado' and empleado_rut_request:
+            queryset = queryset.filter(empleado_rut__rut=empleado_rut_request)
+        elif empleado_rol == 'empleado' and not empleado_rut_request:
+            # Si es empleado pero no se proporciona el RUT, no devolver nada
+            queryset = queryset.none()
+        else:
+            # Para gerente y administrador, aplicar filtros opcionales
+            if empleado_rut_request:
+                queryset = queryset.filter(empleado_rut__rut=empleado_rut_request)
+        
+        # Filtros adicionales (aplican a todos los roles)
         fecha = self.request.query_params.get('fecha', None)
         estado = self.request.query_params.get('estado', None)
         fecha_inicio = self.request.query_params.get('fecha_inicio', None)
         fecha_fin = self.request.query_params.get('fecha_fin', None)
-        
-        if empleado_rut:
-            queryset = queryset.filter(empleado_rut__rut=empleado_rut)
         
         if fecha:
             queryset = queryset.filter(fecha=fecha)

@@ -2,6 +2,8 @@ import { useEffect, useState, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { getAllAsistencia } from "../api/asistencia.api";
 import { formatearRUTParaMostrar } from "../utils/rutUtils";
+import { useAuth } from "../contexts/AuthContext";
+import { usePermissions } from "../hooks/usePermissions";
 
 export function AsistenciaList() {
   const [asistencias, setAsistencias] = useState([]);
@@ -14,6 +16,8 @@ export function AsistenciaList() {
   const [paginaActual, setPaginaActual] = useState(1);
   const [itemsPorPagina] = useState(10);
   const navigate = useNavigate();
+  const { empleado } = useAuth();
+  const { rol } = usePermissions();
 
   const getEstadoColor = (estado) => {
     switch (estado) {
@@ -209,7 +213,19 @@ export function AsistenciaList() {
     async function loadAsistencias() {
       try {
         setLoading(true);
-        const res = await getAllAsistencia();
+        // Si el usuario es empleado, enviar su RUT y rol para que el backend filtre solo sus asistencias
+        const params = {};
+        if (rol === 'empleado' && empleado?.rut) {
+          // Limpiar el RUT de puntos y guiones para enviarlo
+          const rutLimpio = empleado.rut.replace(/[^0-9kK]/g, '').toUpperCase();
+          params.empleado_rut = rutLimpio;
+          params.empleado_rol = rol;
+        } else if (rol === 'gerente' || rol === 'administrador') {
+          // Gerente y administrador pueden ver todas las asistencias
+          params.empleado_rol = rol;
+        }
+        
+        const res = await getAllAsistencia(params);
         console.log('Asistencias recibidas:', res.data);
         setAsistencias(res.data || []);
       } catch (error) {
@@ -225,7 +241,7 @@ export function AsistenciaList() {
       }
     }
     loadAsistencias();
-  }, []);
+  }, [rol, empleado]);
 
   if (loading) {
     return (
@@ -304,18 +320,22 @@ export function AsistenciaList() {
             </div>
             <div>
               <h1 className="text-3xl font-bold text-gray-900">Asistencias</h1>
-              <p className="text-gray-600 mt-1">Gestiona las asistencias de los empleados</p>
+              <p className="text-gray-600 mt-1">
+                {rol === "empleado" ? "Consulta tus asistencias" : "Gestiona las asistencias de los empleados"}
+              </p>
             </div>
           </div>
-          <Link
-            to="/asistencia-create"
-            className="inline-flex items-center px-6 py-2.5 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-primary-500 hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-all duration-200"
-          >
-            <svg className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-            </svg>
-            Nueva Asistencia
-          </Link>
+          {(rol === "gerente" || rol === "administrador") && (
+            <Link
+              to="/asistencia-create"
+              className="inline-flex items-center px-6 py-2.5 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-primary-500 hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-all duration-200"
+            >
+              <svg className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+              </svg>
+              Nueva Asistencia
+            </Link>
+          )}
         </div>
 
         {/* Stats */}
@@ -401,27 +421,29 @@ export function AsistenciaList() {
 
         {/* Búsqueda y Filtros */}
         <div className="bg-white shadow-lg border border-gray-200 rounded-xl p-6">
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-            {/* Búsqueda */}
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Buscar
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                  </svg>
+          <div className={`grid grid-cols-1 gap-4 ${rol === "gerente" || rol === "administrador" ? "md:grid-cols-5" : "md:grid-cols-4"}`}>
+            {/* Búsqueda - Solo visible para gerente y administrador */}
+            {(rol === "gerente" || rol === "administrador") && (
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Buscar
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="Buscar por nombre o RUT..."
+                    value={busqueda}
+                    onChange={(e) => setBusqueda(e.target.value)}
+                    className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  />
                 </div>
-                <input
-                  type="text"
-                  placeholder="Buscar por nombre o RUT..."
-                  value={busqueda}
-                  onChange={(e) => setBusqueda(e.target.value)}
-                  className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                />
               </div>
-            </div>
+            )}
 
             {/* Filtro por Estado */}
             <div>
