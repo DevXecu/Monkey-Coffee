@@ -220,13 +220,17 @@ export function AsistenciaList() {
           const rutLimpio = empleado.rut.replace(/[^0-9kK]/g, '').toUpperCase();
           params.empleado_rut = rutLimpio;
           params.empleado_rol = rol;
+          console.log('Empleado - RUT original:', empleado.rut);
+          console.log('Empleado - RUT limpio enviado:', rutLimpio);
         } else if (rol === 'gerente' || rol === 'administrador') {
           // Gerente y administrador pueden ver todas las asistencias
           params.empleado_rol = rol;
         }
         
+        console.log('Parámetros enviados al backend:', params);
         const res = await getAllAsistencia(params);
         console.log('Asistencias recibidas:', res.data);
+        console.log('Total de asistencias:', res.data?.length || 0);
         setAsistencias(res.data || []);
       } catch (error) {
         console.error('Error loading asistencias:', error);

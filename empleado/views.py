@@ -352,14 +352,50 @@ class AsistenciaView(viewsets.ModelViewSet):
         
         # Si el usuario es empleado, forzar el filtro para que solo vea sus asistencias
         if empleado_rol == 'empleado' and empleado_rut_request:
-            queryset = queryset.filter(empleado_rut__rut=empleado_rut_request)
+            # Normalizar el RUT del request (ya viene limpio del frontend, pero por si acaso)
+            import re
+            rut_normalizado = re.sub(r'[^0-9kK]', '', empleado_rut_request).upper()
+            
+            # Buscar el empleado por RUT normalizado
+            # Como los RUTs en la BD pueden tener formato, necesitamos comparar normalizados
+            empleados = Empleado.objects.all()
+            empleado_encontrado = None
+            for emp in empleados:
+                rut_empleado_limpio = re.sub(r'[^0-9kK]', '', emp.rut).upper()
+                if rut_empleado_limpio == rut_normalizado:
+                    empleado_encontrado = emp
+                    break
+            
+            if empleado_encontrado:
+                # Filtrar asistencias por el empleado encontrado
+                queryset = queryset.filter(empleado_rut=empleado_encontrado)
+            else:
+                # Si no se encuentra el empleado, no devolver nada
+                queryset = queryset.none()
         elif empleado_rol == 'empleado' and not empleado_rut_request:
             # Si es empleado pero no se proporciona el RUT, no devolver nada
             queryset = queryset.none()
         else:
             # Para gerente y administrador, aplicar filtros opcionales
             if empleado_rut_request:
-                queryset = queryset.filter(empleado_rut__rut=empleado_rut_request)
+                # Normalizar el RUT para la búsqueda
+                import re
+                rut_normalizado = re.sub(r'[^0-9kK]', '', empleado_rut_request).upper()
+                
+                # Buscar empleado por RUT normalizado
+                empleados = Empleado.objects.all()
+                empleado_encontrado = None
+                for emp in empleados:
+                    rut_empleado_limpio = re.sub(r'[^0-9kK]', '', emp.rut).upper()
+                    if rut_empleado_limpio == rut_normalizado:
+                        empleado_encontrado = emp
+                        break
+                
+                if empleado_encontrado:
+                    queryset = queryset.filter(empleado_rut=empleado_encontrado)
+                else:
+                    # Si no se encuentra el empleado, no devolver nada
+                    queryset = queryset.none()
         
         # Filtros adicionales (aplican a todos los roles)
         fecha = self.request.query_params.get('fecha', None)
