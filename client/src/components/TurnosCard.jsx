@@ -1,8 +1,11 @@
 import { useNavigate } from "react-router-dom";
 import { formatearRUTParaMostrar } from "../utils/rutUtils";
+import { useAuth } from "../contexts/AuthContext";
 
 export function TurnosCard({ turno }) {
   const navigate = useNavigate();
+  const { empleado } = useAuth();
+  const rol = empleado?.rol || "empleado";
 
   const formatTime = (timeStr) => {
     if (!timeStr) return '-';
@@ -39,12 +42,21 @@ export function TurnosCard({ turno }) {
 
   const duracion = calcularDuracion();
 
+  const handleCardClick = () => {
+    // Solo permitir navegación si no es empleado
+    if (rol !== "empleado") {
+      navigate(`/turnos/${turno.id}`);
+    }
+  };
+
   return (
     <div
-      className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 hover:shadow-lg hover:border-primary-300 cursor-pointer transition-all duration-200 group"
-      onClick={() => {
-        navigate(`/turnos/${turno.id}`);
-      }}
+      className={`bg-white p-6 rounded-xl shadow-sm border border-gray-200 transition-all duration-200 group ${
+        rol !== "empleado" 
+          ? "hover:shadow-lg hover:border-primary-300 cursor-pointer" 
+          : "cursor-default"
+      }`}
+      onClick={handleCardClick}
     >
       <div className="flex items-start justify-between mb-4">
         <div className="flex-1">

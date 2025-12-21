@@ -509,13 +509,53 @@ class TurnoView(viewsets.ModelViewSet):
         # Obtener todos los turnos, pero manejar empleados inexistentes en el serializer
         queryset = Turno.objects.all().order_by('-fecha_creacion')
         
-        # Filtros opcionales
-        empleado_rut = self.request.query_params.get('empleado_rut', None)
+        # Obtener información del empleado desde headers o query params
+        empleado_rut_header = self.request.headers.get('X-Empleado-Rut', None)
+        empleado_rol_header = self.request.headers.get('X-Empleado-Rol', None)
+        empleado_rut_param = self.request.query_params.get('empleado_rut', None)
+        empleado_rol_param = self.request.query_params.get('empleado_rol', None)
+        
+        # Priorizar headers sobre query params
+        empleado_rut = empleado_rut_header or empleado_rut_param
+        empleado_rol = empleado_rol_header or empleado_rol_param
+        
+        # Si es empleado, solo mostrar sus propios turnos
+        if empleado_rol == 'empleado' and empleado_rut:
+            import re
+            rut_normalizado = re.sub(r'[^0-9kK]', '', empleado_rut).upper()
+            # Buscar el empleado por RUT normalizado (comparar normalizando ambos)
+            empleados = Empleado.objects.filter(activo=True)
+            empleado_encontrado = None
+            for emp in empleados:
+                rut_emp_limpio = re.sub(r'[^0-9kK]', '', emp.rut).upper()
+                if rut_emp_limpio == rut_normalizado:
+                    empleado_encontrado = emp
+                    break
+            if empleado_encontrado:
+                queryset = queryset.filter(empleados_rut=empleado_encontrado)
+            else:
+                # Si no se encuentra el empleado, retornar queryset vacío
+                queryset = queryset.none()
+        elif empleado_rol == 'empleado' and not empleado_rut:
+            # Si es empleado pero no se proporciona RUT, no mostrar nada
+            queryset = queryset.none()
+        else:
+            # Para gerente y administrador, permitir filtros opcionales
+            if empleado_rut:
+                import re
+                rut_normalizado = re.sub(r'[^0-9kK]', '', empleado_rut).upper()
+                empleados = Empleado.objects.filter(activo=True)
+                empleado_encontrado = None
+                for emp in empleados:
+                    rut_emp_limpio = re.sub(r'[^0-9kK]', '', emp.rut).upper()
+                    if rut_emp_limpio == rut_normalizado:
+                        empleado_encontrado = emp
+                        break
+                if empleado_encontrado:
+                    queryset = queryset.filter(empleados_rut=empleado_encontrado)
+        
+        # Filtro por activo/inactivo
         activo = self.request.query_params.get('activo', None)
-        
-        if empleado_rut:
-            queryset = queryset.filter(empleados_rut__rut=empleado_rut)
-        
         if activo is not None:
             activo_bool = activo.lower() == 'true'
             queryset = queryset.filter(activo=activo_bool)
@@ -523,6 +563,15 @@ class TurnoView(viewsets.ModelViewSet):
         return queryset
     
     def create(self, request, *args, **kwargs):
+        # Verificar permisos: solo gerente y administrador pueden crear turnos
+        empleado_rol = request.headers.get('X-Empleado-Rol') or request.query_params.get('empleado_rol')
+        
+        if empleado_rol == 'empleado':
+            return Response(
+                {"error": "No tienes permisos para crear turnos. Solo los gerentes y administradores pueden crear turnos."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
         try:
             serializer = self.get_serializer(data=request.data)
             serializer.is_valid(raise_exception=True)
@@ -543,6 +592,15 @@ class TurnoView(viewsets.ModelViewSet):
             )
     
     def update(self, request, *args, **kwargs):
+        # Verificar permisos: solo gerente y administrador pueden actualizar turnos
+        empleado_rol = request.headers.get('X-Empleado-Rol') or request.query_params.get('empleado_rol')
+        
+        if empleado_rol == 'empleado':
+            return Response(
+                {"error": "No tienes permisos para actualizar turnos. Solo los gerentes y administradores pueden actualizar turnos."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
         try:
             partial = kwargs.pop('partial', False)
             instance = self.get_object()
@@ -564,6 +622,15 @@ class TurnoView(viewsets.ModelViewSet):
             )
     
     def destroy(self, request, *args, **kwargs):
+        # Verificar permisos: solo gerente y administrador pueden eliminar turnos
+        empleado_rol = request.headers.get('X-Empleado-Rol') or request.query_params.get('empleado_rol')
+        
+        if empleado_rol == 'empleado':
+            return Response(
+                {"error": "No tienes permisos para eliminar turnos. Solo los gerentes y administradores pueden eliminar turnos."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
         """
         Soft delete: En lugar de eliminar físicamente el turno,
         se cambia el campo 'activo' a False.

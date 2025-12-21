@@ -5,8 +5,12 @@ import { createTurno, deleteTurno, getTurno, updateTurno } from "../api/turno.ap
 import { getAllEmpleado } from "../api/empleado.api";
 import { toast } from "react-hot-toast";
 import { formatearRUTParaMostrar } from "../utils/rutUtils";
+import { useAuth } from "../contexts/AuthContext";
 
 export function TurnosFormPage() {
+  const { empleado } = useAuth();
+  const rol = empleado?.rol || "empleado";
+  const navigate = useNavigate();
   const {
     register,
     handleSubmit,
@@ -19,12 +23,21 @@ export function TurnosFormPage() {
   
   const horaEntrada = watch("hora_entrada");
   const horaSalida = watch("hora_salida");
-  const navigate = useNavigate();
   const params = useParams();
   const [turnoActual, setTurnoActual] = useState(null);
   const [empleados, setEmpleados] = useState([]);
   const [diasSemana, setDiasSemana] = useState([]);
   const [isLoadingTurno, setIsLoadingTurno] = useState(false);
+
+  // Redirigir empleados si intentan crear o editar turnos
+  useEffect(() => {
+    if (rol === "empleado") {
+      toast.error("No tienes permisos para crear o editar turnos", {
+        position: "bottom-right",
+      });
+      navigate("/turnos");
+    }
+  }, [rol, navigate]);
 
   const diasSemanaOptions = [
     { value: 0, label: 'Domingo' },
@@ -295,6 +308,11 @@ export function TurnosFormPage() {
     }
     loadTurno();
   }, [params.id, setValue]);
+
+  // Si es empleado, no mostrar el formulario
+  if (rol === "empleado") {
+    return null;
+  }
 
   return (
     <div className="max-w-4xl mx-auto">

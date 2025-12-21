@@ -3,8 +3,11 @@ import { Link } from "react-router-dom";
 import { getAllTurnos } from "../api/turno.api";
 import { TurnosCard } from "./TurnosCard";
 import { formatearRUTParaMostrar } from "../utils/rutUtils";
+import { useAuth } from "../contexts/AuthContext";
 
 export function TurnosList() {
+  const { empleado } = useAuth();
+  const rol = empleado?.rol || "empleado";
   const [turnos, setTurnos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [busqueda, setBusqueda] = useState("");
@@ -40,6 +43,15 @@ export function TurnosList() {
   // Filtrar y ordenar turnos
   const turnosFiltrados = useMemo(() => {
     let filtradas = [...turnos];
+
+    // Si es empleado, solo mostrar sus propios turnos
+    if (rol === "empleado" && empleado?.rut) {
+      const rutEmpleado = empleado.rut.replace(/[^0-9kK]/g, '').toUpperCase();
+      filtradas = filtradas.filter((t) => {
+        const rutTurno = (t.empleados_rut || '').replace(/[^0-9kK]/g, '').toUpperCase();
+        return rutTurno === rutEmpleado;
+      });
+    }
 
     // Filtro por búsqueda
     if (busqueda.trim()) {
@@ -96,7 +108,7 @@ export function TurnosList() {
     });
 
     return filtradas;
-  }, [turnos, busqueda, filtroActivo, ordenarPor, ordenDireccion]);
+  }, [turnos, busqueda, filtroActivo, ordenarPor, ordenDireccion, rol, empleado]);
 
   // Paginación
   const totalPaginas = Math.ceil(turnosFiltrados.length / itemsPorPagina);
@@ -167,18 +179,22 @@ export function TurnosList() {
             </div>
             <div>
               <h1 className="text-3xl font-bold text-gray-900">Turnos</h1>
-              <p className="text-gray-600 mt-1">Gestiona los turnos de trabajo</p>
+              <p className="text-gray-600 mt-1">
+                {rol === "empleado" ? "Ver tu turno asignado" : "Gestiona los turnos de trabajo"}
+              </p>
             </div>
           </div>
-          <Link
-            to="/turnos-create"
-            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-primary-500 hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors"
-          >
-            <svg className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-            </svg>
-            Nuevo Turno
-          </Link>
+          {rol !== "empleado" && (
+            <Link
+              to="/turnos-create"
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-primary-500 hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors"
+            >
+              <svg className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+              </svg>
+              Nuevo Turno
+            </Link>
+          )}
         </div>
       </div>
 
@@ -334,7 +350,7 @@ export function TurnosList() {
               ? 'Intenta ajustar los filtros de búsqueda'
               : 'Comienza agregando un nuevo turno'}
           </p>
-          {(!busqueda && filtroActivo === 'todos') && (
+          {(!busqueda && filtroActivo === 'todos' && rol !== "empleado") && (
             <div className="mt-6">
               <Link
                 to="/turnos-create"
