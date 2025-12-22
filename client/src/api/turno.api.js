@@ -24,11 +24,18 @@ turnoApi.interceptors.request.use(
           config.headers['X-Empleado-Rut'] = rutNormalizado;
         }
         if (empleadoData.rol) {
-          config.headers['X-Empleado-Rol'] = empleadoData.rol;
+          // Normalizar el rol a minúsculas para consistencia con el backend
+          const rolNormalizado = empleadoData.rol.toLowerCase().trim();
+          config.headers['X-Empleado-Rol'] = rolNormalizado;
+          console.log(`[TurnoAPI] Enviando rol en header: '${rolNormalizado}' (original: '${empleadoData.rol}')`);
+        } else {
+          console.warn("[TurnoAPI] No se encontró rol en empleadoData:", empleadoData);
         }
       } catch (error) {
         console.error("Error parsing empleado from localStorage:", error);
       }
+    } else {
+      console.warn("[TurnoAPI] No se encontró empleado en localStorage");
     }
     console.log("Making request to:", config.baseURL + config.url);
     return config;

@@ -370,16 +370,47 @@ class AsistenciaView(viewsets.ModelViewSet):
         # Obtener todas las asistencias, pero manejar empleados inexistentes en el serializer
         queryset = Asistencia.objects.all().order_by('-fecha', '-hora_entrada')
         
+        # Obtener información del empleado desde headers o query params
+        empleado_rol_header = (
+            self.request.META.get('HTTP_X_EMPLEADO_ROL') or 
+            self.request.headers.get('X-Empleado-Rol') or
+            self.request.headers.get('x-empleado-rol')
+        )
+        empleado_rol_param = self.request.query_params.get('empleado_rol', None)
+        
+        # Priorizar query params para el rol y normalizar a minúsculas
+        empleado_rol = (empleado_rol_param or empleado_rol_header)
+        if empleado_rol:
+            empleado_rol = empleado_rol.lower().strip()
+        
         # Obtener parámetros de la petición
         empleado_rut_request = self.request.query_params.get('empleado_rut', None)
-        empleado_rol = self.request.query_params.get('empleado_rol', None)
         
-        # Si el usuario es empleado, SIEMPRE debe ver solo sus asistencias
-        if empleado_rol == 'empleado':
+        # LÓGICA PRINCIPAL: Solo filtrar si es empleado
+        # Gerentes y administradores ven TODAS las asistencias por defecto
+        if empleado_rol in ['gerente', 'administrador']:
+            # GERENTE/ADMINISTRADOR: Ver TODAS las asistencias por defecto
+            # Solo filtrar por RUT si se especifica explícitamente en query params (para búsquedas específicas)
             if empleado_rut_request:
                 empleado_encontrado = self._buscar_empleado_por_rut(empleado_rut_request)
                 if empleado_encontrado:
-                    # Filtrar asistencias por el empleado encontrado
+                    queryset = queryset.filter(empleado_rut=empleado_encontrado)
+                else:
+                    # Si no se encuentra el empleado, no devolver nada
+                    queryset = queryset.none()
+            # Si no se proporciona empleado_rut, gerente/administrador ve todas las asistencias (sin filtrar)
+        elif empleado_rol == 'empleado':
+            # EMPLEADO: Solo puede ver sus propias asistencias
+            empleado_rut_header = (
+                self.request.META.get('HTTP_X_EMPLEADO_RUT') or 
+                self.request.headers.get('X-Empleado-Rut') or
+                self.request.headers.get('x-empleado-rut')
+            )
+            empleado_rut = empleado_rut_header or empleado_rut_request
+            
+            if empleado_rut:
+                empleado_encontrado = self._buscar_empleado_por_rut(empleado_rut)
+                if empleado_encontrado:
                     queryset = queryset.filter(empleado_rut=empleado_encontrado)
                 else:
                     # Si no se encuentra el empleado, no devolver nada (por seguridad)
@@ -388,16 +419,9 @@ class AsistenciaView(viewsets.ModelViewSet):
                 # Si es empleado pero no se proporciona el RUT, no devolver nada (por seguridad)
                 queryset = queryset.none()
         else:
-            # Para gerente y administrador, aplicar filtros opcionales
-            # Si se proporciona empleado_rut, filtrar por ese empleado específico
-            if empleado_rut_request:
-                empleado_encontrado = self._buscar_empleado_por_rut(empleado_rut_request)
-                if empleado_encontrado:
-                    queryset = queryset.filter(empleado_rut=empleado_encontrado)
-                else:
-                    # Si no se encuentra el empleado, no devolver nada
-                    queryset = queryset.none()
-            # Si no se proporciona empleado_rut, gerente/administrador ve todas las asistencias
+            # Si el rol no se detecta o es desconocido, por seguridad no mostrar nada
+            # (solo empleados, gerentes y administradores tienen acceso)
+            queryset = queryset.none()
         
         # Filtros adicionales (aplican a todos los roles)
         fecha = self.request.query_params.get('fecha', None)
@@ -507,84 +531,174 @@ class TurnoView(viewsets.ModelViewSet):
     serializer_class = TurnoSerializer
     queryset = Turno.objects.all()
     
+    def _buscar_empleado_por_rut_turno(self, rut_str):
+        """
+        Función auxiliar para buscar un empleado por RUT, normalizando ambos valores.
+        Retorna el objeto Empleado si se encuentra, None en caso contrario.
+        """
+        import re
+        if not rut_str:
+            return None
+        
+        # Normalizar el RUT del request (limpiar puntos, guiones y espacios)
+        rut_normalizado = re.sub(r'[^0-9kK]', '', rut_str).upper()
+        
+        if not rut_normalizado:
+            return None
+        
+        # Buscar el empleado por RUT normalizado
+        empleados = Empleado.objects.filter(activo=True)
+        for emp in empleados:
+            rut_empleado_limpio = re.sub(r'[^0-9kK]', '', emp.rut).upper()
+            if rut_empleado_limpio == rut_normalizado:
+                return emp
+        
+        return None
+    
     def get_queryset(self):
         # Obtener todos los turnos, pero manejar empleados inexistentes en el serializer
         queryset = Turno.objects.all().order_by('-fecha_creacion')
         
         # Obtener información del empleado desde headers o query params
         # Django convierte los headers a HTTP_X_EMPLEADO_RUT (mayúsculas, guiones a guiones bajos, prefijo HTTP_)
-        # También intentar con el formato original por si se accede directamente
-        empleado_rut_header = (
-            self.request.META.get('HTTP_X_EMPLEADO_RUT') or 
-            self.request.headers.get('X-Empleado-Rut') or
-            self.request.headers.get('x-empleado-rut')
-        )
         empleado_rol_header = (
             self.request.META.get('HTTP_X_EMPLEADO_ROL') or 
             self.request.headers.get('X-Empleado-Rol') or
             self.request.headers.get('x-empleado-rol')
         )
-        empleado_rut_param = self.request.query_params.get('empleado_rut', None)
         empleado_rol_param = self.request.query_params.get('empleado_rol', None)
         
-        # Priorizar headers sobre query params
-        empleado_rut = empleado_rut_header or empleado_rut_param
-        empleado_rol = empleado_rol_header or empleado_rol_param
+        # Obtener RUT solo de query params (no de headers para gerentes/administradores)
+        # Los headers se usan solo para identificar al usuario, no para filtrar cuando es gerente/admin
+        empleado_rut_param = self.request.query_params.get('empleado_rut', None)
         
-        # Debug: imprimir información recibida
-        print(f"[TurnoView] RUT recibido: {empleado_rut}, Rol: {empleado_rol}")
-        print(f"[TurnoView] Headers META: {self.request.META.get('HTTP_X_EMPLEADO_RUT')}")
-        print(f"[TurnoView] Headers directos: {self.request.headers.get('X-Empleado-Rut')}")
+        # Priorizar query params para el rol y normalizar a minúsculas
+        empleado_rol = (empleado_rol_param or empleado_rol_header)
+        if empleado_rol:
+            empleado_rol = empleado_rol.lower().strip()
         
-        # Si es empleado, solo mostrar sus propios turnos
-        if empleado_rol == 'empleado' and empleado_rut:
-            import re
-            rut_normalizado = re.sub(r'[^0-9kK]', '', empleado_rut).upper()
-            # Buscar el empleado por RUT normalizado (comparar normalizando ambos)
-            empleados = Empleado.objects.filter(activo=True)
-            empleado_encontrado = None
-            for emp in empleados:
-                rut_emp_limpio = re.sub(r'[^0-9kK]', '', emp.rut).upper()
-                if rut_emp_limpio == rut_normalizado:
-                    empleado_encontrado = emp
-                    break
-            if empleado_encontrado:
-                print(f"[TurnoView] Empleado encontrado: {empleado_encontrado.rut} (ID: {empleado_encontrado.id})")
-                queryset = queryset.filter(empleados_rut=empleado_encontrado)
-                print(f"[TurnoView] Turnos encontrados: {queryset.count()}")
-            else:
-                # Si no se encuentra el empleado, retornar queryset vacío
-                print(f"[TurnoView] Empleado NO encontrado con RUT normalizado: {rut_normalizado}")
-                queryset = queryset.none()
-        elif empleado_rol == 'empleado' and not empleado_rut:
-            # Si es empleado pero no se proporciona RUT, no mostrar nada
-            queryset = queryset.none()
-        else:
-            # Para gerente y administrador, permitir filtros opcionales
-            if empleado_rut:
-                import re
-                rut_normalizado = re.sub(r'[^0-9kK]', '', empleado_rut).upper()
-                empleados = Empleado.objects.filter(activo=True)
-                empleado_encontrado = None
-                for emp in empleados:
-                    rut_emp_limpio = re.sub(r'[^0-9kK]', '', emp.rut).upper()
-                    if rut_emp_limpio == rut_normalizado:
-                        empleado_encontrado = emp
-                        break
+        # Debug: imprimir información del rol detectado
+        print(f"[TurnoView.get_queryset] Rol detectado: '{empleado_rol}' (header: '{empleado_rol_header}', param: '{empleado_rol_param}')")
+        print(f"[TurnoView.get_queryset] Total turnos en BD (sin filtros): {Turno.objects.all().count()}")
+        print(f"[TurnoView.get_queryset] Headers completos: {dict(self.request.headers)}")
+        print(f"[TurnoView.get_queryset] META HTTP_X_EMPLEADO_ROL: {self.request.META.get('HTTP_X_EMPLEADO_ROL')}")
+        
+        # LÓGICA PRINCIPAL: Solo filtrar si es empleado
+        # Gerentes y administradores ven TODOS los turnos por defecto
+        if empleado_rol in ['gerente', 'administrador']:
+            # GERENTE/ADMINISTRADOR: Ver TODOS los turnos por defecto
+            # Solo filtrar por RUT si se especifica explícitamente en query params (para búsquedas específicas)
+            if empleado_rut_param:
+                empleado_encontrado = self._buscar_empleado_por_rut_turno(empleado_rut_param)
                 if empleado_encontrado:
                     queryset = queryset.filter(empleados_rut=empleado_encontrado)
+                    print(f"[TurnoView.get_queryset] Filtrando por RUT específico (búsqueda): {empleado_rut_param}")
+                else:
+                    # Si no se encuentra el empleado, retornar queryset vacío
+                    print(f"[TurnoView.get_queryset] Empleado con RUT {empleado_rut_param} no encontrado en búsqueda")
+                    queryset = queryset.none()
+            # Si no hay filtro de RUT, gerente/administrador ve todos los turnos (sin filtrar)
+            print(f"[TurnoView.get_queryset] Rol '{empleado_rol}' detectado - mostrando TODOS los turnos (gerente/administrador)")
+        elif empleado_rol == 'empleado':
+            # EMPLEADO: Solo puede ver sus propios turnos
+            empleado_rut_header = (
+                self.request.META.get('HTTP_X_EMPLEADO_RUT') or 
+                self.request.headers.get('X-Empleado-Rut') or
+                self.request.headers.get('x-empleado-rut')
+            )
+            empleado_rut = empleado_rut_header or empleado_rut_param
+            
+            if empleado_rut:
+                empleado_encontrado = self._buscar_empleado_por_rut_turno(empleado_rut)
+                if empleado_encontrado:
+                    queryset = queryset.filter(empleados_rut=empleado_encontrado)
+                    print(f"[TurnoView.get_queryset] Filtrando turnos para empleado RUT: {empleado_rut}")
+                else:
+                    # Si no se encuentra el empleado, retornar queryset vacío (por seguridad)
+                    print(f"[TurnoView.get_queryset] Empleado con RUT {empleado_rut} no encontrado, retornando queryset vacío")
+                    queryset = queryset.none()
+            else:
+                # Si es empleado pero no se proporciona RUT, no mostrar nada (por seguridad)
+                print(f"[TurnoView.get_queryset] Empleado sin RUT, retornando queryset vacío")
+                queryset = queryset.none()
+        else:
+            # Si el rol no se detecta o es desconocido, por seguridad no mostrar nada
+            # (solo empleados, gerentes y administradores tienen acceso)
+            print(f"[TurnoView.get_queryset] Rol '{empleado_rol}' no reconocido - retornando queryset vacío por seguridad")
+            queryset = queryset.none()
         
-        # Filtro por activo/inactivo
+        # Filtro opcional por activo/inactivo (solo si se especifica)
         activo = self.request.query_params.get('activo', None)
         if activo is not None:
             activo_bool = activo.lower() == 'true'
             queryset = queryset.filter(activo=activo_bool)
+            print(f"[TurnoView.get_queryset] Filtrando por activo={activo_bool}")
         
+        total_final = queryset.count()
+        print(f"[TurnoView.get_queryset] Total turnos retornados después de filtros: {total_final}")
         return queryset
+    
+    def list(self, request, *args, **kwargs):
+        """
+        Sobrescribir el método list para agregar logging y manejar errores
+        """
+        try:
+            print(f"[TurnoView.list] Iniciando list - Request: {request.method} {request.path}")
+            print(f"[TurnoView.list] Headers recibidos: X-Empleado-Rol={request.headers.get('X-Empleado-Rol')}, X-Empleado-Rut={request.headers.get('X-Empleado-Rut')}")
+            
+            # Obtener el queryset base
+            base_queryset = self.get_queryset()
+            print(f"[TurnoView.list] Queryset base tiene {base_queryset.count()} turnos")
+            
+            # Aplicar filtros adicionales (si los hay)
+            queryset = self.filter_queryset(base_queryset)
+            total_queryset = queryset.count()
+            print(f"[TurnoView.list] Queryset filtrado tiene {total_queryset} turnos")
+            
+            if total_queryset == 0:
+                # Verificar si hay turnos en la BD sin filtros
+                total_turnos_bd = Turno.objects.all().count()
+                print(f"[TurnoView.list] ADVERTENCIA: Queryset vacío. Total turnos en BD (sin filtros): {total_turnos_bd}")
+                
+                if total_turnos_bd > 0:
+                    print(f"[TurnoView.list] Hay {total_turnos_bd} turnos en BD pero el queryset está vacío - posible problema con filtros")
+            
+            # Serializar los datos
+            print(f"[TurnoView.list] Iniciando serialización de {total_queryset} turnos...")
+            serializer = self.get_serializer(queryset, many=True)
+            data = serializer.data
+            print(f"[TurnoView.list] Datos serializados exitosamente: {len(data)} turnos")
+            
+            # Log de los primeros turnos para debugging
+            if data:
+                print(f"[TurnoView.list] Primer turno (ID={data[0].get('id', 'N/A')}): {data[0]}")
+                if len(data) > 1:
+                    print(f"[TurnoView.list] Último turno (ID={data[-1].get('id', 'N/A')}): {data[-1]}")
+            else:
+                print("[TurnoView.list] ADVERTENCIA: Array de datos serializados está vacío")
+            
+            print(f"[TurnoView.list] Retornando {len(data)} turnos al cliente")
+            return Response(data)
+        except Exception as e:
+            print(f"[TurnoView.list] ERROR durante list: {str(e)}")
+            print(f"[TurnoView.list] Tipo de error: {type(e).__name__}")
+            print(f"[TurnoView.list] Traceback completo:\n{traceback.format_exc()}")
+            return Response(
+                {"error": str(e), "detail": traceback.format_exc()},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
     
     def create(self, request, *args, **kwargs):
         # Verificar permisos: solo gerente y administrador pueden crear turnos
-        empleado_rol = request.headers.get('X-Empleado-Rol') or request.query_params.get('empleado_rol')
+        empleado_rol_header = (
+            request.META.get('HTTP_X_EMPLEADO_ROL') or 
+            request.headers.get('X-Empleado-Rol') or
+            request.headers.get('x-empleado-rol')
+        )
+        empleado_rol_param = request.query_params.get('empleado_rol', None)
+        empleado_rol = (empleado_rol_param or empleado_rol_header)
+        if empleado_rol:
+            empleado_rol = empleado_rol.lower().strip()
         
         if empleado_rol == 'empleado':
             return Response(
@@ -613,7 +727,15 @@ class TurnoView(viewsets.ModelViewSet):
     
     def update(self, request, *args, **kwargs):
         # Verificar permisos: solo gerente y administrador pueden actualizar turnos
-        empleado_rol = request.headers.get('X-Empleado-Rol') or request.query_params.get('empleado_rol')
+        empleado_rol_header = (
+            request.META.get('HTTP_X_EMPLEADO_ROL') or 
+            request.headers.get('X-Empleado-Rol') or
+            request.headers.get('x-empleado-rol')
+        )
+        empleado_rol_param = request.query_params.get('empleado_rol', None)
+        empleado_rol = (empleado_rol_param or empleado_rol_header)
+        if empleado_rol:
+            empleado_rol = empleado_rol.lower().strip()
         
         if empleado_rol == 'empleado':
             return Response(
@@ -643,7 +765,15 @@ class TurnoView(viewsets.ModelViewSet):
     
     def destroy(self, request, *args, **kwargs):
         # Verificar permisos: solo gerente y administrador pueden eliminar turnos
-        empleado_rol = request.headers.get('X-Empleado-Rol') or request.query_params.get('empleado_rol')
+        empleado_rol_header = (
+            request.META.get('HTTP_X_EMPLEADO_ROL') or 
+            request.headers.get('X-Empleado-Rol') or
+            request.headers.get('x-empleado-rol')
+        )
+        empleado_rol_param = request.query_params.get('empleado_rol', None)
+        empleado_rol = (empleado_rol_param or empleado_rol_header)
+        if empleado_rol:
+            empleado_rol = empleado_rol.lower().strip()
         
         if empleado_rol == 'empleado':
             return Response(
@@ -695,6 +825,74 @@ class SolicitudesViewSet(viewsets.ModelViewSet):
         if self.action == 'list':
             return SolicitudesListSerializer
         return SolicitudesSerializer
+    
+    def get_queryset(self):
+        """Filtrar queryset según el rol del empleado"""
+        queryset = Solicitudes.objects.all()
+        
+        # Obtener información del empleado desde headers o query params
+        empleado_rol_header = (
+            self.request.META.get('HTTP_X_EMPLEADO_ROL') or 
+            self.request.headers.get('X-Empleado-Rol') or
+            self.request.headers.get('x-empleado-rol')
+        )
+        empleado_rol_param = self.request.query_params.get('empleado_rol', None)
+        
+        # Priorizar query params para el rol y normalizar a minúsculas
+        empleado_rol = (empleado_rol_param or empleado_rol_header)
+        if empleado_rol:
+            empleado_rol = empleado_rol.lower().strip()
+        
+        # Obtener RUT del empleado desde headers o query params
+        empleado_rut_header = (
+            self.request.META.get('HTTP_X_EMPLEADO_RUT') or 
+            self.request.headers.get('X-Empleado-Rut') or
+            self.request.headers.get('x-empleado-rut')
+        )
+        empleado_rut_param = self.request.query_params.get('empleado_rut', None)
+        empleado_rut = empleado_rut_header or empleado_rut_param
+        
+        # LÓGICA PRINCIPAL: Solo filtrar si es empleado
+        # Gerentes y administradores ven TODAS las solicitudes por defecto
+        if empleado_rol in ['gerente', 'administrador']:
+            # GERENTE/ADMINISTRADOR: Ver TODAS las solicitudes por defecto
+            # Solo filtrar por empleado_id si se especifica explícitamente en query params (para búsquedas específicas)
+            empleado_id_param = self.request.query_params.get('empleado_id', None)
+            if empleado_id_param:
+                queryset = queryset.filter(empleado_id=empleado_id_param)
+            # Si no hay filtro de empleado_id, gerente/administrador ve todas las solicitudes (sin filtrar)
+        elif empleado_rol == 'empleado':
+            # EMPLEADO: Solo puede ver sus propias solicitudes
+            if empleado_rut:
+                # Buscar el empleado por RUT
+                empleado_encontrado = None
+                try:
+                    # Normalizar el RUT
+                    import re
+                    rut_normalizado = re.sub(r'[^0-9kK]', '', empleado_rut).upper()
+                    empleados = Empleado.objects.filter(activo=True)
+                    for emp in empleados:
+                        rut_empleado_limpio = re.sub(r'[^0-9kK]', '', emp.rut).upper()
+                        if rut_empleado_limpio == rut_normalizado:
+                            empleado_encontrado = emp
+                            break
+                    
+                    if empleado_encontrado:
+                        queryset = queryset.filter(empleado_id=empleado_encontrado)
+                    else:
+                        queryset = queryset.none()
+                except Exception as e:
+                    print(f"Error al buscar empleado por RUT: {e}")
+                    queryset = queryset.none()
+            else:
+                # Si es empleado pero no se proporciona RUT, no mostrar nada (por seguridad)
+                queryset = queryset.none()
+        else:
+            # Si el rol no se detecta o es desconocido, por seguridad no mostrar nada
+            # (solo empleados, gerentes y administradores tienen acceso)
+            queryset = queryset.none()
+        
+        return queryset
     
     def create(self, request, *args, **kwargs):
         """Crear una nueva solicitud"""

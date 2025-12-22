@@ -10,9 +10,29 @@ const asistenciaApi = axios.create({
   baseURL: `${URL}/api/asistencia`,
 });
 
-// Interceptor para debugging
+// Interceptor para agregar información del empleado en los headers
 asistenciaApi.interceptors.request.use(
   (config) => {
+    // Obtener información del empleado desde localStorage
+    const empleado = localStorage.getItem("empleado");
+    if (empleado) {
+      try {
+        const empleadoData = JSON.parse(empleado);
+        // Agregar RUT y rol del empleado en los headers
+        // Normalizar el RUT (quitar puntos y guiones) para que coincida con la comparación del backend
+        if (empleadoData.rut) {
+          const rutNormalizado = empleadoData.rut.replace(/[^0-9kK]/g, '').toUpperCase();
+          config.headers['X-Empleado-Rut'] = rutNormalizado;
+        }
+        if (empleadoData.rol) {
+          // Normalizar el rol a minúsculas para consistencia con el backend
+          const rolNormalizado = empleadoData.rol.toLowerCase().trim();
+          config.headers['X-Empleado-Rol'] = rolNormalizado;
+        }
+      } catch (error) {
+        console.error("Error parsing empleado from localStorage:", error);
+      }
+    }
     console.log("Making request to:", config.baseURL + config.url);
     return config;
   },

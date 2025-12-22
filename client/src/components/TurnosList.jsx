@@ -20,16 +20,37 @@ export function TurnosList() {
   const loadTurnos = async () => {
     try {
       setLoading(true);
+      console.log('[TurnosList] Cargando turnos...');
+      console.log('[TurnosList] Rol del usuario:', rol);
+      console.log('[TurnosList] RUT del usuario:', empleado?.rut);
+      
       const res = await getAllTurnos();
-      console.log('Turnos recibidos:', res.data);
-      setTurnos(res.data || []);
+      console.log('[TurnosList] Respuesta completa:', res);
+      console.log('[TurnosList] Datos recibidos:', res.data);
+      console.log('[TurnosList] Tipo de datos:', Array.isArray(res.data) ? 'Array' : typeof res.data);
+      console.log('[TurnosList] Cantidad de turnos:', Array.isArray(res.data) ? res.data.length : 'N/A');
+      
+      // Verificar si los datos son un array
+      if (Array.isArray(res.data)) {
+        setTurnos(res.data);
+        console.log('[TurnosList] Turnos establecidos correctamente:', res.data.length);
+      } else if (res.data && res.data.results && Array.isArray(res.data.results)) {
+        // Si viene paginado
+        setTurnos(res.data.results);
+        console.log('[TurnosList] Turnos paginados establecidos:', res.data.results.length);
+      } else {
+        console.warn('[TurnosList] Formato de datos inesperado:', res.data);
+        setTurnos([]);
+      }
     } catch (error) {
-      console.error('Error loading turnos:', error);
-      console.error('Error response:', error.response);
+      console.error('[TurnosList] Error loading turnos:', error);
+      console.error('[TurnosList] Error response:', error.response);
+      console.error('[TurnosList] Error message:', error.message);
       setTurnos([]);
       // Mostrar mensaje de error al usuario
       if (error.response) {
-        console.error('Error del servidor:', error.response.data);
+        console.error('[TurnosList] Error del servidor:', error.response.data);
+        console.error('[TurnosList] Status code:', error.response.status);
       }
     } finally {
       setLoading(false);

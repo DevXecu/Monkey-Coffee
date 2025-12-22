@@ -1,9 +1,39 @@
 const API_BASE_URL = 'http://localhost:8000/api';
 
+// Función helper para obtener headers con información del empleado
+const getHeaders = () => {
+  const headers = {
+    'Content-Type': 'application/json',
+  };
+  
+  // Obtener información del empleado desde localStorage
+  const empleado = localStorage.getItem("empleado");
+  if (empleado) {
+    try {
+      const empleadoData = JSON.parse(empleado);
+      // Agregar RUT y rol del empleado en los headers
+      if (empleadoData.rut) {
+        const rutNormalizado = empleadoData.rut.replace(/[^0-9kK]/g, '').toUpperCase();
+        headers['X-Empleado-Rut'] = rutNormalizado;
+      }
+      if (empleadoData.rol) {
+        const rolNormalizado = empleadoData.rol.toLowerCase().trim();
+        headers['X-Empleado-Rol'] = rolNormalizado;
+      }
+    } catch (error) {
+      console.error("Error parsing empleado from localStorage:", error);
+    }
+  }
+  
+  return headers;
+};
+
 class SolicitudesAPI {
   async getAll() {
     try {
-      const response = await fetch(`${API_BASE_URL}/empleado/solicitudes/`);
+      const response = await fetch(`${API_BASE_URL}/empleado/solicitudes/`, {
+        headers: getHeaders()
+      });
       if (!response.ok) {
         throw new Error('Error al obtener las solicitudes');
       }
@@ -16,7 +46,9 @@ class SolicitudesAPI {
 
   async getById(id) {
     try {
-      const response = await fetch(`${API_BASE_URL}/empleado/solicitudes/${id}/`);
+      const response = await fetch(`${API_BASE_URL}/empleado/solicitudes/${id}/`, {
+        headers: getHeaders()
+      });
       if (!response.ok) {
         throw new Error('Error al obtener la solicitud');
       }
@@ -32,9 +64,7 @@ class SolicitudesAPI {
       console.log('Enviando datos a crear solicitud:', solicitudData);
       const response = await fetch(`${API_BASE_URL}/empleado/solicitudes/`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: getHeaders(),
         body: JSON.stringify(solicitudData),
       });
       
@@ -74,9 +104,7 @@ class SolicitudesAPI {
       console.log('Enviando datos para actualizar solicitud:', id, solicitudData);
       const response = await fetch(`${API_BASE_URL}/empleado/solicitudes/${id}/`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: getHeaders(),
         body: JSON.stringify(solicitudData),
       });
       
@@ -115,9 +143,7 @@ class SolicitudesAPI {
     try {
       const response = await fetch(`${API_BASE_URL}/empleado/solicitudes/${id}/`, {
         method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: getHeaders(),
         body: JSON.stringify(solicitudData),
       });
       if (!response.ok) {
@@ -135,6 +161,7 @@ class SolicitudesAPI {
     try {
       const response = await fetch(`${API_BASE_URL}/empleado/solicitudes/${id}/`, {
         method: 'DELETE',
+        headers: getHeaders(),
       });
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
@@ -151,7 +178,9 @@ class SolicitudesAPI {
 
   async search(query) {
     try {
-      const response = await fetch(`${API_BASE_URL}/empleado/solicitudes/?search=${encodeURIComponent(query)}`);
+      const response = await fetch(`${API_BASE_URL}/empleado/solicitudes/?search=${encodeURIComponent(query)}`, {
+        headers: getHeaders()
+      });
       if (!response.ok) {
         throw new Error('Error al buscar solicitudes');
       }
@@ -164,7 +193,9 @@ class SolicitudesAPI {
 
   async filterByEstado(estado) {
     try {
-      const response = await fetch(`${API_BASE_URL}/empleado/solicitudes/?estado=${estado}`);
+      const response = await fetch(`${API_BASE_URL}/empleado/solicitudes/?estado=${estado}`, {
+        headers: getHeaders()
+      });
       if (!response.ok) {
         throw new Error('Error al filtrar solicitudes por estado');
       }
@@ -179,9 +210,7 @@ class SolicitudesAPI {
     try {
       const response = await fetch(`${API_BASE_URL}/empleado/solicitudes/${id}/aprobar/`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: getHeaders(),
         body: JSON.stringify({
           aprobado_por: aprobadoPor,
           comentario_aprobacion: comentario,
@@ -202,9 +231,7 @@ class SolicitudesAPI {
     try {
       const response = await fetch(`${API_BASE_URL}/empleado/solicitudes/${id}/rechazar/`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: getHeaders(),
         body: JSON.stringify({
           aprobado_por: aprobadoPor,
           comentario_aprobacion: comentario,
@@ -223,7 +250,9 @@ class SolicitudesAPI {
 
   async getTiposSolicitudes() {
     try {
-      const response = await fetch(`${API_BASE_URL}/empleado/tipos-solicitudes/`);
+      const response = await fetch(`${API_BASE_URL}/empleado/tipos-solicitudes/`, {
+        headers: getHeaders()
+      });
       if (!response.ok) {
         throw new Error('Error al obtener los tipos de solicitudes');
       }

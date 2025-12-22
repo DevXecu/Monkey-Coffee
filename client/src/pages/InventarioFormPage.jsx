@@ -167,6 +167,22 @@ export function InventarioFormPage() {
     }
   }, [precioUnitario, setValue, isLoading]);
 
+  // Rellenar automáticamente el teléfono del proveedor cuando se selecciona un proveedor
+  const proveedorSeleccionado = watch("proveedor");
+  useEffect(() => {
+    if (proveedorSeleccionado && proveedores.length > 0) {
+      const proveedor = proveedores.find(p => p.id === proveedorSeleccionado);
+      if (proveedor) {
+        // Preferir telefono, si no está disponible usar telefono_contacto
+        const telefono = proveedor.telefono || proveedor.telefono_contacto || "";
+        setValue("contacto_proveedor", telefono);
+      }
+    } else if (!proveedorSeleccionado) {
+      // Si no hay proveedor seleccionado, limpiar el campo
+      setValue("contacto_proveedor", "");
+    }
+  }, [proveedorSeleccionado, proveedores, setValue]);
+
   // Cargar proveedores
   useEffect(() => {
     async function loadProveedores() {
@@ -664,7 +680,12 @@ export function InventarioFormPage() {
               type="text"
               placeholder="+56 9 1234 5678"
               {...register("contacto_proveedor")}
-              className="block w-full px-3 py-2 border border-gray-300 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              disabled={!!proveedorSeleccionado}
+              className={`block w-full px-3 py-2 border border-gray-300 rounded-lg placeholder-gray-400 ${
+                proveedorSeleccionado 
+                  ? 'bg-gray-100 cursor-not-allowed text-gray-600' 
+                  : 'focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500'
+              }`}
             />
           </div>
 
